@@ -9,7 +9,7 @@ obs_path = '../obs_out/'
 obs_inp_file = '20180103sfc.'
 # obs case name (name of obs pkl file in data folder)
 obs_case_name = 'burglind'
-out_pickle_file_path = '../data/obs_'+obs_case_name+'.pkl'
+out_pickle_file_path = '../data/OBS_'+obs_case_name+'.pkl'
 MISSING_VALUE = -9999
 sample_rate = '1H'
 OBS = 'obs'

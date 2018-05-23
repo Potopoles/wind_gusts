@@ -5,17 +5,25 @@ import pickle
 
 
 ############ USER INPUT #############
+# obs case name (name of obs pkl file in data folder)
+obs_case_name = 'burglind'
+# model case name (name of folder with model data in 'mod_path'
+model_case_name = 'burglind_ref'
+# mode of plotting: either ALL_STATIONS (1 plot for each station) or MEAN_OVER_STATIONS
 plot_mode = 'ALL_STATIONS'
-#plot_mode = 'MEAN_OVER_STATIONS'
-i_save = 1
+# save output (1) or plot output (0)
+i_save = 0 
+# gust methods to calculate and plot
 # i_method = 1: estimate from zvp10 and ustar
 # i_method = 2: estimate from zvp30 and ustar
 # i_method = 3: brasseur
 # i_method = 4: estimate from zvp10 and ustar and gust factor
-i_methods = [1,2,3,4]
 i_methods = [1,3,4]
-data_pickle_path = '../data/model_and_obs.pkl'
+# path of input obs_model pickle file
+data_pickle_path = '../data/OBS_'+obs_case_name+'_MODEL_'+model_case_name+'.pkl'
+# directory to save plots
 plot_dir = '../plots/'
+# header set in file
 file_headers = ['ntstep','k_bra','tcm','zvp10','zvp30','zv_bra','zvpb',
                 'zuke','zvke','zukem1','zvkem1','zukem2','zvkem2']
 MODEL = 'model'

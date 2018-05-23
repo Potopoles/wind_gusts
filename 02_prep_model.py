@@ -16,13 +16,13 @@ start_time = datetime(2018,1,3,0,0)
 end_time = datetime(2018,1,4,0,0)
 #end_time = datetime(2018,1,3,0,0)
 # path to model fortran files
-mod_path = '../model_out/'+case_name
+mod_path = '../model_out/'+model_case_name+'/'
 # path to pickle file of obs created by python script 01_prep_obs.py
-obs_pickle_file_path = '../data/obs.pkl'
+obs_pickle_file_path = '../data/OBS_'+obs_case_name+'.pkl'
 # file name of pickle file containing all the data
-data_pickle_file_path = '../data/model_and_obs.pkl'
+data_pickle_file_path = '../data/OBS_'+obs_case_name+'_MODEL_'+model_case_name+'.pkl'
 # fort.700 does not contain data but station information!
-mod_stations_file = '../model_out/fort.700' 
+mod_stations_file = '../model_out/'+model_case_name+'/fort.700' 
 # starting index of fortran files
 ind0 = 701
 # header of fortran output files
