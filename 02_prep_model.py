@@ -85,6 +85,7 @@ out = {}
 out[MODEL] = data[MODEL]
 out['obs_dts'] = data['dts']
 out['model_dts'] = pd.date_range(start_time, end_time, freq='10s').values.astype('M8[s]').astype('O')
+out['model_file_headers'] = file_headers
 out['station_names'] = list(data[MODEL].keys())
 out[OBS] = {}
 for key in out[MODEL].keys():
@@ -92,5 +93,6 @@ for key in out[MODEL].keys():
     for param in use_params:
         out[OBS][key][param] = data[OBS][param][key].values
         
+
 # save output file
 pickle.dump(out, open(data_pickle_file_path, 'wb'))

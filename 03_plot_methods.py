@@ -10,7 +10,9 @@ obs_case_name = 'burglind'
 # model case name (name of folder with model data in 'mod_path'
 model_case_name = 'burglind_ref'
 # mode of plotting: either ALL_STATIONS (1 plot for each station) or MEAN_OVER_STATIONS
-plot_mode = 'ALL_STATIONS'
+#plot_mode = 'ALL_STATIONS'
+#plot_mode = 'MEAN_OVER_STATIONS'
+plot_mode = 'ABO'
 # save output (1) or plot output (0)
 i_save = 0 
 # gust methods to calculate and plot
@@ -23,9 +25,6 @@ i_methods = [1,3,4]
 data_pickle_path = '../data/OBS_'+obs_case_name+'_MODEL_'+model_case_name+'.pkl'
 # directory to save plots
 plot_dir = '../plots/'
-# header set in file
-file_headers = ['ntstep','k_bra','tcm','zvp10','zvp30','zv_bra','zvpb',
-                'zuke','zvke','zukem1','zvkem1','zukem2','zvkem2']
 MODEL = 'model'
 OBS = 'obs'
 unit = 'km/h'
@@ -255,3 +254,64 @@ elif plot_mode == 'MEAN_OVER_STATIONS':
         plt.savefig(plot_name)
         plt.close('all')
 
+
+
+# plot a single station
+else:
+    stat = plot_mode
+    if stat in station_names:
+        print('station ' + stat)
+        lines = []
+        labels = []
+
+        fig = plt.figure(figsize=(12,8))
+        # model gusts
+        for i in range(0,4):
+            if i+1 in i_methods:
+                line, = plt.plot(mod_gust[:,si,i])
+                lines.append(line)
+                labels.append('gust method '+str(i+1))
+        # observed gust
+        line, = plt.plot(obs_gust[:,si],color='black')
+        lines.append(line)
+        labels.append('gust obs')
+        # model mean wind
+        line, = plt.plot(mod_wind[:,si])
+        lines.append(line)
+        labels.append('wind model')
+        # observed mean wind
+        line, = plt.plot(obs_wind[:,si])
+        lines.append(line)
+        labels.append('wind obs')
+        # hypothetical model gust method 1
+        # based on observed wind
+        line, = plt.plot(hypot_gust[:,si], linestyle='--')
+        lines.append(line)
+        labels.append('hypoth. gust')
+
+        ax = plt.gca()
+
+        ax.set_xlabel('simulation hour')
+        ax.set_ylabel('wind/gust ['+unit+']')
+        ax.set_title(stat)
+        ax.grid()
+
+        ax2 = ax.twinx()
+        line, = ax2.plot(k_bra[:,si], linestyle='-', linewidth=1.0, color='grey')
+        lines.append(line)
+        labels.append('k bra')
+
+        ax2.set_ylabel('brasseur model level')
+        ax2.set_ylim((20,80))
+
+        plt.legend(lines,labels)
+
+        plot_name = plot_dir + stat + '.png'
+
+        if i_save == 0:
+            plt.show()
+        else:
+            plt.savefig(plot_name)
+            plt.close('all')
+    else:
+        raise ValueError('Unknown station name or option given by user for variable "plot_mode"!') 
