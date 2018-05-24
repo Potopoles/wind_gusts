@@ -203,11 +203,10 @@ if plot_mode == 'ALL_STATIONS':
 
         plt.legend(lines,labels)
 
-        plot_name = plot_out_dir + stat + '.png'
-
         if i_save == 0:
             plt.show()
         else:
+            plot_name = plot_out_dir + stat + '.png'
             plt.savefig(plot_name)
             plt.close('all')
 
@@ -257,11 +256,11 @@ elif plot_mode == 'MEAN_OVER_STATIONS':
     ax.set_ylabel('wind/gust ['+unit+']')
     ax.set_title(stat)
 
-    plot_name = plot_out_dir + 'all' + '.png'
 
     if i_save == 0:
         plt.show()
     else:
+        plot_name = plot_out_dir + 'all' + '.png'
         plt.savefig(plot_name)
         plt.close('all')
 
@@ -317,11 +316,10 @@ else:
 
         plt.legend(lines,labels)
 
-        plot_name = plot_out_dir + stat + '.png'
-
         if i_save == 0:
             plt.show()
         else:
+            plot_name = plot_out_dir + stat + '.png'
             plt.savefig(plot_name)
             plt.close('all')
     else:

@@ -21,7 +21,7 @@ eval_mode = 'ABO'
 # should a plot be created?
 i_create_plot = 0
 # save output (1) or plot output (0)
-i_save = 0
+i_plot = 2
 # gust methods to calculate and plot
 # i_method = 1: estimate from zvp10 and ustar
 # i_method = 2: estimate from zvp30 and ustar
@@ -37,7 +37,7 @@ OBS = 'obs'
 #####################################
 
 # create directories
-if i_save and not os.path.exists(plot_case_dir):
+if i_plot > 1 and not os.path.exists(plot_case_dir):
     os.mkdir(plot_case_dir)
 
 # load data
@@ -131,57 +131,64 @@ si = np.arange(0,500)
 #print(si)
 
 ###################### PLOT ABSOLUTE ERROR
-# regression
-reg = LinearRegression(fit_intercept=True)
+if i_plot > 0:
+    # regression
+    reg = LinearRegression(fit_intercept=True)
 
-# plot preparation
-fig,axes = plt.subplots(1,3,figsize=(14,4))
-ymax = -np.Inf
-ymin = np.Inf
+    # plot preparation
+    fig,axes = plt.subplots(1,3,figsize=(14,4))
+    ymax = -np.Inf
+    ymin = np.Inf
 
-# loop over axes and gust calc method
-for i,mi in enumerate(i_methods):
-    ax = axes[i]
+    # loop over axes and gust calc method
+    for i,mi in enumerate(i_methods):
+        ax = axes[i]
 
-    # prepare feature matrix
-    X = obs_gust[:,si].flatten().reshape(-1,1)
-    y = mod_err_gust[:,si,mi-1].flatten()
-    #print(X.shape)
-    #print(y.shape)
+        # prepare feature matrix
+        X = obs_gust[:,si].flatten().reshape(-1,1)
+        y = mod_err_gust[:,si,mi-1].flatten()
+        #print(X.shape)
+        #print(y.shape)
 
-    # remove nans
-    mask = np.isnan(X[:,0])
-    #mask[np.isnan(y)] = True
-    X = X[~mask]
-    y = y[~mask]
+        # remove nans
+        mask = np.isnan(X[:,0])
+        #mask[np.isnan(y)] = True
+        X = X[~mask]
+        y = y[~mask]
 
-    # determine max/min y
-    ymax = max(np.max(y),ymax)
-    ymin = min(np.min(y),ymin)
+        # determine max/min y
+        ymax = max(np.max(y),ymax)
+        ymin = min(np.min(y),ymin)
 
-    # fit regression and draw line
-    reg.fit(X,y)
-    line = reg.predict(X)
+        # fit regression and draw line
+        reg.fit(X,y)
+        line = reg.predict(X)
 
-    # plotting
-    ax.scatter(obs_gust[:,si], mod_err_gust[:,si,mi-1], color='black', marker=".")
-    ax.plot(X, line, color='red')
-    ax.set_xlabel('Observed gust (OBS) [m/s]')
-    if i == 0:
-        ax.set_ylabel('Model absolute error (MOD-OBS) [m/s]')
-    ax.axhline(0, color='k', linewidth=0.8)
-    ax.set_title('Method '+str(mi))
-# set axes limits in each ax
-for ax in axes:
-    ax.set_ylim((ymin,ymax))
+        # plotting
+        ax.scatter(obs_gust[:,si], mod_err_gust[:,si,mi-1], color='black', marker=".")
+        ax.plot(X, line, color='red')
+        ax.set_xlabel('Observed gust (OBS) [m/s]')
+        if i == 0:
+            ax.set_ylabel('Model absolute error (MOD-OBS) [m/s]')
+        ax.axhline(0, color='k', linewidth=0.8)
+        ax.set_title('Method '+str(mi))
+    # set axes limits in each ax
+    for ax in axes:
+        ax.set_ylim((ymin,ymax))
 
-# finish plot
-plt.suptitle(title)
-plt.show()
+    # finish plot
+    plt.suptitle(title)
+
+    if i_plot == 1:
+        plt.show()
+    elif i_plot > 1:
+        plot_name = plot_case_dir + 'scatter.png'
+        plt.savefig(plot_name)
+        plt.close('all')
 
 
 ###################### CALCULATE ERROR MEASURES
-# REGRESSION ERROR MEASURES
+# CONTINUOUS ERROR MEASURES
 error_measures = {}
 error_measures['mean_abs_err'] = np.full((nstat,nmethods), np.nan)
 error_measures['r2'] = np.full((nstat,nmethods), np.nan)
@@ -201,28 +208,47 @@ for si in range(0,nstat):
         error_measures['r2'][si,i] = metrics.r2_score(y_obs, y_mod)
         error_measures['explained_var'][si,i] = metrics.explained_variance_score(y_obs, y_mod)
 
+
 # CATEGORICAL ERROR MEASURES
 
 
-###################### PLOT REGRESSION ERROR MEASURES
-fig,axes = plt.subplots(1,3,figsize=(14,4))
-i = 0
-for key,meas in error_measures.items():
-    ax = axes[i]
-    if key == 'mean_abs_err':
-        bins = np.arange(0,20.1,1)
-    else:
-        bins = np.arange(-1,1.1,0.1)
-    ax.hist(meas,bins=bins, histtype='step',
-            color=['red','orange','black'], label=['Method 1', 'Method 2', 'Method 4'])
-    ax.axvline(0,color='k')
-    if key == 'mean_abs_err':
-        ax.legend(loc='upper right')
-        ax.set_xlabel('Absolute error [m/s]')
-    else:
-        ax.legend(loc='upper left')
-        ax.set_xlabel(']-inf,1]')
-    ax.set_title(key)
-    i += 1
-plt.show()
+# print measures to file
+file_name = plot_case_dir + 'scores.txt'
+with open(file_name, 'w') as f:
+    f.write('i_methods ' + str(i_methods) + '\n')
+    for key,meas in error_measures.items():
+        mean_meas = np.mean(meas, axis=0)
+        text = 'station mean ' + key + ' ' + str(mean_meas)
+        print(text)
+        f.write(text + '\n')
+
+
+###################### PLOT CONTINUOUS ERROR MEASURES
+if i_plot > 0:
+    fig,axes = plt.subplots(1,3,figsize=(14,4))
+    i = 0
+    for key,meas in error_measures.items():
+        ax = axes[i]
+        if key == 'mean_abs_err':
+            bins = np.arange(0,20.1,1)
+        else:
+            bins = np.arange(-1,1.1,0.1)
+        ax.hist(meas,bins=bins, histtype='step',
+                color=['red','orange','black'], label=['Method 1', 'Method 2', 'Method 4'])
+        ax.axvline(0,color='k')
+        if key == 'mean_abs_err':
+            ax.legend(loc='upper right')
+            ax.set_xlabel('Absolute error [m/s]')
+        else:
+            ax.legend(loc='upper left')
+            ax.set_xlabel(']-inf,1]')
+        ax.set_title(key)
+        i += 1
+
+    if i_plot == 1:
+        plt.show()
+    elif i_plot > 1:
+        plot_name = plot_case_dir + 'err_continuous.png'
+        plt.savefig(plot_name)
+        plt.close('all')
 
