@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
@@ -9,12 +10,14 @@ import pickle
 obs_case_name = 'burglind'
 # model case name (name of folder with model data in 'mod_path'
 model_case_name = 'burglind_ref'
+# obs model combination case name
+obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
 # mode of plotting: either ALL_STATIONS (1 plot for each station) or MEAN_OVER_STATIONS
 #plot_mode = 'ALL_STATIONS'
 #plot_mode = 'MEAN_OVER_STATIONS'
 plot_mode = 'ABO'
 # save output (1) or plot output (0)
-i_save = 0 
+i_save = 0
 # gust methods to calculate and plot
 # i_method = 1: estimate from zvp10 and ustar
 # i_method = 2: estimate from zvp30 and ustar
@@ -22,15 +25,23 @@ i_save = 0
 # i_method = 4: estimate from zvp10 and ustar and gust factor
 i_methods = [1,3,4]
 # path of input obs_model pickle file
-data_pickle_path = '../data/OBS_'+obs_case_name+'_MODEL_'+model_case_name+'.pkl'
+data_pickle_path = '../data/'+obs_model_case_name+'.pkl'
 # directory to save plots
-plot_dir = '../plots/'
+plot_base_dir = '../plots/'
+plot_case_dir = plot_base_dir + obs_model_case_name + '/'
 MODEL = 'model'
 OBS = 'obs'
 unit = 'km/h'
 #unit = 'm/s'
 #####################################
 
+# create directories
+if i_save and not os.path.exists(plot_case_dir):
+    os.mkdir(plot_case_dir)
+
+quit()
+
+# load data
 data = pickle.load( open(data_pickle_path, 'rb') )
 
 station_names = data['station_names']
@@ -142,7 +153,9 @@ abs_err_gust = np.abs(mod_err_gust)
 
 
 
-
+############################################################################
+################################# PLOTTING #################################
+############################################################################
 
 if plot_mode == 'ALL_STATIONS':
     for si,stat in enumerate(station_names):
@@ -192,7 +205,7 @@ if plot_mode == 'ALL_STATIONS':
 
         plt.legend(lines,labels)
 
-        plot_name = plot_dir + stat + '.png'
+        plot_name = plot_case_dir + stat + '.png'
 
         if i_save == 0:
             plt.show()
@@ -246,7 +259,7 @@ elif plot_mode == 'MEAN_OVER_STATIONS':
     ax.set_ylabel('wind/gust ['+unit+']')
     ax.set_title(stat)
 
-    plot_name = plot_dir + 'all' + '.png'
+    plot_name = plot_case_dir + 'all' + '.png'
 
     if i_save == 0:
         plt.show()
@@ -306,7 +319,7 @@ else:
 
         plt.legend(lines,labels)
 
-        plot_name = plot_dir + stat + '.png'
+        plot_name = plot_case_dir + stat + '.png'
 
         if i_save == 0:
             plt.show()

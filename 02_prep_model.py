@@ -9,6 +9,8 @@ import pickle
 obs_case_name = 'burglind'
 # model case name (name of folder with model data in 'mod_path'
 model_case_name = 'burglind_ref'
+# obs model combination case name
+obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
 # time window of model run
 # THIS HAS TO BE ADJUSTED IF THE MODEL TIME WINDOW IS CHANGED!
 # OBSERVATIONS ARE ASSUMED TO BE AVAILABLE FOR THIS TIME WINDOW!
@@ -20,7 +22,7 @@ mod_path = '../model_out/'+model_case_name+'/'
 # path to pickle file of obs created by python script 01_prep_obs.py
 obs_pickle_file_path = '../data/OBS_'+obs_case_name+'.pkl'
 # file name of pickle file containing all the data
-data_pickle_file_path = '../data/OBS_'+obs_case_name+'_MODEL_'+model_case_name+'.pkl'
+data_pickle_file_path = '../data/'+obs_model_case_name+'.pkl'
 # fort.700 does not contain data but station information!
 mod_stations_file = '../model_out/'+model_case_name+'/fort.700' 
 # starting index of fortran files
