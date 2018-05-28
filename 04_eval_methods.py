@@ -20,8 +20,8 @@ obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
 eval_mode = 'ABO'
 # should a plot be created?
 i_create_plot = 0
-# save output (1) or plot output (0)
-i_plot = 2
+# do not plot (0) show plot (1) save plot (2)
+i_plot = 1
 # gust methods to calculate and plot
 # i_method = 1: estimate from zvp10 and ustar
 # i_method = 2: estimate from zvp30 and ustar
@@ -34,6 +34,8 @@ plot_base_dir = '../plots/'
 plot_case_dir = plot_base_dir + obs_model_case_name + '/'
 MODEL = 'model'
 OBS = 'obs'
+STAT = 'stations'
+PAR = 'params'
 #####################################
 
 # create directories
@@ -48,7 +50,7 @@ nstat = len(station_names)
 nmethods = len(i_methods)
 
 # Prepare index mask to map model output to observation values
-nhrs = len(data['obs_dts'])
+nhrs = len(data[OBS]['dts'])
 hr_inds = np.zeros((nhrs,360))
 for i in range(0,nhrs):
     hr_inds[i,:] = i*360 + np.arange(0,360)
@@ -67,7 +69,7 @@ for si,stat in enumerate(station_names):
 
     for hr in range(0,nhrs):
         inds = hr_inds[hr]
-        obs_gust[hr,si] = data[OBS][stat]['VMAX_10M1'][hr] 
+        obs_gust[hr,si] = data[OBS][STAT][stat][PAR]['VMAX_10M1'][hr] 
         #mod_wind[hr,si] = np.mean(data[MODEL][stat]['zvp10'][inds])
         #obs_wind[hr,si] = data[OBS][stat]['FF_10M'][hr] 
 
@@ -76,34 +78,34 @@ for si,stat in enumerate(station_names):
 
         if mi == 1:
 
-            tcm = data[MODEL][stat]['tcm']
+            tcm = data[MODEL][STAT][stat][PAR]['tcm']
             zcm = tcm
             zcm[zcm < 5E-4] = 5E-4
             zsqcm = np.sqrt(zcm)
-            zvp10 = data[MODEL][stat]['zvp10']
+            zvp10 = data[MODEL][STAT][stat][PAR]['zvp10']
             gust = zvp10 + 3.0 * 2.4 * zsqcm * zvp10
 
         if mi == 2:
 
-            tcm = data[MODEL][stat]['tcm']
+            tcm = data[MODEL][STAT][stat][PAR]['tcm']
             zcm = tcm
             zcm[zcm < 5E-4] = 5E-4
             zsqcm = np.sqrt(zcm)
-            zvp30 = data[MODEL][stat]['zvp30']
-            zvpb = data[MODEL][stat]['zvpb']
+            zvp30 = data[MODEL][STAT][stat][PAR]['zvp30']
+            zvpb = data[MODEL][STAT][stat][PAR]['zvpb']
             gust = zvp30 + 3.0 * 2.4 * zsqcm * zvpb
 
         if mi == 3:
 
-            gust = data[MODEL][stat]['zv_bra']
+            gust = data[MODEL][STAT][stat][PAR]['zv_bra']
 
         if mi == 4:
 
-            tcm = data[MODEL][stat]['tcm']
+            tcm = data[MODEL][STAT][stat][PAR]['tcm']
             zcm = tcm
             zcm[zcm < 5E-4] = 5E-4
             zsqcm = np.sqrt(zcm)
-            zvp10 = data[MODEL][stat]['zvp10']
+            zvp10 = data[MODEL][STAT][stat][PAR]['zvp10']
             gust = zvp10 + (3.0 * 2.4 + 0.09 * zvp10) * zsqcm * zvp10
     
         # calc and save model max gust
