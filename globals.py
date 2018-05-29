@@ -30,3 +30,10 @@ GUST = 'gusts'
 GUST_MIX_COEF_LINEAR = 'gust_mix_coef_linear'
 GUST_MIX_COEF_NONLIN = 'gust_mix_coef_nonlin'
 GUST_BRASSEUR_ESTIM  = 'gust_brassuer_estim'
+GUST_BRASSEUR_K_VAL  = 'gust_brassuer_k_val'
+
+
+
+###### Scores
+SCORE_RMSE = 'score_rmse'
+SCORE_RMSE = 'score_rmse'

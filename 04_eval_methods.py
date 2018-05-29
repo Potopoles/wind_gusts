@@ -42,7 +42,7 @@ if i_plot > 1 and not os.path.exists(plot_case_dir):
 data = pickle.load( open(data_pickle_path, 'rb') )
 
 
-calc_gusts(data, i_gust_fields)
+data = calc_gusts(data, i_gust_fields)
 quit()
 
 station_names = np.asarray(data['station_names'])

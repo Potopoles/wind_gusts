@@ -13,7 +13,7 @@ def calc_gusts(data, i_gust_fields):
                     for options see globals.py section 'Gust methods':
 
     OUTPUT
-    data:           add GUSTS entry to MODEL according to i_gust_fields
+    data:           added GUSTS entry to MODEL according to i_gust_fields
     """
 
     # number of stations and number of hours in data set
@@ -28,7 +28,7 @@ def calc_gusts(data, i_gust_fields):
    
     # loop through all stations
     for stat in data[G.STAT_NAMES]:
-        print(stat)
+        #print(stat)
 
         # add gust dictionary entry
         data[G.MODEL][G.STAT][stat][G.GUST] = {}
@@ -36,6 +36,8 @@ def calc_gusts(data, i_gust_fields):
         for method in i_gust_fields:
             #print(method)
     
+            # Calculate gusts for various methods
+
             if method == G.GUST_MIX_COEF_LINEAR:
     
                 tcm = data[G.MODEL][G.STAT][stat][G.PAR]['tcm']
@@ -58,35 +60,56 @@ def calc_gusts(data, i_gust_fields):
     
                 gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra']
 
+            elif method == G.GUST_BRASSEUR_K_VAL:
+
+                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra']
+                kval = data[G.MODEL][G.STAT][stat][G.PAR]['k_bra']
+
             else:
-                raise ValueError('Unknown user input in list "i_gust_fields"!')
+                raise ValueError('Unknown user input "' + method + '" in list i_gust_fields!')
     
         
-            # calc and save model max gust
+            # Aggregate to hourly values
             hr_max_gusts = np.full((nhrs),np.nan)
-            for hr in range(0,nhrs):
-                inds = hr_inds[hr]
-                # find maximum gust
-                hr_max_gust = np.max(gust[inds])
-                hr_max_gusts[hr] = hr_max_gust
-    
+
+            if method == G.GUST_BRASSEUR_K_VAL:
+
+                # find index of maximum brasseur gust and store k value
+                for hr in range(0,nhrs):
+                    inds = hr_inds[hr]
+                    # find maximum gust ind
+                    hr_max_gust_ind = np.argmax(gust[inds])
+                    hr_max_gusts[hr] = kval[inds][hr_max_gust_ind]
+        
+            else: # any other field
+
+                # calc and save model max gust
+                for hr in range(0,nhrs):
+                    inds = hr_inds[hr]
+                    # find maximum gust
+                    hr_max_gust = np.max(gust[inds])
+                    hr_max_gusts[hr] = hr_max_gust
+        
             # save in data
             data[G.MODEL][G.STAT][stat][G.GUST][method] = hr_max_gusts
-            #print(data[G.MODEL][G.STAT][stat][G.GUST][method])
+
+    return(data)
     
 
-def calc_scores(data, i_gust_fields):
+
+
+def calc_scores(data, i_scores):
 
     """
-    Calculate gusts according to various methods
+    Calculate various scores according to various methods
 
     INPUT
-    data:           dictionary containing data
-    i_gust_fields:  list containing string of gust method names:
-                    for options see globals.py section 'Gust methods':
+    data:           dictionary containing data (with calcualted gusts)
+    i_scores:       list containing string of scores to calculate.
+                    for options see globals.py section 'scores':
 
     OUTPUT
-    data:           add GUSTS entry to MODEL according to i_gust_fields
+    data:           added SCORE entry to MODEL according to i_scores
     """
     # calculate scores
     # error fields
