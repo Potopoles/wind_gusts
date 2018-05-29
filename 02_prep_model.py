@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import pickle
 import globals as G
@@ -11,7 +11,7 @@ obs_case_name = 'burglind'
 # model case name (name of folder with model data in 'mod_path'
 model_case_name = 'burglind_ref'
 # obs model combination case name
-obs_model_case_name = 'G.OBS_'+obs_case_name+'_G.MODEL_'+model_case_name
+obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
 # time window of model run
 # THIS HAS TO BE ADJUSTED IF THE G.MODEL TIME WINDOW IS CHANGED!
 # G.OBSERVATIONS ARE ASSUMED TO BE AVAILABLE FOR THIS TIME WINDOW!
@@ -22,7 +22,7 @@ model_dt = 10
 # path to model fortran files
 mod_path = '../model_out/'+model_case_name+'/'
 # path to pickle file of obs created by python script 01_prep_obs.py
-obs_pickle_file_path = '../data/G.OBS_'+obs_case_name+'.pkl'
+obs_pickle_file_path = '../data/OBS_'+obs_case_name+'.pkl'
 # file name of pickle file containing all the data
 data_pickle_file_path = '../data/'+obs_model_case_name+'.pkl'
 # fort.700 does not contain data but station information!

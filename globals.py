@@ -23,6 +23,9 @@ PAR = 'params'
 # 3rd level MODEL:  key to hourly gust data
 # data[MODEL][STAT][GUST]
 GUST = 'gusts'
+# 3rd level MODEL:  key to hourly scores data
+# data[MODEL][STAT][SCORE]
+SCORE = 'scores'
 
 
 
@@ -30,10 +33,16 @@ GUST = 'gusts'
 GUST_MIX_COEF_LINEAR = 'gust_mix_coef_linear'
 GUST_MIX_COEF_NONLIN = 'gust_mix_coef_nonlin'
 GUST_BRASSEUR_ESTIM  = 'gust_brassuer_estim'
-GUST_BRASSEUR_K_VAL  = 'gust_brassuer_k_val'
+KVAL_BRASSEUR_ESTIM  = 'kval_brassuer_estim'
 
 
 
 ###### Scores
-SCORE_RMSE = 'score_rmse'
-SCORE_RMSE = 'score_rmse'
+# vector scores
+# model error
+SCORE_ME = 'score_me'
+# absolute error
+SCORE_AE = 'score_ae'
+# scalar scores
+# mean absolute error
+SCORE_MAE = 'score_mae'
