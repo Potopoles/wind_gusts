@@ -5,6 +5,8 @@ from datetime import datetime
 import pickle
 from sklearn import metrics
 from sklearn.linear_model import LinearRegression
+from functions import calc_gusts
+import globals as G
 
 
 ############ USER INPUT #############
@@ -13,30 +15,24 @@ obs_case_name = 'burglind'
 # model case name (name of folder with model data in 'mod_path'
 model_case_name = 'burglind_ref'
 # obs model combination case name
-obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
-# mode of evaluation: either ALL_STATIONS (1 plot for each station) or MEAN_OVER_STATIONS
-#eval_mode = 'ALL_STATIONS'
-#eval_mode = 'MEAN_OVER_STATIONS'
+obs_model_case_name = 'G.OBS_'+obs_case_name+'_G.MODEL_'+model_case_name
+# mode of evaluation: either ALL_G.STATIONS (1 plot for each station) or MEAN_OVER_G.STATIONS
+#eval_mode = 'ALL_G.STATIONS'
+#eval_mode = 'MEAN_OVER_G.STATIONS'
 eval_mode = 'ABO'
 # should a plot be created?
 i_create_plot = 0
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 1
 # gust methods to calculate and plot
-# i_method = 1: estimate from zvp10 and ustar
-# i_method = 2: estimate from zvp30 and ustar
-# i_method = 3: brasseur
-# i_method = 4: estimate from zvp10 and ustar and gust factor
-i_methods = [1,3,4]
+i_gust_fields = [G.GUST_MIX_COEF_LINEAR,
+                G.GUST_MIX_COEF_NONLIN]
 # path of input obs_model pickle file
 data_pickle_path = '../data/'+obs_model_case_name+'.pkl'
 plot_base_dir = '../plots/'
 plot_case_dir = plot_base_dir + obs_model_case_name + '/'
-MODEL = 'model'
-OBS = 'obs'
-STAT = 'stations'
-PAR = 'params'
 #####################################
+
 
 # create directories
 if i_plot > 1 and not os.path.exists(plot_case_dir):
@@ -45,12 +41,16 @@ if i_plot > 1 and not os.path.exists(plot_case_dir):
 # load data
 data = pickle.load( open(data_pickle_path, 'rb') )
 
+
+calc_gusts(data, i_gust_fields)
+quit()
+
 station_names = np.asarray(data['station_names'])
 nstat = len(station_names)
 nmethods = len(i_methods)
 
 # Prepare index mask to map model output to observation values
-nhrs = len(data[OBS]['dts'])
+nhrs = len(data[G.OBS]['dts'])
 hr_inds = np.zeros((nhrs,360))
 for i in range(0,nhrs):
     hr_inds[i,:] = i*360 + np.arange(0,360)
@@ -69,43 +69,43 @@ for si,stat in enumerate(station_names):
 
     for hr in range(0,nhrs):
         inds = hr_inds[hr]
-        obs_gust[hr,si] = data[OBS][STAT][stat][PAR]['VMAX_10M1'][hr] 
-        #mod_wind[hr,si] = np.mean(data[MODEL][stat]['zvp10'][inds])
-        #obs_wind[hr,si] = data[OBS][stat]['FF_10M'][hr] 
+        obs_gust[hr,si] = data[G.OBS][G.STAT][stat][G.PAR]['VMAX_10M1'][hr] 
+        #mod_wind[hr,si] = np.mean(data[G.MODEL][stat]['zvp10'][inds])
+        #obs_wind[hr,si] = data[G.OBS][stat]['FF_10M'][hr] 
 
     for mi in i_methods:
 
 
         if mi == 1:
 
-            tcm = data[MODEL][STAT][stat][PAR]['tcm']
+            tcm = data[G.MODEL][G.STAT][stat][G.PAR]['tcm']
             zcm = tcm
             zcm[zcm < 5E-4] = 5E-4
             zsqcm = np.sqrt(zcm)
-            zvp10 = data[MODEL][STAT][stat][PAR]['zvp10']
+            zvp10 = data[G.MODEL][G.STAT][stat][G.PAR]['zvp10']
             gust = zvp10 + 3.0 * 2.4 * zsqcm * zvp10
 
         if mi == 2:
 
-            tcm = data[MODEL][STAT][stat][PAR]['tcm']
+            tcm = data[G.MODEL][G.STAT][stat][G.PAR]['tcm']
             zcm = tcm
             zcm[zcm < 5E-4] = 5E-4
             zsqcm = np.sqrt(zcm)
-            zvp30 = data[MODEL][STAT][stat][PAR]['zvp30']
-            zvpb = data[MODEL][STAT][stat][PAR]['zvpb']
+            zvp30 = data[G.MODEL][G.STAT][stat][G.PAR]['zvp30']
+            zvpb = data[G.MODEL][G.STAT][stat][G.PAR]['zvpb']
             gust = zvp30 + 3.0 * 2.4 * zsqcm * zvpb
 
         if mi == 3:
 
-            gust = data[MODEL][STAT][stat][PAR]['zv_bra']
+            gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra']
 
         if mi == 4:
 
-            tcm = data[MODEL][STAT][stat][PAR]['tcm']
+            tcm = data[G.MODEL][G.STAT][stat][G.PAR]['tcm']
             zcm = tcm
             zcm[zcm < 5E-4] = 5E-4
             zsqcm = np.sqrt(zcm)
-            zvp10 = data[MODEL][STAT][stat][PAR]['zvp10']
+            zvp10 = data[G.MODEL][G.STAT][stat][G.PAR]['zvp10']
             gust = zvp10 + (3.0 * 2.4 + 0.09 * zvp10) * zsqcm * zvp10
     
         # calc and save model max gust
@@ -169,9 +169,9 @@ if i_plot > 0:
         # plotting
         ax.scatter(obs_gust[:,si], mod_err_gust[:,si,mi-1], color='black', marker=".")
         ax.plot(X, line, color='red')
-        ax.set_xlabel('Observed gust (OBS) [m/s]')
+        ax.set_xlabel('Observed gust (G.OBS) [m/s]')
         if i == 0:
-            ax.set_ylabel('Model absolute error (MOD-OBS) [m/s]')
+            ax.set_ylabel('Model absolute error (MOD-G.OBS) [m/s]')
         ax.axhline(0, color='k', linewidth=0.8)
         ax.set_title('Method '+str(mi))
     # set axes limits in each ax

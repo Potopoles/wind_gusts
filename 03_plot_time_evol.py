@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 import pickle
+import globals as G
 
 
 ############ USER INPUT #############
@@ -11,10 +12,10 @@ obs_case_name = 'burglind'
 # model case name (name of folder with model data in 'mod_path'
 model_case_name = 'burglind_ref'
 # obs model combination case name
-obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
-# mode of plotting: either ALL_STATIONS (1 plot for each station) or MEAN_OVER_STATIONS
-#plot_mode = 'ALL_STATIONS'
-#plot_mode = 'MEAN_OVER_STATIONS'
+obs_model_case_name = 'G.OBS_'+obs_case_name+'_G.MODEL_'+model_case_name
+# mode of plotting: either ALL_G.STATIONS (1 plot for each station) or MEAN_OVER_G.STATIONS
+#plot_mode = 'ALL_G.STATIONS'
+#plot_mode = 'MEAN_OVER_G.STATIONS'
 plot_mode = 'ABO'
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 1
@@ -30,10 +31,6 @@ data_pickle_path = '../data/'+obs_model_case_name+'.pkl'
 plot_base_dir = '../plots/'
 plot_case_dir = plot_base_dir + obs_model_case_name + '/'
 plot_out_dir = plot_case_dir + '/time_evolution/'
-MODEL = 'model'
-OBS = 'obs'
-STAT = 'stations'
-PAR = 'params'
 unit = 'km/h'
 #unit = 'm/s'
 #####################################
@@ -52,7 +49,7 @@ nstat = len(station_names)
 nmethods = len(i_methods)
 
 # Prepare index mask to map model output to observation values
-nhrs = len(data[OBS]['dts'])
+nhrs = len(data[G.OBS]['dts'])
 hr_inds = np.zeros((nhrs,360))
 for i in range(0,nhrs):
     hr_inds[i,:] = i*360 + np.arange(0,360)
@@ -77,30 +74,30 @@ for si,stat in enumerate(station_names):
 
     # unit conversion
     if unit == 'km/h':
-        data[MODEL][STAT][stat][PAR]['zvp10'] = data[MODEL][STAT][stat][PAR]['zvp10']*3.6
-        data[MODEL][STAT][stat][PAR]['zvp30'] = data[MODEL][STAT][stat][PAR]['zvp30']*3.6
-        data[MODEL][STAT][stat][PAR]['zvpb'] = data[MODEL][STAT][stat][PAR]['zvpb']*3.6
-        data[MODEL][STAT][stat][PAR]['zv_bra'] = data[MODEL][STAT][stat][PAR]['zv_bra']*3.6
-        data[OBS][STAT][stat][PAR]['VMAX_10M1'] = data[OBS][STAT][stat][PAR]['VMAX_10M1']*3.6
-        data[OBS][STAT][stat][PAR]['FF_10M'] = data[OBS][STAT][stat][PAR]['FF_10M']*3.6
+        data[G.MODEL][G.STAT][stat][G.PAR]['zvp10'] = data[G.MODEL][G.STAT][stat][G.PAR]['zvp10']*3.6
+        data[G.MODEL][G.STAT][stat][G.PAR]['zvp30'] = data[G.MODEL][G.STAT][stat][G.PAR]['zvp30']*3.6
+        data[G.MODEL][G.STAT][stat][G.PAR]['zvpb'] = data[G.MODEL][G.STAT][stat][G.PAR]['zvpb']*3.6
+        data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra'] = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra']*3.6
+        data[G.OBS][G.STAT][stat][G.PAR]['VMAX_10M1'] = data[G.OBS][G.STAT][stat][G.PAR]['VMAX_10M1']*3.6
+        data[G.OBS][G.STAT][stat][G.PAR]['FF_10M'] = data[G.OBS][G.STAT][stat][G.PAR]['FF_10M']*3.6
 
     for hr in range(0,nhrs):
         inds = hr_inds[hr]
-        obs_gust[hr,si] = data[OBS][STAT][stat][PAR]['VMAX_10M1'][hr] 
-        mod_wind[hr,si] = np.mean(data[MODEL][STAT][stat][PAR]['zvp10'][inds])
-        obs_wind[hr,si] = data[OBS][STAT][stat][PAR]['FF_10M'][hr] 
-        k_bra[hr,si] = np.mean(data[MODEL][STAT][stat][PAR]['k_bra'][inds])
+        obs_gust[hr,si] = data[G.OBS][G.STAT][stat][G.PAR]['VMAX_10M1'][hr] 
+        mod_wind[hr,si] = np.mean(data[G.MODEL][G.STAT][stat][G.PAR]['zvp10'][inds])
+        obs_wind[hr,si] = data[G.OBS][G.STAT][stat][G.PAR]['FF_10M'][hr] 
+        k_bra[hr,si] = np.mean(data[G.MODEL][G.STAT][stat][G.PAR]['k_bra'][inds])
 
     for mi in i_methods:
 
 
         if mi == 1:
 
-            tcm = data[MODEL][STAT][stat][PAR]['tcm']
+            tcm = data[G.MODEL][G.STAT][stat][G.PAR]['tcm']
             zcm = tcm
             zcm[zcm < 5E-4] = 5E-4
             zsqcm = np.sqrt(zcm)
-            zvp10 = data[MODEL][STAT][stat][PAR]['zvp10']
+            zvp10 = data[G.MODEL][G.STAT][stat][G.PAR]['zvp10']
             gust = zvp10 + 3.0 * 2.4 * zsqcm * zvp10
 
             # hypothetical observation based gust
@@ -114,25 +111,25 @@ for si,stat in enumerate(station_names):
 
         if mi == 2:
 
-            tcm = data[MODEL][STAT][stat][PAR]['tcm']
+            tcm = data[G.MODEL][G.STAT][stat][G.PAR]['tcm']
             zcm = tcm
             zcm[zcm < 5E-4] = 5E-4
             zsqcm = np.sqrt(zcm)
-            zvp30 = data[MODEL][STAT][stat][PAR]['zvp30']
-            zvpb = data[MODEL][STAT][stat][PAR]['zvpb']
+            zvp30 = data[G.MODEL][G.STAT][stat][G.PAR]['zvp30']
+            zvpb = data[G.MODEL][G.STAT][stat][G.PAR]['zvpb']
             gust = zvp30 + 3.0 * 2.4 * zsqcm * zvpb
 
         if mi == 3:
 
-            gust = data[MODEL][STAT][stat][PAR]['zv_bra']
+            gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra']
 
         if mi == 4:
 
-            tcm = data[MODEL][STAT][stat][PAR]['tcm']
+            tcm = data[G.MODEL][G.STAT][stat][G.PAR]['tcm']
             zcm = tcm
             zcm[zcm < 5E-4] = 5E-4
             zsqcm = np.sqrt(zcm)
-            zvp10 = data[MODEL][STAT][stat][PAR]['zvp10']
+            zvp10 = data[G.MODEL][G.STAT][stat][G.PAR]['zvp10']
             if unit == 'km/h':
                 gust = zvp10 + (3.0 * 2.4 + 0.09 * zvp10/3.6) * zsqcm * zvp10
             elif unit == 'm/s':
@@ -157,7 +154,7 @@ abs_err_gust = np.abs(mod_err_gust)
 ################################# PLOTTING #################################
 ############################################################################
 
-if plot_mode == 'ALL_STATIONS':
+if plot_mode == 'ALL_G.STATIONS':
     for si,stat in enumerate(station_names):
         print('station ' + stat)
         lines = []
@@ -217,7 +214,7 @@ if plot_mode == 'ALL_STATIONS':
 
 
 
-elif plot_mode == 'MEAN_OVER_STATIONS':
+elif plot_mode == 'MEAN_OVER_G.STATIONS':
     mod_gust_stat_mean = np.nanmean(mod_gust, axis=1)
     obs_gust_stat_mean = np.nanmean(obs_gust, axis=1)
     mod_wind_stat_mean = np.nanmean(mod_wind, axis=1)

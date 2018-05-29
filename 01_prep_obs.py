@@ -3,18 +3,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
 from datetime import datetime
+import globals as G
 
 ############ USER INPUT #############
 obs_path = '../obs_out/'
 obs_inp_file = '20180103sfc_2262.'
 # obs case name (name of obs pkl file in data folder)
 obs_case_name = 'burglind'
-out_pickle_file_path = '../data/OBS_'+obs_case_name+'.pkl'
+out_pickle_file_path = '../data/G.OBS_'+obs_case_name+'.pkl'
 MISSING_VALUE = -9999
 sample_rate = '1H'
-OBS = 'obs'
-STAT = 'stations'
-PAR = 'params'
 # path to file containing meta information about stations (mainly column 'Use' is interesting)
 stations_meta_file_path = '../obs_out/ps_fkl010b1_2262.csv'
 ### use_params
@@ -56,19 +54,19 @@ for param in obs_params:
 
 # Create dictionary with each parameter as a key and pandas df as value
 obs = {}
-obs['dts'] = tmp[obs_params[0]].index.values.astype('M8[s]').astype('O')
-obs['param_names'] = obs_params
+obs[G.DTS] = tmp[obs_params[0]].index.values.astype('M8[s]').astype('O')
+obs[G.PAR_NAMES] = obs_params
 stations = {}
 for stat_key in inp_station_names: 
     if np.any(stations_meta_use['ABBR'] == stat_key):
-        stations[stat_key] = {PAR:{}}
+        stations[stat_key] = {G.PAR:{}}
         stations[stat_key]['meta'] = stations_meta_use[stations_meta_use['ABBR'] == stat_key]
         for param in obs_params:
-            stations[stat_key][PAR][param] = tmp[param][stat_key]
+            stations[stat_key][G.PAR][param] = tmp[param][stat_key]
 
-obs[STAT] = stations
+obs[G.STAT] = stations
 data = {}
-data[OBS] = obs
+data[G.OBS] = obs
 
 # Save
 pickle.dump(data, open(out_pickle_file_path, 'wb'))
