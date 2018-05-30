@@ -7,16 +7,16 @@ import pickle
 from sklearn.linear_model import LinearRegression
 from functions import calc_gusts, calc_scores
 import globals as G
-from filter import StationFilter
+from filter import StationFilter, EntryFilter
 
 
 ############ USER INPUT #############
 # obs case name (name of obs pkl file in data folder)
 obs_case_name = 'burglind'
-obs_case_name = 'foehn_apr18'
+#obs_case_name = 'foehn_apr18'
 # model case name (name of folder with model data in 'mod_path'
 model_case_name = 'burglind_ref'
-model_case_name = 'foehn_apr18_ref'
+#model_case_name = 'foehn_apr18_ref'
 # obs model combination case name
 obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
 # do not plot (0) show plot (1) save plot (2)
@@ -30,10 +30,11 @@ i_scores = [G.SCORE_ME]
 data_pickle_path = '../data/'+obs_model_case_name+'.pkl'
 plot_base_dir = '../plots/'
 plot_case_dir = plot_base_dir + obs_model_case_name + '/'
+min_gust = 5
 tag_class = 'TopoTag'
 tags = ['flat', 'hilly', 'mountain_top', 'mountain', 'valley']
-tag_class = 'SfcTag'
-tags = ['rural', 'forest', 'urban', 'city']
+#tag_class = 'SfcTag'
+#tags = ['rural', 'forest', 'urban', 'city']
 #####################################
 
 
@@ -45,20 +46,11 @@ if i_plot > 1 and not os.path.exists(plot_case_dir):
 data = pickle.load( open(data_pickle_path, 'rb') )
 
 # filter stations according to tags
-SF = StationFilter(data)
-filtered = SF.filter_according_tag(tag_class, tags)
+SF = StationFilter()
+filtered = SF.filter_according_tag(data, tag_class, tags)
 
-## calculate gusts
-#data = calc_gusts(data, i_gust_fields)
-##data = remove_obs_nan_in_hourly_fields(data, 'VMAX_10M1')
-#data = calc_scores(data, i_scores)
-#
-#station_names = np.asarray(data[G.STAT_NAMES])
-
-
+EF = EntryFilter()
     
-
-
 obs_gust_tag = {}
 mod_err_dict_tag = {}
 stations_filtered_tag = {}
@@ -66,13 +58,8 @@ for tag in tags:
     print(tag)
     ## calculate gusts and scores
     filtered[tag] = calc_gusts(filtered[tag], i_gust_fields)
+    filtered[tag] = EF.filter_according_obs_gust(filtered[tag], min_gust)
     filtered[tag] = calc_scores(filtered[tag], i_scores)
-
-    #stations_filtered = []
-    #for stat in station_names:
-    #    this_tag = data[G.OBS][G.STAT][stat][G.STATION_META][tag_class].values
-    #    if this_tag == tag:
-    #        stations_filtered.append(stat)
 
     stations_filtered = filtered[tag][G.STAT_NAMES]
     nstat = len(stations_filtered)

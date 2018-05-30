@@ -7,6 +7,7 @@ import pickle
 from sklearn.linear_model import LinearRegression
 from functions import calc_gusts, calc_scores
 import globals as G
+from filter import EntryFilter
 
 
 ############ USER INPUT #############
@@ -19,7 +20,7 @@ model_case_name = 'foehn_apr18_ref'
 # obs model combination case name
 obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 2
+i_plot = 1
 # gust methods to calculate and plot
 i_gust_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_MIX_COEF_NONLIN,
@@ -31,8 +32,10 @@ i_scores = [G.SCORE_ME]
 data_pickle_path = '../data/'+obs_model_case_name+'.pkl'
 plot_base_dir = '../plots/'
 plot_case_dir = plot_base_dir + obs_model_case_name + '/'
+min_gust = 10
 #####################################
 
+EF = EntryFilter()
 
 # create directories
 if i_plot > 1 and not os.path.exists(plot_case_dir):
@@ -43,6 +46,8 @@ data = pickle.load( open(data_pickle_path, 'rb') )
 
 # calculate gusts
 data = calc_gusts(data, i_gust_fields)
+# filter according to min gust strength
+data = EF.filter_according_obs_gust(data, min_gust)
 #data = remove_obs_nan_in_hourly_fields(data, 'VMAX_10M1')
 data = calc_scores(data, i_scores)
 
