@@ -18,8 +18,8 @@ PAR_NAMES = 'param_names'
 # data[MODEL/OBS][DTS]
 DTS = 'dts'
 # 3rd level: key in STAT leading to meta information about station (e.g. tags)
-# data[MODEL/OBS][STAT][STATION_META]
-STATION_META = 'station_meta'
+# data[MODEL/OBS][STAT][STAT_META]
+STAT_META = 'station_meta'
 # 3rd level: key in STAT leading to observed/modeled raw fields 
 # data[MODEL/OBS][STAT][PAR]
 PAR = 'params'

@@ -7,7 +7,7 @@ import pickle
 from sklearn.linear_model import LinearRegression
 from functions import calc_gusts, calc_scores
 import globals as G
-from filter import Filter
+from filter import StationFilter
 
 
 ############ USER INPUT #############
@@ -44,21 +44,19 @@ if i_plot > 1 and not os.path.exists(plot_case_dir):
 # load data
 data = pickle.load( open(data_pickle_path, 'rb') )
 
-F = Filter(data)
+# filter stations according to tags
+SF = StationFilter(data)
+filtered = SF.filter_according_tag(tag_class, tags)
 
-quit()
-
-# calculate gusts
-data = calc_gusts(data, i_gust_fields)
-#data = remove_obs_nan_in_hourly_fields(data, 'VMAX_10M1')
-data = calc_scores(data, i_scores)
-
-station_names = np.asarray(data[G.STAT_NAMES])
+## calculate gusts
+#data = calc_gusts(data, i_gust_fields)
+##data = remove_obs_nan_in_hourly_fields(data, 'VMAX_10M1')
+#data = calc_scores(data, i_scores)
+#
+#station_names = np.asarray(data[G.STAT_NAMES])
 
 
     
-#nstat = len(station_names)
-nts = len(data[G.OBS][G.DTS])
 
 
 obs_gust_tag = {}
@@ -66,25 +64,30 @@ mod_err_dict_tag = {}
 stations_filtered_tag = {}
 for tag in tags:
     print(tag)
+    ## calculate gusts and scores
+    filtered[tag] = calc_gusts(filtered[tag], i_gust_fields)
+    filtered[tag] = calc_scores(filtered[tag], i_scores)
 
-    stations_filtered = []
-    for stat in station_names:
-        this_tag = data[G.OBS][G.STAT][stat][G.STATION_META][tag_class].values
-        if this_tag == tag:
-            stations_filtered.append(stat)
+    #stations_filtered = []
+    #for stat in station_names:
+    #    this_tag = data[G.OBS][G.STAT][stat][G.STATION_META][tag_class].values
+    #    if this_tag == tag:
+    #        stations_filtered.append(stat)
 
+    stations_filtered = filtered[tag][G.STAT_NAMES]
     nstat = len(stations_filtered)
+    nts = len(filtered[tag][G.OBS][G.DTS])
 
     ## Aggregate over stations
     obs_gust = np.zeros((nts,nstat))
     mod_err_dict = {}
     for si,stat in enumerate(stations_filtered):
-        obs_gust[:,si] = data[G.OBS][G.STAT][stat][G.PAR]['VMAX_10M1'].values
+        obs_gust[:,si] = filtered[tag][G.OBS][G.STAT][stat][G.PAR]['VMAX_10M1'].values
 
     for method in i_gust_fields:
         mod_err = np.zeros((nts,nstat))
         for si,stat in enumerate(stations_filtered):
-            mod_err[:,si] = data[G.MODEL][G.STAT][stat][G.SCORE][method][G.SCORE_ME]
+            mod_err[:,si] = filtered[tag][G.MODEL][G.STAT][stat][G.SCORE][method][G.SCORE_ME]
         mod_err_dict[method] = mod_err
 
     obs_gust_tag[tag] = obs_gust
@@ -141,7 +144,7 @@ if i_plot > 0:
             ax.plot(X, line, color='red')
             if mi == len(i_gust_fields):
                 ax.set_xlabel('Observed gust (OBS) [m/s]')
-            if ti == 0:
+            if ti == len(tags):
                 ax.set_ylabel('Model absolute error (MOD-OBS) [m/s]')
             ax.axhline(0, color='k', linewidth=0.8)
             ax.set_title(method + '  ' + tag)
@@ -152,7 +155,7 @@ if i_plot > 0:
             ax.set_ylim((ymin,ymax))
 
     # finish plot
-    plt.suptitle(tag_class)
+    plt.suptitle(tag_class + '   ' + obs_model_case_name)
     plt.subplots_adjust(left=0.05,bottom=0.08,right=0.98,top=0.92,wspace=0.15,hspace=0.25)
 
     if i_plot == 1:
