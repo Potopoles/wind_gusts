@@ -12,20 +12,20 @@ import globals as G
 ############ USER INPUT #############
 # obs case name (name of obs pkl file in data folder)
 obs_case_name = 'burglind'
+obs_case_name = 'foehn_apr18'
 # model case name (name of folder with model data in 'mod_path'
 model_case_name = 'burglind_ref'
+model_case_name = 'foehn_apr18_ref'
 # obs model combination case name
 obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
-# mode of evaluation: either ALL_G.STATIONS (1 plot for each station) or MEAN_OVER_G.STATIONS
-#eval_mode = 'ALL_G.STATIONS'
-#eval_mode = 'MEAN_OVER_G.STATIONS'
-#eval_mode = 'ABO'
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 1
+i_plot = 2
 # gust methods to calculate and plot
 i_gust_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_MIX_COEF_NONLIN,
-                G.GUST_BRASSEUR_ESTIM]
+                G.GUST_BRASSEUR_ESTIM,
+                G.GUST_BRASSEUR_UPBOU,
+                G.GUST_BRASSEUR_LOBOU]
 i_scores = [G.SCORE_ME]
 # path of input obs_model pickle file
 data_pickle_path = '../data/'+obs_model_case_name+'.pkl'
@@ -47,9 +47,9 @@ data = calc_gusts(data, i_gust_fields)
 data = calc_scores(data, i_scores)
 
 station_names = np.asarray(data[G.STAT_NAMES])
+
 nstat = len(station_names)
 nts = len(data[G.OBS][G.DTS])
-
 
 ## Aggregate over stations
 obs_gust = np.zeros((nts,nstat))
@@ -68,8 +68,8 @@ for method in i_gust_fields:
 stat = 'SAE'
 si = np.argwhere(station_names == stat).squeeze()
 
-#si = np.arange(0,500)
-title = '500 stations'
+si = np.arange(0,len(station_names))
+title = 'all 512 stations'
 #print(si)
 
 ###################### PLOT model error vs obs gust
@@ -78,14 +78,20 @@ if i_plot > 0:
     reg = LinearRegression(fit_intercept=True)
 
     # plot preparation
-    fig,axes = plt.subplots(1,3,figsize=(14,4))
+    #fig,axes = plt.subplots(2,3,figsize=(14,8))
+    fig = plt.figure(figsize=(14,8))
+    nrow = 2
+    ncol = 3
     ymax = -np.Inf
     ymin = np.Inf
 
     # loop over axes and gust calc method
+    axes = []
     for mi,method in enumerate(i_gust_fields):
         print(method)
-        ax = axes[mi]
+        #ax = axes[mi]
+        ax = fig.add_subplot(nrow, ncol, mi+1)
+        axes.append(ax)
 
         # prepare feature matrix
         X = obs_gust[:,si].flatten().reshape(-1,1)
@@ -121,6 +127,7 @@ if i_plot > 0:
 
     # finish plot
     plt.suptitle(title)
+    plt.subplots_adjust(left=0.05,bottom=0.08,right=0.95,top=0.9,wspace=0.2,hspace=0.3)
 
     if i_plot == 1:
         plt.show()

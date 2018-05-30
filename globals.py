@@ -17,6 +17,9 @@ PAR_NAMES = 'param_names'
 # 2nd level: key in MODEL and OBS containing datetime objects for each time step
 # data[MODEL/OBS][DTS]
 DTS = 'dts'
+# 3rd level: key in STAT leading to meta information about station (e.g. tags)
+# data[MODEL/OBS][STAT][STATION_META]
+STATION_META = 'station_meta'
 # 3rd level: key in STAT leading to observed/modeled raw fields 
 # data[MODEL/OBS][STAT][PAR]
 PAR = 'params'
@@ -33,7 +36,11 @@ SCORE = 'scores'
 GUST_MIX_COEF_LINEAR = 'gust_mix_coef_linear'
 GUST_MIX_COEF_NONLIN = 'gust_mix_coef_nonlin'
 GUST_BRASSEUR_ESTIM  = 'gust_brassuer_estim'
+GUST_BRASSEUR_LOBOU  = 'gust_brassuer_lobou'
+GUST_BRASSEUR_UPBOU  = 'gust_brassuer_upbou'
 KVAL_BRASSEUR_ESTIM  = 'kval_brassuer_estim'
+KVAL_BRASSEUR_LOBOU  = 'kval_brassuer_lobou'
+KVAL_BRASSEUR_UPBOU  = 'kval_brassuer_upbou'
 
 
 

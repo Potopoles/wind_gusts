@@ -8,8 +8,10 @@ import globals as G
 ############ USER INPUT #############
 obs_path = '../obs_out/'
 obs_inp_file = '20180103sfc_2262.'
+obs_inp_file = '20180429sfc.'
 # obs case name (name of obs pkl file in data folder)
-obs_case_name = 'burglind'
+#obs_case_name = 'burglind'
+obs_case_name = 'foehn_apr18'
 out_pickle_file_path = '../data/OBS_'+obs_case_name+'.pkl'
 MISSING_VALUE = -9999
 sample_rate = '1H'
@@ -60,7 +62,7 @@ stations = {}
 for stat_key in inp_station_names: 
     if np.any(stations_meta_use['ABBR'] == stat_key):
         stations[stat_key] = {G.PAR:{}}
-        stations[stat_key]['meta'] = stations_meta_use[stations_meta_use['ABBR'] == stat_key]
+        stations[stat_key][G.STATION_META] = stations_meta_use[stations_meta_use['ABBR'] == stat_key]
         for param in obs_params:
             stations[stat_key][G.PAR][param] = tmp[param][stat_key]
 

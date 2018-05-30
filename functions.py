@@ -59,12 +59,30 @@ def calc_gusts(data, i_gust_fields):
                 
             elif method == G.GUST_BRASSEUR_ESTIM:
     
-                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra']
+                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra_es']
+
+            elif method == G.GUST_BRASSEUR_LOBOU:
+    
+                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra_lb']
+
+            elif method == G.GUST_BRASSEUR_UPBOU:
+    
+                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra_ub']
 
             elif method == G.KVAL_BRASSEUR_ESTIM:
 
-                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra']
-                kval = data[G.MODEL][G.STAT][stat][G.PAR]['k_bra']
+                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra_es']
+                kval = data[G.MODEL][G.STAT][stat][G.PAR]['k_bra_es']
+
+            elif method == G.KVAL_BRASSEUR_LOBOU:
+
+                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra_lb']
+                kval = data[G.MODEL][G.STAT][stat][G.PAR]['k_bra_lb']
+
+            elif method == G.KVAL_BRASSEUR_UPBOU:
+
+                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra_ub']
+                kval = data[G.MODEL][G.STAT][stat][G.PAR]['k_bra_ub']
 
             else:
                 raise ValueError('Unknown user input "' + method + '" in list i_gust_fields!')
@@ -73,7 +91,7 @@ def calc_gusts(data, i_gust_fields):
             # Aggregate to hourly values
             hr_max_gusts = np.full((nhrs),np.nan)
 
-            if method == G.KVAL_BRASSEUR_ESTIM:
+            if method in [G.KVAL_BRASSEUR_ESTIM,G.KVAL_BRASSEUR_LOBOU,G.KVAL_BRASSEUR_UPBOU]:
 
                 # find index of maximum brasseur gust and store k value
                 for hr in range(0,nhrs):

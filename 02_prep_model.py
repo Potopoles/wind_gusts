@@ -8,8 +8,10 @@ import globals as G
 ############ USER INPUT #############
 # obs case name (name of obs pkl file in data folder)
 obs_case_name = 'burglind'
+obs_case_name = 'foehn_apr18'
 # model case name (name of folder with model data in 'mod_path'
 model_case_name = 'burglind_ref'
+model_case_name = 'foehn_apr18_ref'
 # obs model combination case name
 obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
 # time window of model run
@@ -30,10 +32,10 @@ mod_stations_file = '../model_out/'+model_case_name+'/fort.700'
 # starting index of fortran files
 ind0 = 701
 # header of fortran output files
-model_params = ['ntstep','k_bra','tcm','zvp10','zvp30','zv_bra','zvpb',
+model_params = ['ntstep','k_bra_es','k_bra_lb','k_bra_ub','tcm','zvp10',
+                'zvp30','zv_bra_es','zv_bra_lb','zv_bra_ub','zvpb',
                 'zuke','zvke','zukem1','zvkem1','zukem2','zvkem2']
 #####################################
-
 
 # read model station names
 mod_stations = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,0]

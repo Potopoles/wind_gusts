@@ -10,22 +10,33 @@ import globals as G
 ############ USER INPUT #############
 # obs case name (name of obs pkl file in data folder)
 obs_case_name = 'burglind'
+obs_case_name = 'foehn_apr18'
 # model case name (name of folder with model data in 'mod_path'
 model_case_name = 'burglind_ref'
+model_case_name = 'foehn_apr18_ref'
 # obs model combination case name
 obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
 # mode of plotting: either ALL_G.STATIONS (1 plot for each station) or MEAN_OVER_G.STATIONS
 plot_mode = 'ALL_STATIONS'
 #plot_mode = 'MEAN_OVER_STATIONS'
-plot_mode = 'SIO'
+#plot_mode = 'ABO'
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 1
+i_plot = 2
 # gust methods to calculate
 i_gust_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_MIX_COEF_NONLIN,
                 G.GUST_BRASSEUR_ESTIM,
-                G.KVAL_BRASSEUR_ESTIM]
+                G.GUST_BRASSEUR_LOBOU,
+                G.GUST_BRASSEUR_UPBOU,
+                G.KVAL_BRASSEUR_ESTIM,
+                G.KVAL_BRASSEUR_LOBOU,
+                G.KVAL_BRASSEUR_UPBOU]
 # gust methods to plot on left axis
+#i_gust_fields_plot = [G.GUST_MIX_COEF_LINEAR,
+#                    G.GUST_MIX_COEF_NONLIN,
+#                    G.GUST_BRASSEUR_ESTIM,
+#                    G.GUST_BRASSEUR_LOBOU,
+#                    G.GUST_BRASSEUR_UPBOU]
 i_gust_fields_plot = [G.GUST_MIX_COEF_LINEAR,
                     G.GUST_MIX_COEF_NONLIN,
                     G.GUST_BRASSEUR_ESTIM]
@@ -82,25 +93,40 @@ def plot_station(stat):
     fig = plt.figure(figsize=(12,8))
     # model gusts
     for method in i_gust_fields_plot: 
-        line, = plt.plot(dts, data[G.MODEL][G.STAT][stat][G.GUST][method])
+        if method in [G.GUST_BRASSEUR_ESTIM, G.GUST_BRASSEUR_LOBOU, G.GUST_BRASSEUR_UPBOU]:
+            line, = plt.plot(dts, data[G.MODEL][G.STAT][stat][G.GUST][method], color='red')
+        else:
+            line, = plt.plot(dts, data[G.MODEL][G.STAT][stat][G.GUST][method])
         lines.append(line)
         labels.append(method)
+
+    ax = plt.gca()
+
+    # brasseur gust range
+    upper = data[G.MODEL][G.STAT][stat][G.GUST][G.GUST_BRASSEUR_UPBOU]
+    lower = data[G.MODEL][G.STAT][stat][G.GUST][G.GUST_BRASSEUR_LOBOU]
+    line = ax.fill_between(dts, lower, upper, where=upper >= lower, alpha=0.5)
+    ax.fill_between(dts, lower, upper, where=upper < lower, alpha=0.5, color='orange')
+    lines.append(line)
+    labels.append('brass. bounds')
+
     # observed gust
     obs = data[G.OBS][G.STAT][stat][G.PAR]['VMAX_10M1']
-    line, = plt.plot(dts, obs,color='black')
+    line, = plt.plot(dts, obs,color='black', linewidth=2)
     lines.append(line)
     labels.append('gust obs')
+
     # model mean wind
-    line, = plt.plot(dts, mod_wind[:,si])
+    line, = plt.plot(dts, mod_wind[:,si], linestyle='-.')
     lines.append(line)
     labels.append('wind model')
+
     # observed mean wind
     obs = data[G.OBS][G.STAT][stat][G.PAR]['FF_10M']
-    line, = plt.plot(dts, obs)
+    line, = plt.plot(dts, obs, linestyle='-.')
     lines.append(line)
     labels.append('wind obs')
 
-    ax = plt.gca()
 
     ax.set_xlabel('simulation hour')
     ax.set_ylabel('wind/gust [m/s]')
@@ -109,12 +135,21 @@ def plot_station(stat):
 
     ax2 = ax.twinx()
     line, = ax2.plot(dts, data[G.MODEL][G.STAT][stat][G.GUST][G.KVAL_BRASSEUR_ESTIM],
-                    linestyle='-', linewidth=1.0, color='grey')
+                    linestyle='--', linewidth=1.0, color='grey')
     lines.append(line)
-    labels.append('k bra')
+    labels.append('k bra est')
+    line, = ax2.plot(dts, data[G.MODEL][G.STAT][stat][G.GUST][G.KVAL_BRASSEUR_LOBOU],
+                    linestyle='--', linewidth=1.0, color='black')
+    lines.append(line)
+    labels.append('k bra lobou')
+    line, = ax2.plot(dts, data[G.MODEL][G.STAT][stat][G.GUST][G.KVAL_BRASSEUR_UPBOU],
+                    linestyle='--', linewidth=1.0, color='brown')
+    lines.append(line)
+    labels.append('k bra upbou')
+
 
     ax2.set_ylabel('brasseur model level')
-    ax2.set_ylim((20,80))
+    ax2.set_ylim((0,80))
 
     plt.legend(lines,labels)
 
@@ -129,7 +164,7 @@ def plot_station(stat):
 
 
 if plot_mode == 'ALL_STATIONS':
-    for stat in station_names:
+    for stat in station_names[0:50]:
         print(stat)
         plot_station(stat)
 
