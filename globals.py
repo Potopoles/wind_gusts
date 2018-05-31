@@ -35,12 +35,12 @@ SCORE = 'scores'
 ###### Gust methods
 GUST_MIX_COEF_LINEAR = 'gust_mix_coef_linear'
 GUST_MIX_COEF_NONLIN = 'gust_mix_coef_nonlin'
-GUST_BRASSEUR_ESTIM  = 'gust_brassuer_estim'
-GUST_BRASSEUR_LOBOU  = 'gust_brassuer_lobou'
-GUST_BRASSEUR_UPBOU  = 'gust_brassuer_upbou'
-KVAL_BRASSEUR_ESTIM  = 'kval_brassuer_estim'
-KVAL_BRASSEUR_LOBOU  = 'kval_brassuer_lobou'
-KVAL_BRASSEUR_UPBOU  = 'kval_brassuer_upbou'
+GUST_BRASSEUR_ESTIM  = 'gust_brasseur_estim'
+GUST_BRASSEUR_LOBOU  = 'gust_brasseur_lobou'
+GUST_BRASSEUR_UPBOU  = 'gust_brasseur_upbou'
+KVAL_BRASSEUR_ESTIM  = 'kval_brasseur_estim'
+KVAL_BRASSEUR_LOBOU  = 'kval_brasseur_lobou'
+KVAL_BRASSEUR_UPBOU  = 'kval_brasseur_upbou'
 
 
 

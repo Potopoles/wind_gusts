@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 import pickle
+import copy
 from functions import calc_gusts
 import globals as G
 
@@ -10,10 +11,10 @@ import globals as G
 ############ USER INPUT #############
 # obs case name (name of obs pkl file in data folder)
 obs_case_name = 'burglind'
-obs_case_name = 'foehn_apr18'
+#obs_case_name = 'foehn_apr18'
 # model case name (name of folder with model data in 'mod_path'
 model_case_name = 'burglind_ref'
-model_case_name = 'foehn_apr18_ref'
+#model_case_name = 'foehn_apr18_ref'
 # obs model combination case name
 obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
 # mode of plotting: either ALL_G.STATIONS (1 plot for each station) or MEAN_OVER_G.STATIONS
@@ -128,8 +129,8 @@ def plot_station(stat):
     labels.append('wind obs')
 
 
-    ax.set_xlabel('simulation hour')
-    ax.set_ylabel('wind/gust [m/s]')
+    ax.set_xlabel('time (UTC)')
+    ax.set_ylabel('wind gust [m/s]')
     ax.set_title(stat)
     ax.grid()
 
@@ -164,9 +165,41 @@ def plot_station(stat):
 
 
 if plot_mode == 'ALL_STATIONS':
-    for stat in station_names[0:50]:
+    for stat in station_names[0:150]:
         print(stat)
         plot_station(stat)
+
+
+elif plot_mode == 'MEAN_OVER_STATIONS':
+    mean_stat_name = 'MEAN_OVER_STATIONS'
+
+    # copy from any station
+    data[G.OBS][G.STAT][mean_stat_name] = copy.deepcopy(data[G.OBS][G.STAT][station_names[0]])
+    data[G.MODEL][G.STAT][mean_stat_name] = copy.deepcopy(data[G.MODEL][G.STAT][station_names[0]])
+
+    # model variables
+    for method in i_gust_fields:
+        vals_all_stat = np.full((nhrs,nstat),np.nan)
+        for si,stat in enumerate(station_names):
+            vals_all_stat[:,si] = data[G.MODEL][G.STAT][stat][G.GUST][method]
+        vals_mean_stat = np.mean(vals_all_stat,axis=1)
+        data[G.MODEL][G.STAT][mean_stat_name][G.GUST][method] = vals_mean_stat
+
+    # obs variables
+    obs_names = ['VMAX_10M1', 'FF_10M']
+    for obs_name in obs_names:
+        for si,stat in enumerate(station_names):
+            vals_all_stat[:,si] = data[G.OBS][G.STAT][stat][G.PAR][obs_name]
+        vals_mean_stat = np.nanmean(vals_all_stat,axis=1)
+        data[G.OBS][G.STAT][mean_stat_name][G.PAR][obs_name] = vals_mean_stat
+
+
+    station_names = np.append(station_names, mean_stat_name)
+
+    # model mean wind
+    si = np.argwhere(station_names == mean_stat_name).squeeze()
+    mod_wind = np.insert(mod_wind, si, np.mean(mod_wind, axis=1), axis=1) 
+    plot_station(mean_stat_name)
 
 
 # plot a single station
@@ -179,53 +212,4 @@ else:
         raise ValueError('Unknown station name or option given by user for variable "plot_mode"!') 
 
 
-
-#elif plot_mode == 'MEAN_OVER_STATIONS':
-#    mod_gust_stat_mean = np.nanmean(mod_gust, axis=1)
-#    obs_gust_stat_mean = np.nanmean(obs_gust, axis=1)
-#    mod_wind_stat_mean = np.nanmean(mod_wind, axis=1)
-#    obs_wind_stat_mean = np.nanmean(obs_wind, axis=1)
-#    hypot_gust_stat_mean = np.nanmean(hypot_gust, axis=1)
-#
-#    lines = []
-#    labels = []
-#    # model gusts
-#    for i in range(0,4):
-#        if i+1 in i_methods:
-#            line, = plt.plot(mod_gust_stat_mean[:,i])
-#            lines.append(line)
-#            labels.append('gust method '+str(i+1))
-#    # observed gust
-#    line, = plt.plot(obs_gust_stat_mean,color='black')
-#    lines.append(line)
-#    labels.append('gust obs')
-#    # model mean wind
-#    line, = plt.plot(mod_wind_stat_mean)
-#    lines.append(line)
-#    labels.append('wind model')
-#    # observed mean wind
-#    line, = plt.plot(obs_wind_stat_mean)
-#    lines.append(line)
-#    labels.append('wind obs')
-#    # hypothetical model gust method 1
-#    # based on observed wind
-#    line, = plt.plot(hypot_gust_stat_mean, linestyle='--')
-#    lines.append(line)
-#    labels.append('hypoth. gust')
-#
-#    plt.legend(lines,labels)
-#    
-#    ax = plt.gca()
-#
-#    ax.set_xlabel('simulation hour')
-#    ax.set_ylabel('wind/gust ['+unit+']')
-#    ax.set_title(stat)
-#
-#
-#    if i_plot == 1:
-#        plt.show()
-#    elif i_plot > 1:
-#        plot_name = plot_out_dir + 'all' + '.png'
-#        plt.savefig(plot_name)
-#        plt.close('all')
 

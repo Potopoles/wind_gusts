@@ -30,12 +30,28 @@ data_pickle_path = '../data/'+obs_model_case_name+'.pkl'
 plot_base_dir = '../plots/'
 plot_case_dir = plot_base_dir + obs_model_case_name + '/'
 min_gust_levels = [0,10,20]
-tag_class = 'TopoTag'
-tags = ['flat', 'hilly', 'mountain_top', 'mountain', 'valley']
-#tag_class = 'SfcTag'
-#tags = ['rural', 'forest', 'urban', 'city']
+#min_gust_levels = [10]
+#altitudes = [[0,1000],
+#            [1001,2000],
+#            [2001,4000]]
+altitudes = [[0,800],
+            [801,2000],
+            [2001,4000]]
+i_plot_alt_hist = 1
 #####################################
 
+
+# altitude histogram
+if i_plot_alt_hist:
+    data = pickle.load( open(data_pickle_path, 'rb') )
+    station_names = data[G.STAT_NAMES]
+    alts = np.zeros(len(station_names))
+    for i,stat in enumerate(station_names):
+        alts[i] = data[G.OBS][G.STAT][stat][G.STAT_META]['Height'].values
+    plt.hist(alts, bins=50)
+    plot_name = plot_case_dir + 'alt_stations.png'
+    plt.savefig(plot_name)
+    plt.close('all')
 
 # create directories
 if i_plot > 1 and not os.path.exists(plot_case_dir):
@@ -50,9 +66,11 @@ for min_gust in min_gust_levels:
 
     # filter stations according to tags
     SF = StationFilter()
-    filtered = SF.filter_according_tag(data, tag_class, tags)
+    filtered = SF.filter_according_altitude(data, altitudes)
+    tags = list(filtered.keys())
+    #for stat in filtered[tags[1]][G.STAT_NAMES]:
+    #    print(filtered[tags[1]][G.OBS][G.STAT][stat][G.STAT_META]['Height'].values)
 
-        
     obs_gust_tag = {}
     mod_err_dict_tag = {}
     stations_filtered_tag = {}
@@ -145,13 +163,13 @@ for min_gust in min_gust_levels:
                 ax.set_ylim((ymin,ymax))
 
         # finish plot
-        plt.suptitle(tag_class + '   ' + obs_model_case_name)
-        plt.subplots_adjust(left=0.05,bottom=0.08,right=0.98,top=0.92,wspace=0.15,hspace=0.25)
+        plt.suptitle(obs_model_case_name)
+        plt.subplots_adjust(left=0.10,bottom=0.08,right=0.98,top=0.92,wspace=0.15,hspace=0.25)
 
         if i_plot == 1:
             plt.show()
         elif i_plot > 1:
-            plot_name = plot_case_dir + 'tags_'+tag_class+'_minGust_'+str(min_gust).zfill(2)+'.png'
+            plot_name = plot_case_dir + 'altitude_tags_minGust_'+str(min_gust).zfill(2)+'.png'
             print(plot_name)
             plt.savefig(plot_name)
             plt.close('all')
