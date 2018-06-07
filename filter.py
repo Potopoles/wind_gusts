@@ -89,32 +89,36 @@ class EntryFilter:
                 data[G.OBS][G.STAT][stat][G.PAR][field][mask] = np.nan
 
             # remove in model
-            mod_gust_fields = list(data[G.MODEL][G.STAT][stat][G.GUST].keys())
+            mod_gust_fields = list(data[G.MODEL][G.STAT][stat][G.FIELDS].keys())
             for field in mod_gust_fields:
-                data[G.MODEL][G.STAT][stat][G.GUST][field][mask] = np.nan
+                data[G.MODEL][G.STAT][stat][G.FIELDS][field][mask] = np.nan
 
         return(data)
 
              
 
-    #def filter_according_mean_wind_acc(self, data, rel_acc):
+    def filter_according_mean_wind_acc(self, data, rel_acc):
 
-    #    for stat in data[G.STAT_NAMES]:
+        for stat in data[G.STAT_NAMES]:
 
-    #        wind_obs = data[G.OBS][G.STAT][stat][G.PAR]['FF_10M'].values
-    #        wind_mod = data[G.MODEL][G.STAT][stat][G.GUST]['VMAX_10M1'].values
-    #        mask = gust_obs < min_gust
+            wind_obs = data[G.OBS][G.STAT][stat][G.PAR]['FF_10M'].values
+            wind_mod = data[G.MODEL][G.STAT][stat][G.FIELDS][G.MEAN_WIND]
+            abs_diff = np.abs(wind_obs - wind_mod)
 
-    #        # remove in obs
-    #        obs_fields = data[G.OBS][G.PAR_NAMES]
-    #        for field in obs_fields:
-    #            data[G.OBS][G.STAT][stat][G.PAR][field][mask] = np.nan
+            mask = abs_diff > rel_acc*wind_obs
+            mask[np.isnan(wind_obs)] = True
+            #print('remove ' + str(np.sum(mask)) + ' values du to inaccurate mean wind')
 
-    #        # remove in model
-    #        mod_gust_fields = list(data[G.MODEL][G.STAT][stat][G.GUST].keys())
-    #        for field in mod_gust_fields:
-    #            data[G.MODEL][G.STAT][stat][G.GUST][field][mask] = np.nan
+            # remove in obs
+            obs_fields = data[G.OBS][G.PAR_NAMES]
+            for field in obs_fields:
+                data[G.OBS][G.STAT][stat][G.PAR][field][mask] = np.nan
 
-    #    return(data)
+            # remove in model
+            mod_gust_fields = list(data[G.MODEL][G.STAT][stat][G.FIELDS].keys())
+            for field in mod_gust_fields:
+                data[G.MODEL][G.STAT][stat][G.FIELDS][field][mask] = np.nan
+
+        return(data)
             
 

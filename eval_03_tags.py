@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import pickle
 from sklearn.linear_model import LinearRegression
-from functions import calc_gusts, calc_scores
+from functions import calc_model_fields, calc_scores
 import globals as G
 from filter import StationFilter, EntryFilter
 
@@ -19,7 +19,7 @@ model_case_name = 'burglind_ref'
 # obs model combination case name
 obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 2
+i_plot = 1
 # gust methods to calculate and plot
 i_gust_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_MIX_COEF_NONLIN,
@@ -59,7 +59,7 @@ for min_gust in min_gust_levels:
     for tag in tags:
         print(tag)
         ## calculate gusts and scores
-        filtered[tag] = calc_gusts(filtered[tag], i_gust_fields)
+        filtered[tag] = calc_model_fields(filtered[tag], i_gust_fields)
         filtered[tag] = EF.filter_according_obs_gust(filtered[tag], min_gust)
         filtered[tag] = calc_scores(filtered[tag], i_scores)
 

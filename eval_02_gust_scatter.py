@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import pickle
 from sklearn.linear_model import LinearRegression
-from functions import calc_gusts, calc_scores
+from functions import calc_model_fields, calc_scores
 import globals as G
 from filter import EntryFilter
 
@@ -49,7 +49,7 @@ for min_gust in min_gust_levels:
     data = pickle.load( open(data_pickle_path, 'rb') )
 
     # calculate gusts
-    data = calc_gusts(data, i_gust_fields)
+    data = calc_model_fields(data, i_gust_fields)
     # filter according to min gust strength
     data = EF.filter_according_obs_gust(data, min_gust)
     data = calc_scores(data, i_scores)
@@ -147,70 +147,4 @@ for min_gust in min_gust_levels:
             plt.savefig(plot_name)
             plt.close('all')
 
-
-quit()
-####################### CALCULATE ERROR MEASURES
-## CONTINUOUS ERROR MEASURES
-#error_measures = {}
-#error_measures['mean_abs_err'] = np.full((nstat,nmethods), np.nan)
-#error_measures['r2'] = np.full((nstat,nmethods), np.nan)
-#error_measures['explained_var'] = np.full((nstat,nmethods), np.nan)
-##sis = np.arange(0,600)
-#for si in range(0,nstat):
-#    y_obs = obs_gust[:,si]
-#
-#    # find nans
-#    mask = np.isnan(y_obs)
-#    y_obs = y_obs[~mask]
-#
-#    for i,mi in enumerate(i_methods):
-#        y_mod = mod_gust[:,si,mi-1].flatten()
-#        y_mod = y_mod[~mask]
-#        error_measures['mean_abs_err'][si,i] = metrics.mean_absolute_error(y_obs, y_mod)
-#        error_measures['r2'][si,i] = metrics.r2_score(y_obs, y_mod)
-#        error_measures['explained_var'][si,i] = metrics.explained_variance_score(y_obs, y_mod)
-#
-#
-## CATEGORICAL ERROR MEASURES
-#
-#
-## print measures to file
-#file_name = plot_case_dir + 'scores.txt'
-#with open(file_name, 'w') as f:
-#    f.write('i_methods ' + str(i_methods) + '\n')
-#    for key,meas in error_measures.items():
-#        mean_meas = np.mean(meas, axis=0)
-#        text = 'station mean ' + key + ' ' + str(mean_meas)
-#        print(text)
-#        f.write(text + '\n')
-#
-#
-####################### PLOT CONTINUOUS ERROR MEASURES
-#if i_plot > 0:
-#    fig,axes = plt.subplots(1,3,figsize=(14,4))
-#    i = 0
-#    for key,meas in error_measures.items():
-#        ax = axes[i]
-#        if key == 'mean_abs_err':
-#            bins = np.arange(0,20.1,1)
-#        else:
-#            bins = np.arange(-1,1.1,0.1)
-#        ax.hist(meas,bins=bins, histtype='step',
-#                color=['red','orange','black'], label=['Method 1', 'Method 2', 'Method 4'])
-#        ax.axvline(0,color='k')
-#        if key == 'mean_abs_err':
-#            ax.legend(loc='upper right')
-#            ax.set_xlabel('Absolute error [m/s]')
-#        else:
-#            ax.legend(loc='upper left')
-#            ax.set_xlabel(']-inf,1]')
-#        ax.set_title(key)
-#        i += 1
-#
-#    if i_plot == 1:
-#        plt.show()
-#    elif i_plot > 1:
-#        plot_name = plot_case_dir + 'err_continuous.png'
-#        plt.savefig(plot_name)
-#        plt.close('all')
 

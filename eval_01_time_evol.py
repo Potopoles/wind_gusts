@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import pickle
 import copy
-from functions import calc_gusts
+from functions import calc_model_fields
 import globals as G
 
 
@@ -59,7 +59,7 @@ if i_plot > 1 and not os.path.exists(plot_out_dir):
 data = pickle.load( open(data_pickle_path, 'rb') )
 
 # calculate gusts
-data = calc_gusts(data, i_gust_fields)
+data = calc_model_fields(data, i_gust_fields)
 
 station_names = np.asarray(data[G.STAT_NAMES])
 nstat = len(station_names)
@@ -95,17 +95,17 @@ def plot_station(stat):
     # model gusts
     for method in i_gust_fields_plot: 
         if method in [G.GUST_BRASSEUR_ESTIM, G.GUST_BRASSEUR_LOBOU, G.GUST_BRASSEUR_UPBOU]:
-            line, = plt.plot(dts, data[G.MODEL][G.STAT][stat][G.GUST][method], color='red')
+            line, = plt.plot(dts, data[G.MODEL][G.STAT][stat][G.FIELDS][method], color='red')
         else:
-            line, = plt.plot(dts, data[G.MODEL][G.STAT][stat][G.GUST][method])
+            line, = plt.plot(dts, data[G.MODEL][G.STAT][stat][G.FIELDS][method])
         lines.append(line)
         labels.append(method)
 
     ax = plt.gca()
 
     # brasseur gust range
-    upper = data[G.MODEL][G.STAT][stat][G.GUST][G.GUST_BRASSEUR_UPBOU]
-    lower = data[G.MODEL][G.STAT][stat][G.GUST][G.GUST_BRASSEUR_LOBOU]
+    upper = data[G.MODEL][G.STAT][stat][G.FIELDS][G.GUST_BRASSEUR_UPBOU]
+    lower = data[G.MODEL][G.STAT][stat][G.FIELDS][G.GUST_BRASSEUR_LOBOU]
     line = ax.fill_between(dts, lower, upper, where=upper >= lower, alpha=0.5)
     ax.fill_between(dts, lower, upper, where=upper < lower, alpha=0.5, color='orange')
     lines.append(line)
@@ -135,15 +135,15 @@ def plot_station(stat):
     ax.grid()
 
     ax2 = ax.twinx()
-    line, = ax2.plot(dts, data[G.MODEL][G.STAT][stat][G.GUST][G.KVAL_BRASSEUR_ESTIM],
+    line, = ax2.plot(dts, data[G.MODEL][G.STAT][stat][G.FIELDS][G.KVAL_BRASSEUR_ESTIM],
                     linestyle='--', linewidth=1.0, color='grey')
     lines.append(line)
     labels.append('k bra est')
-    line, = ax2.plot(dts, data[G.MODEL][G.STAT][stat][G.GUST][G.KVAL_BRASSEUR_LOBOU],
+    line, = ax2.plot(dts, data[G.MODEL][G.STAT][stat][G.FIELDS][G.KVAL_BRASSEUR_LOBOU],
                     linestyle='--', linewidth=1.0, color='black')
     lines.append(line)
     labels.append('k bra lobou')
-    line, = ax2.plot(dts, data[G.MODEL][G.STAT][stat][G.GUST][G.KVAL_BRASSEUR_UPBOU],
+    line, = ax2.plot(dts, data[G.MODEL][G.STAT][stat][G.FIELDS][G.KVAL_BRASSEUR_UPBOU],
                     linestyle='--', linewidth=1.0, color='brown')
     lines.append(line)
     labels.append('k bra upbou')
@@ -181,9 +181,9 @@ elif plot_mode == 'MEAN_OVER_STATIONS':
     for method in i_gust_fields:
         vals_all_stat = np.full((nhrs,nstat),np.nan)
         for si,stat in enumerate(station_names):
-            vals_all_stat[:,si] = data[G.MODEL][G.STAT][stat][G.GUST][method]
+            vals_all_stat[:,si] = data[G.MODEL][G.STAT][stat][G.FIELDS][method]
         vals_mean_stat = np.mean(vals_all_stat,axis=1)
-        data[G.MODEL][G.STAT][mean_stat_name][G.GUST][method] = vals_mean_stat
+        data[G.MODEL][G.STAT][mean_stat_name][G.FIELDS][method] = vals_mean_stat
 
     # obs variables
     obs_names = ['VMAX_10M1', 'FF_10M']
