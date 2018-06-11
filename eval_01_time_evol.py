@@ -11,10 +11,10 @@ import globals as G
 ############ USER INPUT #############
 # obs case name (name of obs pkl file in data folder)
 obs_case_name = 'burglind'
-#obs_case_name = 'foehn_apr18'
+obs_case_name = 'foehn_apr18'
 # model case name (name of folder with model data in 'mod_path'
 model_case_name = 'burglind_ref'
-#model_case_name = 'foehn_apr18_ref'
+model_case_name = 'foehn_apr18_ref'
 # obs model combination case name
 obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
 # mode of plotting: either ALL_G.STATIONS (1 plot for each station) or MEAN_OVER_G.STATIONS
@@ -165,7 +165,7 @@ def plot_station(stat):
 
 
 if plot_mode == 'ALL_STATIONS':
-    for stat in station_names[0:150]:
+    for stat in station_names[0:512]:
         print(stat)
         plot_station(stat)
 

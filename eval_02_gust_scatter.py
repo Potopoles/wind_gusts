@@ -4,24 +4,17 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import pickle
 from sklearn.linear_model import LinearRegression
-from functions import calc_model_fields, calc_scores
+from functions import calc_model_fields, join_model_and_obs, calc_scores
 import globals as G
 from filter import EntryFilter
-
+from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-# obs case name (name of obs pkl file in data folder)
-obs_case_name = 'burglind'
-#obs_case_name = 'foehn_apr18'
-# model case name (name of folder with model data in 'mod_path'
-model_case_name = 'burglind_ref'
-#model_case_name = 'foehn_apr18_ref'
-# obs model combination case name
-obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
-# do not plot (0) show plot (1) save plot (2)
-i_plot = 2
+case_index = 0
+CN = Case_Namelist(case_index)
+i_plot = 1
 # gust methods to calculate and plot
-i_gust_fields = [G.GUST_MIX_COEF_LINEAR,
+i_model_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_MIX_COEF_NONLIN,
                 G.GUST_BRASSEUR_ESTIM,
                 G.GUST_BRASSEUR_LOBOU,
@@ -31,25 +24,26 @@ brasseur_gusts = [G.GUST_BRASSEUR_ESTIM,
                 G.GUST_BRASSEUR_LOBOU,
                 G.GUST_BRASSEUR_UPBOU]
 # path of input obs_model pickle file
-data_pickle_path = '../data/'+obs_model_case_name+'.pkl'
-plot_base_dir = '../plots/'
-plot_case_dir = plot_base_dir + obs_model_case_name + '/'
 min_gust_levels = [0,10,20]
+min_gust_levels = [20]
 #####################################
 
 # create directories
-if i_plot > 1 and not os.path.exists(plot_case_dir):
-    os.mkdir(plot_case_dir)
+if i_plot > 1 and not os.path.exists(CN.plot_path):
+    os.mkdir(CN.plot_path)
 
 EF = EntryFilter()
 
 for min_gust in min_gust_levels:
 
     # load data
-    data = pickle.load( open(data_pickle_path, 'rb') )
+    data = pickle.load( open(CN.mod_path, 'rb') )
 
     # calculate gusts
-    data = calc_model_fields(data, i_gust_fields)
+    data = calc_model_fields(data, i_model_fields)
+    # join model and obs
+    data = join_model_and_obs(data)
+
     # filter according to min gust strength
     data = EF.filter_according_obs_gust(data, min_gust)
     data = calc_scores(data, i_scores)
@@ -65,11 +59,11 @@ for min_gust in min_gust_levels:
     for si,stat in enumerate(station_names):
         obs_gust[:,si] = data[G.OBS][G.STAT][stat][G.PAR]['VMAX_10M1'].values
 
-    for method in i_gust_fields:
+    for field_name in i_model_fields:
         mod_err = np.zeros((nts,nstat))
         for si,stat in enumerate(station_names):
-            mod_err[:,si] = data[G.MODEL][G.STAT][stat][G.SCORE][method][G.SCORE_ME]
-        mod_err_dict[method] = mod_err
+            mod_err[:,si] = data[G.MODEL][G.STAT][stat][G.SCORE][field_name][G.SCORE_ME]
+        mod_err_dict[field_name] = mod_err
 
 
 
@@ -95,10 +89,10 @@ for min_gust in min_gust_levels:
 
         # loop over axes and gust calc method
         axes = []
-        for mi,method in enumerate(i_gust_fields):
-            print(method)
+        for mi,field_name in enumerate(i_model_fields):
+            print(field_name)
             #ax = axes[mi]
-            if method in brasseur_gusts:
+            if field_name in brasseur_gusts:
                 ax = fig.add_subplot(nrow, ncol, mi+2)
             else:
                 ax = fig.add_subplot(nrow, ncol, mi+1)
@@ -106,7 +100,7 @@ for min_gust in min_gust_levels:
 
             # prepare feature matrix
             X = obs_gust[:,si].flatten().reshape(-1,1)
-            y = mod_err_dict[method][:,si].flatten()
+            y = mod_err_dict[field_name][:,si].flatten()
 
             # delete NAN
             size_before = y.shape[0]
@@ -125,13 +119,13 @@ for min_gust in min_gust_levels:
             line = reg.predict(X)
 
             # plotting
-            ax.scatter(obs_gust[:,si], mod_err_dict[method][:,si], color='black', marker=".")
+            ax.scatter(obs_gust[:,si], mod_err_dict[field_name][:,si], color='black', marker=".")
             ax.plot(X, line, color='red')
             ax.set_xlabel('Observed gust (OBS) [m/s]')
             if mi == 0:
                 ax.set_ylabel('Model absolute error (MOD-OBS) [m/s]')
             ax.axhline(0, color='k', linewidth=0.8)
-            ax.set_title(method)
+            ax.set_title(field_name)
         # set axes limits in each ax
         for ax in axes:
             ax.set_ylim((ymin,ymax))

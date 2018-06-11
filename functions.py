@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import globals as G
 from sklearn import metrics
 
@@ -18,115 +19,192 @@ def calc_model_fields(data, i_model_fields):
     data:           added FIELDS entry to MODEL according to i_model_fields
     """
 
-    # number of stations and number of hours in data set
-    nstat = len(data[G.STAT_NAMES])
-    nhrs = len(data[G.OBS][G.DTS])
-
-    # Prepare index mask to map time step model output to hourly values
-    hr_inds = np.zeros((nhrs,360))
-    for i in range(0,nhrs):
-        hr_inds[i,:] = i*360 + np.arange(0,360)
-    hr_inds = hr_inds.astype(np.int)
-   
     # loop through all stations
     for stat in data[G.STAT_NAMES]:
-        #print(stat)
 
         # add fields dictionary entry
         data[G.MODEL][G.STAT][stat][G.FIELDS] = {}
+
+        for lm_run in list(data[G.MODEL][G.STAT][stat][G.RAW].keys()):
+            
+            curr_raw = data[G.MODEL][G.STAT][stat][G.RAW][lm_run]
     
-        for field_name in i_model_fields:
-            #print(field_name)
-    
-            # Calculate gusts for various methods
+            all_fields = []
+            for field_name in i_model_fields:
 
-            if field_name == G.GUST_MIX_COEF_LINEAR:
-    
-                tcm = data[G.MODEL][G.STAT][stat][G.PAR]['tcm']
-                zcm = tcm
-                zcm[zcm < 5E-4] = 5E-4
-                zsqcm = np.sqrt(zcm)
-                zvp10 = data[G.MODEL][G.STAT][stat][G.PAR]['zvp10']
-                gust = zvp10 + 3.0 * 2.4 * zsqcm * zvp10
-    
-            elif field_name == G.GUST_MIX_COEF_NONLIN:
-    
-                tcm = data[G.MODEL][G.STAT][stat][G.PAR]['tcm']
-                zcm = tcm
-                zcm[zcm < 5E-4] = 5E-4
-                zsqcm = np.sqrt(zcm)
-                zvp10 = data[G.MODEL][G.STAT][stat][G.PAR]['zvp10']
-                gust = zvp10 + (3.0 * 2.4 + 0.09 * zvp10) * zsqcm * zvp10
-                
-            elif field_name == G.GUST_BRASSEUR_ESTIM:
-    
-                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra_es']
+                if field_name in G.FIELDS_GUST:
+                    # Calculate gusts for various methods
 
-            elif field_name == G.GUST_BRASSEUR_LOBOU:
-    
-                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra_lb']
+                    if field_name == G.GUST_MIX_COEF_LINEAR:
+            
+                        tcm = curr_raw['tcm']
+                        zcm = tcm
+                        zcm[zcm < 5E-4] = 5E-4
+                        zsqcm = np.sqrt(zcm)
+                        zvp10 = curr_raw['zvp10']
+                        gust = zvp10 + 3.0 * 2.4 * zsqcm * zvp10
+                        gust = gust.to_frame()
+            
+                    elif field_name == G.GUST_MIX_COEF_NONLIN:
+            
+                        tcm = curr_raw['tcm']
+                        zcm = tcm
+                        zcm[zcm < 5E-4] = 5E-4
+                        zsqcm = np.sqrt(zcm)
+                        zvp10 = curr_raw['zvp10']
+                        gust = zvp10 + (3.0 * 2.4 + 0.09 * zvp10) * zsqcm * zvp10
+                        gust = gust.to_frame()
+                        
+                    elif field_name in G.FIELDS_BRA_GUST:
+                        if field_name == G.GUST_BRASSEUR_ESTIM:
+                            gust_field_name = 'zv_bra_es'
+                        elif field_name == G.GUST_BRASSEUR_LOBOU:
+                            gust_field_name = 'zv_bra_lb'
+                        elif field_name == G.GUST_BRASSEUR_UPBOU:
+                            gust_field_name = 'zv_bra_ub'
+            
+                        gust = curr_raw[gust_field_name]
 
-            elif field_name == G.GUST_BRASSEUR_UPBOU:
-    
-                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra_ub']
+                    # resample to maximum hourly value
+                    field = gust.resample('H').max()
+                    field.columns = [field_name]
 
-            elif field_name == G.KVAL_BRASSEUR_ESTIM:
+                elif field_name in G.FIELDS_BRA_KVAL:
 
-                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra_es']
-                kval = data[G.MODEL][G.STAT][stat][G.PAR]['k_bra_es']
+                    if field_name == G.KVAL_BRASSEUR_ESTIM:
+                        gust_field_name = 'zv_bra_es'
+                        k_field_name = 'k_bra_es'
+                    elif field_name == G.KVAL_BRASSEUR_LOBOU:
+                        gust_field_name = 'zv_bra_lb'
+                        k_field_name = 'k_bra_lb'
+                    elif field_name == G.KVAL_BRASSEUR_UPBOU:
+                        gust_field_name = 'zv_bra_ub'
+                        k_field_name = 'k_bra_ub'
 
-            elif field_name == G.KVAL_BRASSEUR_LOBOU:
+                    gust = curr_raw[gust_field_name]
+                    maxid = gust.resample('H').agg({gust_field_name: np.argmax})
+                    values = curr_raw[k_field_name][maxid].values
+                    field = pd.DataFrame(values, index=maxid.index.levels[1], columns=[field_name]).astype(int)
 
-                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra_lb']
-                kval = data[G.MODEL][G.STAT][stat][G.PAR]['k_bra_lb']
+                elif field_name == G.MEAN_WIND:
+                    
+                    field = curr_raw['zvp10']
+                    field = field.resample('H').mean()
 
-            elif field_name == G.KVAL_BRASSEUR_UPBOU:
-
-                gust = data[G.MODEL][G.STAT][stat][G.PAR]['zv_bra_ub']
-                kval = data[G.MODEL][G.STAT][stat][G.PAR]['k_bra_ub']
-
-            elif field_name == G.MEAN_WIND:
-                
-                field = data[G.MODEL][G.STAT][stat][G.PAR]['zvp10']
-
-
-            else:
-                raise ValueError('Unknown user input "' + field_name + '" in list i_gust_fields!')
-    
+                else:
+                    raise ValueError('Unknown user input "' + field_name + '" in list i_gust_fields!')
         
-            # Aggregate to hourly values
-            hourly_values = np.full((nhrs),np.nan)
+                all_fields.append(field)
+            
+            all_fields = pd.concat(all_fields, axis=1)
 
-            if field_name in G.FIELDS_KVAL: 
-
-                # find index of maximum brasseur gust and store k value
-                for hr in range(0,nhrs):
-                    inds = hr_inds[hr]
-                    # find maximum gust ind
-                    hr_max_gust_ind = np.argmax(gust[inds])
-                    hourly_values[hr] = kval[inds][hr_max_gust_ind]
-
-            elif field_name in G.FIELDS_GUST: 
-
-                # calc and save model max gust
-                for hr in range(0,nhrs):
-                    inds = hr_inds[hr]
-                    # find maximum gust
-                    hourly_values[hr] =np.max(gust[inds])
- 
-            else: # any other field
-
-                # calc and save model mean hourly value
-                for hr in range(0,nhrs):
-                    inds = hr_inds[hr]
-                    # calculate hourly mean value
-                    hourly_values[hr] = np.mean(field[inds])
-        
             # save in data
-            data[G.MODEL][G.STAT][stat][G.FIELDS][field_name] = hourly_values
+            data[G.MODEL][G.STAT][stat][G.FIELDS][lm_run] = all_fields
 
     return(data)
     
+
+def join_model_and_obs(data):
+
+    """
+    Calculate model fields (also gusts according to all methods)
+    and aggregates model values to hourly steps.
+
+    INPUT
+    data:           dictionary containing data
+    i_model_fields: list containing string of model fields to calculate:
+                    for options see globals.py section 'Model Fields':
+
+    OUTPUT
+    data:           added FIELDS entry to MODEL according to i_model_fields
+    """
+
+    data[G.BOTH] = {G.STAT:{}}
+
+    # loop through all stations
+    for stat in data[G.STAT_NAMES]:
+
+        data[G.BOTH][G.STAT][stat] = {}
+
+        for lm_run in list(data[G.MODEL][G.STAT][stat][G.FIELDS].keys()):
+            print(lm_run)
+            quit()
+            
+            curr_raw = data[G.MODEL][G.STAT][stat][G.RAW][lm_run]
+    
+            all_fields = []
+            for field_name in i_model_fields:
+
+                if field_name in G.FIELDS_GUST:
+                    # Calculate gusts for various methods
+
+                    if field_name == G.GUST_MIX_COEF_LINEAR:
+            
+                        tcm = curr_raw['tcm']
+                        zcm = tcm
+                        zcm[zcm < 5E-4] = 5E-4
+                        zsqcm = np.sqrt(zcm)
+                        zvp10 = curr_raw['zvp10']
+                        gust = zvp10 + 3.0 * 2.4 * zsqcm * zvp10
+                        gust = gust.to_frame()
+            
+                    elif field_name == G.GUST_MIX_COEF_NONLIN:
+            
+                        tcm = curr_raw['tcm']
+                        zcm = tcm
+                        zcm[zcm < 5E-4] = 5E-4
+                        zsqcm = np.sqrt(zcm)
+                        zvp10 = curr_raw['zvp10']
+                        gust = zvp10 + (3.0 * 2.4 + 0.09 * zvp10) * zsqcm * zvp10
+                        gust = gust.to_frame()
+                        
+                    elif field_name in G.FIELDS_BRA_GUST:
+                        if field_name == G.GUST_BRASSEUR_ESTIM:
+                            gust_field_name = 'zv_bra_es'
+                        elif field_name == G.GUST_BRASSEUR_LOBOU:
+                            gust_field_name = 'zv_bra_lb'
+                        elif field_name == G.GUST_BRASSEUR_UPBOU:
+                            gust_field_name = 'zv_bra_ub'
+            
+                        gust = curr_raw[gust_field_name]
+
+                    # resample to maximum hourly value
+                    field = gust.resample('H').max()
+                    field.columns = [field_name]
+
+                elif field_name in G.FIELDS_BRA_KVAL:
+
+                    if field_name == G.KVAL_BRASSEUR_ESTIM:
+                        gust_field_name = 'zv_bra_es'
+                        k_field_name = 'k_bra_es'
+                    elif field_name == G.KVAL_BRASSEUR_LOBOU:
+                        gust_field_name = 'zv_bra_lb'
+                        k_field_name = 'k_bra_lb'
+                    elif field_name == G.KVAL_BRASSEUR_UPBOU:
+                        gust_field_name = 'zv_bra_ub'
+                        k_field_name = 'k_bra_ub'
+
+                    gust = curr_raw[gust_field_name]
+                    maxid = gust.resample('H').agg({gust_field_name: np.argmax})
+                    values = curr_raw[k_field_name][maxid].values
+                    field = pd.DataFrame(values, index=maxid.index.levels[1], columns=[field_name]).astype(int)
+
+                elif field_name == G.MEAN_WIND:
+                    
+                    field = curr_raw['zvp10']
+                    field = field.resample('H').mean()
+
+                else:
+                    raise ValueError('Unknown user input "' + field_name + '" in list i_gust_fields!')
+        
+                all_fields.append(field)
+            
+            all_fields = pd.concat(all_fields, axis=1)
+
+            # save in data
+            data[G.MODEL][G.STAT][stat][G.FIELDS][lm_run] = all_fields
+
+    return(data)
 
 
 

@@ -80,18 +80,22 @@ class EntryFilter:
 
         for stat in data[G.STAT_NAMES]:
 
-            gust_obs = data[G.OBS][G.STAT][stat][G.PAR]['VMAX_10M1'].values
-            mask = gust_obs < min_gust
+            obs = data[G.OBS][G.STAT][stat]
+            
+            mask = obs[obs['VMAX_10M1'].values < min_gust].index
+            obs = obs.drop(mask)
 
-            # remove in obs
-            obs_fields = data[G.OBS][G.PAR_NAMES]
-            for field in obs_fields:
-                data[G.OBS][G.STAT][stat][G.PAR][field][mask] = np.nan
+            for lm_run in list(data[G.MODEL][G.STAT][stat][G.FIELDS].keys()):
+                model = data[G.MODEL][G.STAT][stat][G.FIELDS][lm_run]
+                this_mask = mask[np.in1d(mask,model.index)]
+                model = model.drop(this_mask)
+                data[G.MODEL][G.STAT][stat][G.FIELDS][lm_run] = model
 
-            # remove in model
-            mod_gust_fields = list(data[G.MODEL][G.STAT][stat][G.FIELDS].keys())
-            for field in mod_gust_fields:
-                data[G.MODEL][G.STAT][stat][G.FIELDS][field][mask] = np.nan
+
+
+            print(data[G.MODEL][G.STAT][stat][G.FIELDS])
+            print(data[G.OBS][G.STAT][stat][G.FIELDS])
+            quit()
 
         return(data)
 
