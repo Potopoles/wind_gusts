@@ -7,7 +7,7 @@ import globals as G
 from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-case_index = 0
+case_index = 1
 CN = Case_Namelist(case_index)
 MISSING_VALUE = -9999
 sample_rate = '1H'
@@ -15,7 +15,12 @@ sample_rate = '1H'
 # VMAX_10M1: hourly max gust
 # FF_10M   : 10min mean wind speed @10m
 # DD_10M   : 10min mean wind direction @10m
-obs_params = ['VMAX_10M1', 'FF_10M', 'DD_10M']
+#obs_params = {'VMAX_10M1': G.OBS_GUST_SPEED,
+#                'FF_10M' : G.OBS_MEAN_WIND,
+#                'DD_10M' : G.OBS_WIND_DIR}
+obs_params = {'VMAX_10M1': G.OBS_GUST_SPEED,
+                'FF_10M' : G.OBS_MEAN_WIND}
+hist_tag = '01_prep_obs'
 #####################################
 
 # meta data about stations (contains information about which should be used)
@@ -60,27 +65,38 @@ for param in obs_params:
     concat = pd.concat(all_days, axis=0)
     tmp[param] = concat
 
+
 # Create dictionary with each parameter as a key and pandas df as value
 obs = {}
-dts = tmp[obs_params[0]].index.values.astype('M8[s]').astype('O')
+dts = tmp[list(obs_params.keys())[0]].index.values.astype('M8[s]').astype('O')
 #obs[G.PAR_NAMES] = obs_params
 stations = {}
 for stat_key in inp_station_names: 
     if np.any(stations_meta_use['ABBR'] == stat_key):
-        stations[stat_key] = {}
-        stations[stat_key][G.STAT_META] = stations_meta_use[stations_meta_use['ABBR'] == stat_key]
+        #stations[stat_key] = {}
+        #stations[stat_key][G.STAT_META] = stations_meta_use[stations_meta_use['ABBR'] == stat_key]
         values = np.zeros((len(dts),len(obs_params)))
+        param_names = []
         for i,param in enumerate(obs_params):
             values[:,i] = tmp[param][stat_key]
+            param_names.append(obs_params[param])
             #stations[stat_key][G.PAR][param] = tmp[param][stat_key]
-        df = pd.DataFrame(values, index=dts, columns=obs_params)
+        df = pd.DataFrame(values, index=dts, columns=param_names)
         stations[stat_key] = df
+
     else:
         print(stat_key)
+
 
 obs[G.STAT] = stations
 data = {}
 data[G.OBS] = obs
+data[G.HIST] = [hist_tag]
+
+data[G.STAT_META] = {}
+for stat_key in inp_station_names: 
+    if np.any(stations_meta_use['ABBR'] == stat_key):
+        data[G.STAT_META][stat_key] = stations_meta_use[stations_meta_use['ABBR'] == stat_key]
 
 # Save
 pickle.dump(data, open(CN.obs_path, 'wb'))

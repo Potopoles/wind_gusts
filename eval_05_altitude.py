@@ -4,139 +4,125 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import pickle
 from sklearn.linear_model import LinearRegression
-from functions import calc_model_fields, calc_scores
+from functions import calc_model_fields, join_model_and_obs, \
+                        join_model_runs, join_all_stations
 import globals as G
 from filter import StationFilter, EntryFilter
+from namelist_cases import Case_Namelist
 
 
 ############ USER INPUT #############
-# obs case name (name of obs pkl file in data folder)
-obs_case_name = 'burglind'
-#obs_case_name = 'foehn_apr18'
-# model case name (name of folder with model data in 'mod_path'
-model_case_name = 'burglind_ref'
-#model_case_name = 'foehn_apr18_ref'
-# obs model combination case name
-obs_model_case_name = 'OBS_'+obs_case_name+'_MODEL_'+model_case_name
+case_index = 1
+CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
-# gust methods to calculate and plot
-i_gust_fields = [G.GUST_MIX_COEF_LINEAR,
+# model fields to calculate 
+i_model_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_MIX_COEF_NONLIN,
                 G.GUST_BRASSEUR_ESTIM]
-i_scores = [G.SCORE_ME]
-# path of input obs_model pickle file
-data_pickle_path = '../data/'+obs_model_case_name+'.pkl'
-plot_base_dir = '../plots/'
-plot_case_dir = plot_base_dir + obs_model_case_name + '/'
 min_gust_levels = [0,10,20]
-#min_gust_levels = [10]
-#altitudes = [[0,1000],
-#            [1001,2000],
-#            [2001,4000]]
-altitudes = [[0,800],
-            [801,2000],
+#min_gust_levels = [18]
+altitudes = [[0,1000],
+            [1001,2000],
             [2001,4000]]
-i_plot_alt_hist = 1
+#altitudes = [[0,800],
+#            [801,2000],
+#            [2001,4000]]
+i_plot_alt_hist = 2
 #####################################
 
+# create directories
+if ((i_plot > 1) or (i_plot_alt_hist > 1))  and not os.path.exists(CN.plot_path):
+    os.mkdir(CN.plot_path)
+
+# string for the current altitudes setting
+alt_str = ""
+for alt in altitudes[:-1]:
+    alt_str = alt_str + str(alt[1]) + '_'
+alt_str = alt_str[:-1]
 
 # altitude histogram
 if i_plot_alt_hist:
-    data = pickle.load( open(data_pickle_path, 'rb') )
+    data = pickle.load( open(CN.mod_path, 'rb') )
     station_names = data[G.STAT_NAMES]
     alts = np.zeros(len(station_names))
     for i,stat in enumerate(station_names):
-        alts[i] = data[G.OBS][G.STAT][stat][G.STAT_META]['Height'].values
+        alts[i] = data[G.STAT_META][stat]['Height'].values
+    fig,axes = plt.subplots(figsize=(8,4))
     plt.hist(alts, bins=50)
-    plot_name = plot_case_dir + 'alt_stations.png'
-    plt.savefig(plot_name)
-    plt.close('all')
+    plt.grid()
+    plt.xlabel('Altitude [m]')
+    plt.ylabel('Number of Stations')
+    plt.title('Station Altitude Histogram')
+    for alt in altitudes:
+        plt.axvline(x=alt[0], color='k')
+        plt.axvline(x=alt[1], color='k')
+    if i_plot_alt_hist == 1:
+        plt.show()
+    elif i_plot_alt_hist > 1:
+        plot_name = CN.plot_path + 'altitude_stations_('+alt_str+').png'
+        plt.savefig(plot_name)
+        plt.close('all')
 
-# create directories
-if i_plot > 1 and not os.path.exists(plot_case_dir):
-    os.mkdir(plot_case_dir)
 
 EF = EntryFilter()
 
 for min_gust in min_gust_levels:
+    print('########## ' + str(min_gust) + ' ##########')
 
     # load data
-    data = pickle.load( open(data_pickle_path, 'rb') )
+    data = pickle.load( open(CN.mod_path, 'rb') )
 
-    # filter stations according to tags
+    # filter stations according to altitudes
     SF = StationFilter()
     filtered = SF.filter_according_altitude(data, altitudes)
     tags = list(filtered.keys())
-    #for stat in filtered[tags[1]][G.STAT_NAMES]:
-    #    print(filtered[tags[1]][G.OBS][G.STAT][stat][G.STAT_META]['Height'].values)
 
-    obs_gust_tag = {}
-    mod_err_dict_tag = {}
-    stations_filtered_tag = {}
     for tag in tags:
-        print(tag)
-        ## calculate gusts and scores
-        filtered[tag] = calc_model_fields(filtered[tag], i_gust_fields)
-        filtered[tag] = EF.filter_according_obs_gust(filtered[tag], min_gust)
-        filtered[tag] = calc_scores(filtered[tag], i_scores)
+        print('##### ' + tag + ' #####')
+        tag_data = filtered[tag]
+        # calculate gusts
+        tag_data = calc_model_fields(tag_data, i_model_fields)
+        # join model and obs
+        tag_data = join_model_and_obs(tag_data)
+        # filter according to min gust strength
+        tag_data = EF.filter_according_obs_gust(tag_data, min_gust)
+        # join all model runs
+        tag_data = join_model_runs(tag_data)
+        # join stations
+        tag_data = join_all_stations(tag_data)
+        
+        filtered[tag] = tag_data
 
-        stations_filtered = filtered[tag][G.STAT_NAMES]
-        nstat = len(stations_filtered)
-        nts = len(filtered[tag][G.OBS][G.DTS])
-
-        ## Aggregate over stations
-        obs_gust = np.zeros((nts,nstat))
-        mod_err_dict = {}
-        for si,stat in enumerate(stations_filtered):
-            obs_gust[:,si] = filtered[tag][G.OBS][G.STAT][stat][G.PAR]['VMAX_10M1'].values
-
-        for method in i_gust_fields:
-            mod_err = np.zeros((nts,nstat))
-            for si,stat in enumerate(stations_filtered):
-                mod_err[:,si] = filtered[tag][G.MODEL][G.STAT][stat][G.SCORE][method][G.SCORE_ME]
-            mod_err_dict[method] = mod_err
-
-        obs_gust_tag[tag] = obs_gust
-        mod_err_dict_tag[tag] = mod_err_dict
-        stations_filtered_tag[tag] = stations_filtered
-
-
-    ###################### PLOT model error vs obs gust
+    ###################### PLOT
     if i_plot > 0:
         # regression
         reg = LinearRegression(fit_intercept=True)
 
         # plot preparation
         ncol = len(tags)
-        nrow = len(i_gust_fields)
+        nrow = len(i_model_fields)
         fig,axes = plt.subplots(nrow,ncol,figsize=(ncol*3.8,nrow*3.3))
-        #fig = plt.figure(figsize=(14,8))
-        #nrow = len(tags)
-        #ncol = len(i_gust_fields)
+
         ymax = -np.Inf
         ymin = np.Inf
 
-        # loop over axes and gust calc method
+        # loop over axes and gust calc field_name
         for ti,tag in enumerate(tags):
 
-            obs_gust = obs_gust_tag[tag]
-            mod_err_dict = mod_err_dict_tag[tag]
-            si = np.arange(0,len(stations_filtered_tag[tag]))
+            df = filtered[tag][G.BOTH][G.ALL_STAT]
 
-            for mi,method in enumerate(i_gust_fields):
+            for mi,field_name in enumerate(i_model_fields):
                 ax = axes[mi][ti]
 
                 # prepare feature matrix
-                X = obs_gust[:,si].flatten().reshape(-1,1)
-                y = mod_err_dict[method][:,si].flatten()
+                X = df[G.OBS_GUST_SPEED].values.reshape(-1,1)
+                y = (df[field_name] - df[G.OBS_GUST_SPEED]).values
 
                 # delete NAN
-                size_before = y.shape[0]
                 mask = np.isnan(X[:,0])
                 X = X[~mask,:]
                 y = y[~mask]
-                size_after = y.shape[0]
 
                 # determine max/min y
                 if len(y) > 0:
@@ -148,14 +134,14 @@ for min_gust in min_gust_levels:
                     line = reg.predict(X)
 
                     # plotting
-                    ax.scatter(obs_gust[:,si], mod_err_dict[method][:,si], color='black', marker=".")
+                    ax.scatter(X[:,0], y, color='black', marker=".")
                     ax.plot(X, line, color='red')
-                    if mi == len(i_gust_fields)-1:
+                    if mi == len(i_model_fields)-1:
                         ax.set_xlabel('Observed gust (OBS) [m/s]')
                     if ti == 0:
                         ax.set_ylabel('Model absolute error (MOD-OBS) [m/s]')
                     ax.axhline(0, color='k', linewidth=0.8)
-                    ax.set_title(method + '  ' + tag)
+                    ax.set_title(field_name + '  ' + tag)
 
         # set axes limits in each ax
         for axs in axes:
@@ -163,13 +149,14 @@ for min_gust in min_gust_levels:
                 ax.set_ylim((ymin,ymax))
 
         # finish plot
-        plt.suptitle(obs_model_case_name)
+        title = 'altitude sep ' + alt_str + ' ' + CN.case_name + ' minGust ' + str(min_gust) +' m/s'
+        plt.suptitle(title)
         plt.subplots_adjust(left=0.10,bottom=0.08,right=0.98,top=0.92,wspace=0.15,hspace=0.25)
 
         if i_plot == 1:
             plt.show()
         elif i_plot > 1:
-            plot_name = plot_case_dir + 'altitude_tags_minGust_'+str(min_gust).zfill(2)+'.png'
+            plot_name = CN.plot_path + 'altitude_tags_'+alt_str+'_minGust_'+str(min_gust).zfill(2)+'.png'
             print(plot_name)
             plt.savefig(plot_name)
             plt.close('all')

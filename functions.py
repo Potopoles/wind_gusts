@@ -4,6 +4,16 @@ import globals as G
 from sklearn import metrics
 
 
+def check_prerequisites(data, prerequisites, hist_tag):
+    for prereq in prerequisites:
+        if prereq not in data[G.HIST]:
+            raise ValueError('Functions ' + prereq + \
+            ' needs to be applied to data to run ' + hist_tag)
+    data[G.HIST].append(hist_tag)
+    return(data)
+
+
+
 def calc_model_fields(data, i_model_fields):
 
     """
@@ -16,8 +26,11 @@ def calc_model_fields(data, i_model_fields):
                     for options see globals.py section 'Model Fields':
 
     OUTPUT
-    data:           added FIELDS entry to MODEL according to i_model_fields
+    data:           added FIELDS entry to data (data[G.MODEL][...][G.FIELDS]) according to i_model_fields
     """
+    hist_tag = 'calc_model_fields'
+    prerequisites = ['01_prep_obs', '02_prep_model']
+    data = check_prerequisites(data, prerequisites, hist_tag)
 
     # loop through all stations
     for stat in data[G.STAT_NAMES]:
@@ -63,11 +76,10 @@ def calc_model_fields(data, i_model_fields):
                         elif field_name == G.GUST_BRASSEUR_UPBOU:
                             gust_field_name = 'zv_bra_ub'
             
-                        gust = curr_raw[gust_field_name]
+                        gust = curr_raw[gust_field_name].to_frame()
 
                     # resample to maximum hourly value
                     field = gust.resample('H').max()
-                    field.columns = [field_name]
 
                 elif field_name in G.FIELDS_BRA_KVAL:
 
@@ -88,12 +100,13 @@ def calc_model_fields(data, i_model_fields):
 
                 elif field_name == G.MEAN_WIND:
                     
-                    field = curr_raw['zvp10']
+                    field = curr_raw['zvp10'].to_frame()
                     field = field.resample('H').mean()
 
                 else:
                     raise ValueError('Unknown user input "' + field_name + '" in list i_gust_fields!')
         
+                field.columns = [field_name]
                 all_fields.append(field)
             
             all_fields = pd.concat(all_fields, axis=1)
@@ -107,17 +120,19 @@ def calc_model_fields(data, i_model_fields):
 def join_model_and_obs(data):
 
     """
-    Calculate model fields (also gusts according to all methods)
-    and aggregates model values to hourly steps.
+    Combines the hourly calculated model fields with the hourly observation.
+    Puts this into data-sub-dictionary G.BOTH
 
     INPUT
-    data:           dictionary containing data
-    i_model_fields: list containing string of model fields to calculate:
-                    for options see globals.py section 'Model Fields':
+    data:           dictionary containing the dict data[G.MODEL][...][G.FIELDS]
 
     OUTPUT
-    data:           added FIELDS entry to MODEL according to i_model_fields
+    data:           added G.BOTH entry to data dictionary
     """
+    hist_tag = 'join_model_and_obs'
+    prerequisites = ['01_prep_obs', '02_prep_model',
+                    'calc_model_fields']
+    data = check_prerequisites(data, prerequisites, hist_tag)
 
     data[G.BOTH] = {G.STAT:{}}
 
@@ -127,147 +142,146 @@ def join_model_and_obs(data):
         data[G.BOTH][G.STAT][stat] = {}
 
         for lm_run in list(data[G.MODEL][G.STAT][stat][G.FIELDS].keys()):
-            print(lm_run)
-            quit()
             
-            curr_raw = data[G.MODEL][G.STAT][stat][G.RAW][lm_run]
-    
-            all_fields = []
-            for field_name in i_model_fields:
+            model = data[G.MODEL][G.STAT][stat][G.FIELDS][lm_run]
+            obs = data[G.OBS][G.STAT][stat]
 
-                if field_name in G.FIELDS_GUST:
-                    # Calculate gusts for various methods
-
-                    if field_name == G.GUST_MIX_COEF_LINEAR:
+            both = pd.concat([model, obs], axis=1, join='inner')
+            data[G.BOTH][G.STAT][stat][lm_run] = both
             
-                        tcm = curr_raw['tcm']
-                        zcm = tcm
-                        zcm[zcm < 5E-4] = 5E-4
-                        zsqcm = np.sqrt(zcm)
-                        zvp10 = curr_raw['zvp10']
-                        gust = zvp10 + 3.0 * 2.4 * zsqcm * zvp10
-                        gust = gust.to_frame()
-            
-                    elif field_name == G.GUST_MIX_COEF_NONLIN:
-            
-                        tcm = curr_raw['tcm']
-                        zcm = tcm
-                        zcm[zcm < 5E-4] = 5E-4
-                        zsqcm = np.sqrt(zcm)
-                        zvp10 = curr_raw['zvp10']
-                        gust = zvp10 + (3.0 * 2.4 + 0.09 * zvp10) * zsqcm * zvp10
-                        gust = gust.to_frame()
-                        
-                    elif field_name in G.FIELDS_BRA_GUST:
-                        if field_name == G.GUST_BRASSEUR_ESTIM:
-                            gust_field_name = 'zv_bra_es'
-                        elif field_name == G.GUST_BRASSEUR_LOBOU:
-                            gust_field_name = 'zv_bra_lb'
-                        elif field_name == G.GUST_BRASSEUR_UPBOU:
-                            gust_field_name = 'zv_bra_ub'
-            
-                        gust = curr_raw[gust_field_name]
-
-                    # resample to maximum hourly value
-                    field = gust.resample('H').max()
-                    field.columns = [field_name]
-
-                elif field_name in G.FIELDS_BRA_KVAL:
-
-                    if field_name == G.KVAL_BRASSEUR_ESTIM:
-                        gust_field_name = 'zv_bra_es'
-                        k_field_name = 'k_bra_es'
-                    elif field_name == G.KVAL_BRASSEUR_LOBOU:
-                        gust_field_name = 'zv_bra_lb'
-                        k_field_name = 'k_bra_lb'
-                    elif field_name == G.KVAL_BRASSEUR_UPBOU:
-                        gust_field_name = 'zv_bra_ub'
-                        k_field_name = 'k_bra_ub'
-
-                    gust = curr_raw[gust_field_name]
-                    maxid = gust.resample('H').agg({gust_field_name: np.argmax})
-                    values = curr_raw[k_field_name][maxid].values
-                    field = pd.DataFrame(values, index=maxid.index.levels[1], columns=[field_name]).astype(int)
-
-                elif field_name == G.MEAN_WIND:
-                    
-                    field = curr_raw['zvp10']
-                    field = field.resample('H').mean()
-
-                else:
-                    raise ValueError('Unknown user input "' + field_name + '" in list i_gust_fields!')
-        
-                all_fields.append(field)
-            
-            all_fields = pd.concat(all_fields, axis=1)
-
-            # save in data
-            data[G.MODEL][G.STAT][stat][G.FIELDS][lm_run] = all_fields
-
     return(data)
 
 
-
-
-def calc_scores(data, i_scores):
+def join_model_runs(data):
 
     """
-    Calculate scores for the hourly gusts in data
+    Assumes that data already contains data[G.BOTH] !
+    Joins the dataframes of all model runs (with different lead time) into one dataframe.
 
     INPUT
-    data:           dictionary containing [G.MODEL][G.FIELDS] (with calcualted gusts)
-    i_scores:       list containing string of scores to calculate.
-                    for options see globals.py section 'scores':
+    data:           dictionary containing the dict data[G.BOTH]
 
     OUTPUT
-    data:           added SCORE entry to MODEL according to i_scores
+    data:           combined all data[G.BOTH][...][model run].df into data[G.BOTH][...].df
     """
+    hist_tag = 'join_model_runs'
+    prerequisites = ['01_prep_obs', '02_prep_model',
+                    'calc_model_fields', 'join_model_and_obs']
+    data = check_prerequisites(data, prerequisites, hist_tag)
+
     # loop through all stations
     for stat in data[G.STAT_NAMES]:
 
-        # add score dictionary entry
-        data[G.MODEL][G.STAT][stat][G.SCORE] = {}
-    
-        gust_methods = list(data[G.MODEL][G.STAT][stat][G.FIELDS].keys())
-        #gust_methods = [gm for gm in gust_methods_inp if gm in G.FIELDS_GUST]
-        #if len(gust_methods_inp) != len(gust_methods):
-        #    raise ValueError('Non-gust field in score calculation!')
+        dfs = []
+        for lm_run in list(data[G.MODEL][G.STAT][stat][G.FIELDS].keys()):
+            
+            dfs.append(data[G.BOTH][G.STAT][stat][lm_run])
 
-        # vector of observed gusts
-        gust_obs = data[G.OBS][G.STAT][stat][G.PAR]['VMAX_10M1'].values
-        # vector of observed mean winds
-        wind_obs = data[G.OBS][G.STAT][stat][G.PAR]['FF_10M'].values
-
-        for gust_method in gust_methods:
-
-            # add entry for gust method in score dictionary
-            data[G.MODEL][G.STAT][stat][G.SCORE][gust_method] = {}
-
-            # vector of simulated gusts
-            gust_mod = data[G.MODEL][G.STAT][stat][G.FIELDS][gust_method]
-
-            if gust_method in G.FIELDS_GUST:
-                eval_field = gust_obs
-            else:
-                eval_field = wind_obs
-    
-            for score_name in i_scores:
-                
-                # Vector scores
-                if score_name == G.SCORE_ME:
-                    score = gust_mod - eval_field
-                elif score_name == G.SCORE_AE:
-                    score = np.abs(gust_mod - eval_field)
-
-                # scalar scores
-                elif score_name == G.SCORE_MAE:
-                    score = metrics.mean_absolute_error(eval_field, gust_mod)
-
-                # add score to gust method dictionary
-                data[G.MODEL][G.STAT][stat][G.SCORE][gust_method][score_name] = score
-        
-
+        df = pd.concat(dfs, axis=0)
+        data[G.BOTH][G.STAT][stat] = df
+            
     return(data)
+
+
+def join_all_stations(data):
+
+    """
+    Assumes that data already contains data[G.BOTH] and model runs with different lead time joined !
+    Joins the dataframes of all stations
+
+    INPUT
+    data:           dictionary containing the dict data[G.BOTH]
+
+    OUTPUT
+    data:           combined all data[G.BOTH][G.STAT][...].df to data[G.BOTH][G.ALL_STAT].df
+    """
+    hist_tag = 'join_all_stations'
+    prerequisites = ['01_prep_obs', '02_prep_model',
+                    'calc_model_fields', 'join_model_and_obs', 'join_model_runs']
+    data = check_prerequisites(data, prerequisites, hist_tag)
+
+    dfs = []
+    # loop through all stations
+    for stat in data[G.STAT_NAMES]:
+        dfs.append(data[G.BOTH][G.STAT][stat])
+
+    df = pd.concat(dfs, axis=0)
+    data[G.BOTH][G.ALL_STAT] = df
+            
+    return(data)
+
+
+
+
+#def calc_scores(data, i_scores):
+#
+#    """
+#    Calculate scores for the hourly gusts in data
+#
+#    INPUT
+#    data:           dictionary containing [G.MODEL][G.FIELDS] (with calcualted gusts)
+#    i_scores:       list containing string of scores to calculate.
+#                    for options see globals.py section 'scores':
+#
+#    OUTPUT
+#    data:           added SCORE entry to data according to i_scores (data[SCORE][...][
+#    """
+#    data[G.SCORE] = {G.STAT:{}}
+#
+#    data = join_model_runs(data)
+#
+#    # loop through all stations
+#    for stat in data[G.STAT_NAMES]:
+#
+#        # add score dictionary entry
+#        data[G.SCORE][G.STAT][stat] = {}
+#
+#        for gust_method in G.FIELDS_GUST:
+#            if gust_method in data[G.BOTH][G.STAT][stat]:
+#                print(gust_method)
+#        
+#        quit()
+#    
+#        gust_methods = list(data[G.MODEL][G.STAT][stat][G.FIELDS].keys())
+#        #gust_methods = [gm for gm in gust_methods_inp if gm in G.FIELDS_GUST]
+#        #if len(gust_methods_inp) != len(gust_methods):
+#        #    raise ValueError('Non-gust field in score calculation!')
+#
+#        # vector of observed gusts
+#        gust_obs = data[G.OBS][G.STAT][stat][G.PAR]['VMAX_10M1'].values
+#        # vector of observed mean winds
+#        wind_obs = data[G.OBS][G.STAT][stat][G.PAR]['FF_10M'].values
+#
+#        for gust_method in gust_methods:
+#
+#            # add entry for gust method in score dictionary
+#            data[G.MODEL][G.STAT][stat][G.SCORE][gust_method] = {}
+#
+#            # vector of simulated gusts
+#            gust_mod = data[G.MODEL][G.STAT][stat][G.FIELDS][gust_method]
+#
+#            if gust_method in G.FIELDS_GUST:
+#                eval_field = gust_obs
+#            else:
+#                eval_field = wind_obs
+#    
+#            for score_name in i_scores:
+#                
+#                # Vector scores
+#                if score_name == G.SCORE_ME:
+#                    score = gust_mod - eval_field
+#                elif score_name == G.SCORE_AE:
+#                    score = np.abs(gust_mod - eval_field)
+#
+#                # scalar scores
+#                elif score_name == G.SCORE_MAE:
+#                    score = metrics.mean_absolute_error(eval_field, gust_mod)
+#
+#                # add score to gust method dictionary
+#                data[G.MODEL][G.STAT][stat][G.SCORE][gust_method][score_name] = score
+#        
+#
+#    return(data)
 
 
 

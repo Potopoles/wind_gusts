@@ -1,4 +1,7 @@
 ###### Generic keys in data dictionary
+# 1st level: history of functions applied to data
+# data[HIST]
+HIST = 'hist'
 # 1st level: key to model data
 # data[MODEL]
 MODEL = 'model'
@@ -8,30 +11,27 @@ OBS = 'obs'
 # 1st level: key to combined data
 # data[BOTH]
 BOTH = 'both'
+# 1st level:  key to hourly scores data
+# data[SCORE]
+SCORE = 'scores'
 # 1st level: key to names of stations
 # data[STAT_NAMES]
 STAT_NAMES = 'station_names'
+# 1st level: key leading to meta information about station (e.g. tags)
+# data[STAT_META]
+STAT_META = 'station_meta'
 # 2nd level: key in MODEL and OBS leading to station dictionary
 # data[MODEL/OBS][STAT]
 STAT = 'stations'
-## 2nd level: key in MODEL and OBS showing the names of parameters contained for each station
-## data[MODEL/OBS][PAR_NAMES]
-#PAR_NAMES = 'param_names'
-## 2nd level: key in MODEL and OBS containing datetime objects for each time step
-## data[MODEL/OBS][DTS]
-#DTS = 'dts'
-# 3rd level: key in STAT leading to meta information about station (e.g. tags)
-# data[MODEL/OBS][STAT][STAT_META]
-STAT_META = 'station_meta'
+# 2nd level: key in BOTH containing arrays for all stations combined 
+# data[BOTH][ALL_STAT]
+ALL_STAT = 'all_stations'
 # 3rd level: key in STAT leading to raw (time step) model output fields 
 # data[MODEL][STAT][RAW]
 RAW = 'raw'
 # 3rd level MODEL:  key to hourly gust data
 # data[MODEL][STAT][FIELDS]
 FIELDS = 'fields'
-# 3rd level MODEL:  key to hourly scores data
-# data[MODEL][STAT][SCORE]
-SCORE = 'scores'
 
 
 
@@ -44,7 +44,7 @@ GUST_BRASSEUR_UPBOU  = 'gust_brasseur_upbou'
 KVAL_BRASSEUR_ESTIM  = 'kval_brasseur_estim'
 KVAL_BRASSEUR_LOBOU  = 'kval_brasseur_lobou'
 KVAL_BRASSEUR_UPBOU  = 'kval_brasseur_upbou'
-MEAN_WIND = 'mean_wind'
+MODEL_MEAN_WIND      = 'model_mean_wind'
 FIELDS_GUST = [GUST_MIX_COEF_LINEAR,
                GUST_MIX_COEF_NONLIN,
                GUST_BRASSEUR_ESTIM,
@@ -60,6 +60,7 @@ FIELDS_BRA_KVAL = [KVAL_BRASSEUR_ESTIM,
 ###### Obs Fields
 OBS_GUST_SPEED = 'obs_gust_speed'
 OBS_MEAN_WIND  = 'obs_mean_wind'
+OBS_WIND_DIR   = 'obs_wind_dir'
 
 
 

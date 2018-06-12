@@ -23,6 +23,8 @@ class Case_Namelist:
 
     cases = [
         {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.'],
+                    OBS:'20180301_Burglind', MOD_RAW:'20180301_Burglind', MOD:'DEBUG'},
+        {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.'],
                     OBS:'20180301_Burglind', MOD_RAW:'20180301_Burglind', MOD:'ref'}
     ]
 
@@ -40,9 +42,12 @@ class Case_Namelist:
                         self.cases[case_ind][self.MOD] + '.pkl'
 
         self.plot_path = self.plot_base_dir + 'OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
-                        self.cases[case_ind][self.MOD] + '.pkl'
+                        self.cases[case_ind][self.MOD] + '/'
+
+        self.case_name = 'OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
+                        self.cases[case_ind][self.MOD]
 
         print('##########################################')
-        print(self.mod_path)
+        print(self.case_name)
         print('##########################################')
 

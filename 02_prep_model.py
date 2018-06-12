@@ -8,7 +8,7 @@ from namelist_cases import Case_Namelist
 import os
 
 ############ USER INPUT #############
-case_index = 0
+case_index = 1
 CN = Case_Namelist(case_index)
 # time step [s] of model
 model_dt = 10
@@ -20,6 +20,7 @@ model_params = ['ntstep','k_bra_es','k_bra_lb','k_bra_ub','tcm','zvp10',
                 'vl1','vl2','vl3','vl4','vl5',
                 'tkel1','tkel2','tkel3','tkel4','tkel5',
                 'dpsdt','tke_bra_es','ps']
+hist_tag = '02_prep_model'
 #####################################
 
 lm_runs = os.listdir(CN.raw_mod_path)
@@ -28,8 +29,9 @@ mod_stations_file = CN.raw_mod_path + lm_runs[0] + '/fort.700'
 
 # read model station names
 mod_stations = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,0]
-#mod_stations = ['ABO','AEG'] # debug
-mod_stations = mod_stations[:10] # debug
+if case_index == 0:
+    #mod_stations = ['ABO','AEG'] # debug
+    mod_stations = mod_stations[:30] # debug
 
 # load main data file
 data = pd.read_pickle(CN.obs_path)
@@ -78,6 +80,8 @@ print('##################')
 
 # save names of used stations
 data[G.STAT_NAMES] = list(data[G.MODEL][G.STAT].keys())
+
+data[G.HIST].append(hist_tag)
 
 # save output file
 pickle.dump(data, open(CN.mod_path, 'wb'))
