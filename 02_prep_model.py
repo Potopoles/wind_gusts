@@ -8,18 +8,24 @@ from namelist_cases import Case_Namelist
 import os
 
 ############ USER INPUT #############
-case_index = 1
+case_index = 0
 CN = Case_Namelist(case_index)
 # time step [s] of model
 model_dt = 10
 # starting index of fortran files
 ind0 = 701
 # header of fortran output files
-model_params = ['ntstep','k_bra_es','k_bra_lb','k_bra_ub','tcm','zvp10',
-                'zv_bra_es','zv_bra_lb','zv_bra_ub',
-                'vl1','vl2','vl3','vl4','vl5',
-                'tkel1','tkel2','tkel3','tkel4','tkel5',
-                'dpsdt','tke_bra_es','ps']
+model_params = ['ntstep','k_bra_es','k_bra_lb','k_bra_ub', # time step and model levels of brassuer
+                'tcm','zvp10', # turbulent coefficient of momentum and abs wind at 10 m
+                'zv_bra_es','zv_bra_lb','zv_bra_ub', # brasseur gust velocities
+                'uvl1','uvl2','uvl3', # abs wind at lowest 3 model levels
+                'ul1', 'vl1', # u and v at lowest model level
+                'tkel1', 'tke_bra_es', # tke at lowest level and mean tke between sfc and bra estimate
+                'z0', 'Tl1', # surface roughness and temperature at lowest model level
+                'shflx', 'qvflx', # surface sensible heat and water vapor flux 
+                'Tskin', 'qvl1', # skin temperature and water vapor at lowest model level
+                'phil1', # geopotential at lowest model level 
+                'ps']
 hist_tag = '02_prep_model'
 #####################################
 
@@ -31,7 +37,7 @@ mod_stations_file = CN.raw_mod_path + lm_runs[0] + '/fort.700'
 mod_stations = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,0]
 if case_index == 0:
     #mod_stations = ['ABO','AEG'] # debug
-    mod_stations = mod_stations[:30] # debug
+    mod_stations = mod_stations[:200] # debug
 
 # load main data file
 data = pd.read_pickle(CN.obs_path)

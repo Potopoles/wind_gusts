@@ -58,7 +58,11 @@ class StationFilter:
             keep = []
             for stat in data[G.STAT_NAMES]:
                 this_tag = data[G.STAT_META][stat][tag_class].values
-                if this_tag == tag:
+                # combine flat and hilly (flat + hilly = flat)
+                if tag == 'flat':
+                    if this_tag == 'hilly' or this_tag == 'flat':
+                        keep.append(stat)
+                elif this_tag == tag:
                     keep.append(stat)
 
             # create subdata set save in filtered dictionary

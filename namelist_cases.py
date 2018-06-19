@@ -22,10 +22,23 @@ class Case_Namelist:
 
 
     cases = [
+        # 0 DEBUG
         {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.'],
-                    OBS:'20180301_Burglind', MOD_RAW:'20180301_Burglind', MOD:'DEBUG'},
+                    OBS:'20180103_Burglind', MOD_RAW:'DEBUG_Burglind', MOD:'DEBUG'},
+        # 1 Burglind
         {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.'],
-                    OBS:'20180301_Burglind', MOD_RAW:'20180301_Burglind', MOD:'ref'}
+                    OBS:'20180103_Burglind', MOD_RAW:'20180103_Burglind', MOD:'ref'},
+        # 2 Bisensturm
+        {OBS_RAW:['20180502sfc.','20180503sfc.','20180504sfc.','20180505sfc.'],
+                    OBS:'20180503_Bisensturm', MOD_RAW:'20180503_Bisensturm', MOD:'ref'},
+        # 3 Foehnsturm
+        {OBS_RAW:['20180428sfc.','20180429sfc.','20180430sfc.','20180501sfc.'],
+                    OBS:'20180429_Foehnsturm', MOD_RAW:'20180429_Foehnsturm', MOD:'ref'},
+        # 4 all
+        {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.',
+                  '20180502sfc.','20180503sfc.','20180504sfc.','20180505sfc.',
+                  '20180428sfc.','20180429sfc.','20180430sfc.','20180501sfc.'],
+                    OBS:'All', MOD_RAW:'All', MOD:'ref'}
     ]
 
     def __init__(self, case_ind):

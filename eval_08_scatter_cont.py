@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from datetime import datetime
 import pickle
@@ -18,12 +19,12 @@ i_plot = 1
 # model fields to calculate 
 i_model_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_MIX_COEF_NONLIN,
-                G.MODEL_MEAN_WIND,
                 G.GUST_BRASSEUR_ESTIM,
+                G.MODEL_MEAN_WIND,
                 G.GUST_BRASSEUR_LOBOU,
                 G.GUST_BRASSEUR_UPBOU]
 min_gust_levels = [0,5,10,20]
-min_gust_levels = [10]
+min_gust_levels = [5]
 #####################################
 
 # create directories
@@ -53,86 +54,99 @@ for min_gust in min_gust_levels:
     if i_plot > 0:
         df = data[G.BOTH][G.ALL_STAT]
 
-        # regression
-        reg = LinearRegression(fit_intercept=True)
-
-        # plot preparation
-        fig = plt.figure(figsize=(14,9))
-        nrow = 2
-        ncol = 3
         ymax = -np.Inf
         ymin = np.Inf
+        xmax = -np.Inf
+        xmin = np.Inf
 
-        # loop over axes and gust calc method
-        axes = []
+        xs = {}
+        ys = {}
         for mi,field_name in enumerate(i_model_fields):
             print(field_name)
 
-            ax = fig.add_subplot(nrow, ncol, mi+1)
-            axes.append(ax)
-
             # prepare feature matrix
             if field_name == G.MODEL_MEAN_WIND:
-                X = df[G.OBS_MEAN_WIND].values.reshape(-1,1)
+                x = df[G.OBS_MEAN_WIND].values
                 y = (df[field_name] - df[G.OBS_MEAN_WIND]).values
-                xlab = 'Observed mean wind (OBS) [m/s]'
-                ylab = 'Model mean wind error (MOD-OBS) [m/s]'
             else:
-                X = df[G.OBS_GUST_SPEED].values.reshape(-1,1)
+                x = df[G.OBS_GUST_SPEED].values
                 y = (df[field_name] - df[G.OBS_GUST_SPEED]).values
-                xlab = 'Observed gust (OBS) [m/s]'
-                ylab = 'Model gust error (MOD-OBS) [m/s]'
 
             # delete NAN
-            mask = np.isnan(X[:,0])
-            X = X[~mask,:]
+            mask = np.isnan(x)
+            x = x[~mask]
             y = y[~mask]
-
 
             # determine max/min y
             ymax = max(np.max(y),ymax)
             ymin = min(np.min(y),ymin)
+            xmax = max(np.max(x),xmax)
+            xmin = min(np.min(x),xmin)
 
-            dmp = 1
-            mp_borders = np.arange(np.floor(ymin),np.ceil(ymax),dmp)
-            mp_x = mp_borders[:-1] + np.diff(mp_borders)/2
-            mp_y = np.full(len(mp_x),np.nan)
-            for i in range(0,len(mp_x)):
-                #inds = np.squeeze(np.argwhere((X[:,0] > mp_borders[i]) & (X[:,0] <= mp_borders[i+1])))
-                inds = (X[:,0] > mp_borders[i]) & (X[:,0] <= mp_borders[i+1])
-                if np.sum(inds) > 20:
-                    mp_y[i] = np.median(y[inds])
-                
+            xs[field_name] = x
+            ys[field_name] = y
 
-            # fit regression and draw line
-            reg.fit(X,y)
-            line = reg.predict(X)
 
-            # plotting
-            ax.scatter(X[:,0], y, color='black', marker=".")
-            ax.plot(X, line, color='red')
-            ax.plot(mp_x, mp_y, color='orange')
+        #xmin = min_gust
+        #xmax = 50
+        ymin = -30
+        ymax = 50
+        dx = 2
+        dy = 2
+        xseq = np.arange(np.floor(xmin),np.ceil(xmax),dx)
+        yseq = np.arange(np.floor(ymin),np.ceil(ymax),dy)
+
+        # Create Histrogram and find maximum occurence
+        Hs = {}
+        Hmax = -np.Inf
+        for mi,field_name in enumerate(i_model_fields):
+            H, xseq, yseq = np.histogram2d(xs[field_name], ys[field_name], bins=(xseq,yseq))
+            H = np.sqrt(H)
+            Hs[field_name] = H
+            Hmax = max(np.max(H),Hmax)
+
+
+        # plot preparation
+        fig = plt.figure(figsize=(14,10))
+        nrow = 2
+        ncol = 3
+        # loop over axes and gust calc method
+        axes = []
+        for mi,field_name in enumerate(i_model_fields):
+            print(field_name)
+            ax = fig.add_subplot(nrow, ncol, mi+1, xlim=xseq[[0,-1]], ylim=yseq[[0,-1]])
+            axes.append(ax)
+
+            norm = mpl.colors.Normalize(vmin=0, vmax=Hmax)
+            im = mpl.image.NonUniformImage(ax, interpolation='bilinear', norm=norm)
+            xcenters = (xseq[:-1] + xseq[1:])/2
+            ycenters = (yseq[:-1] + yseq[1:])/2
+
+            im.set_data(xcenters,ycenters, np.transpose(Hs[field_name]))
+            ax.images.append(im)
+
+            if field_name == G.MODEL_MEAN_WIND:
+                xlab = 'Observed mean wind (OBS) [m/s]'
+                ylab = 'Model mean wind error (MOD-OBS) [m/s]'
+            else:
+                xlab = 'Observed gust (OBS) [m/s]'
+                ylab = 'Model gust error (MOD-OBS) [m/s]'
+
             ax.set_xlabel(xlab)
-            if (mi == 0) or (mi == 2):
+            if (mi == 0):
                 ax.set_ylabel(ylab)
             ax.axhline(0, color='k', linewidth=0.8)
             ax.set_title(field_name)
-        # set axes limits in each ax
-        for i,ax in enumerate(axes):
-            ax.set_ylim((ymin,ymax))
-            ax.set_xlim(left=min_gust)
-            if i == 0:
-                ax.text(np.max(X)-0.13*(np.max(X)-np.min(X)), ymax-0.10*(ymax-ymin), len(y))
 
         # finish plot
         title = CN.case_name + ' minGust ' + str(min_gust) +' m/s'
         plt.suptitle(title)
-        plt.subplots_adjust(left=0.05,bottom=0.08,right=0.95,top=0.9,wspace=0.2,hspace=0.3)
+        plt.subplots_adjust(left=0.05,bottom=0.11,right=0.95,top=0.9,wspace=0.10,hspace=0.3)
 
         if i_plot == 1:
             plt.show()
         elif i_plot > 1:
-            plot_name = CN.plot_path + 'scatter_minGust_'+str(min_gust).zfill(2)+'.png'
+            plot_name = CN.plot_path + 'scattercontour_minGust_'+str(min_gust).zfill(2)+'.png'
             print(plot_name)
             plt.savefig(plot_name)
             plt.close('all')

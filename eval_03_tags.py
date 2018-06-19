@@ -11,7 +11,7 @@ from filter import StationFilter, EntryFilter
 from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-case_index = 1
+case_index = 4
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -19,12 +19,14 @@ i_plot = 2
 i_model_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_MIX_COEF_NONLIN,
                 G.GUST_BRASSEUR_ESTIM]
-min_gust_levels = [0,10,20]
+min_gust_levels = [0,5,10,20]
 #min_gust_levels = [18]
 tag_class = 'TopoTag'
-tags = ['flat', 'hilly', 'mountain_top', 'mountain', 'valley']
-tag_class = 'SfcTag'
-tags = ['rural', 'forest', 'urban', 'city']
+#tags = ['flat', 'hilly', 'mountain_top', 'mountain', 'valley']
+tags = ['flat', 'mountain_top', 'mountain', 'valley']
+#tag_class = 'SfcTag'
+##tags = ['rural', 'forest', 'urban', 'city']
+#tags = ['rural', 'urban', 'city']
 #####################################
 
 # create directories

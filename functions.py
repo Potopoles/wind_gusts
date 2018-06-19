@@ -67,6 +67,51 @@ def calc_model_fields(data, i_model_fields):
                         zvp10 = curr_raw['zvp10']
                         gust = zvp10 + (3.0 * 2.4 + 0.09 * zvp10) * zsqcm * zvp10
                         gust = gust.to_frame()
+
+                    elif field_name == G.GUST_ICON:
+                        
+                        ugn = 7.71
+                        hpbl = 1000
+                        kappa = 0.4
+                        g = 9.81
+                        Rd = 287
+                        etv = 0.6078
+
+                        umlev = curr_raw['ul1']
+                        vmlev = curr_raw['vl1']
+                        ps = curr_raw['ps']
+                        qvflx = curr_raw['qvflx']
+                        shflx = curr_raw['shflx']
+                        z0 = curr_raw['gz0']
+                        Tskin = curr_raw['Tskin']
+                        Tmlev = curr_raw['Tl1']
+                        qvmlev = curr_raw['qvl1']
+                        phimlev = curr_raw['phil1']
+
+                        # density
+                        rho = ps / ( Rd*Tmlev * ( 1 + etv*qvmlev ) )
+                        print(rho)
+                        quit()
+
+                        # buoyancy
+                        buoy = g * ( - etv*qflx - shflx/( tskin*cp ) ) / rho
+
+                        # surface stress
+                        zcdn = ( kappa / np.log( 1 + phimlev/(g*z0) ) )
+                        dua = np.sqrt( max( 0.1**2, umlev**2 + vmlev**2 ) )
+                        ustr = rho*umlev*dua*zcdn
+                        vstr = rho*vmlev*dua*zcdn
+
+                        # friction velocity
+                        ustar2 = np.sqrt( ustr**2 + vstr**2 ) / rho 
+                        if buoy > 0:
+                            wstar2 = ( buoy*hpbl )**(2/3)
+                            ustar2 += 2E-3*wstar2
+                        ustar = max( np.sqrt(ustar2), 0.001 )
+
+                        # wind gust
+                        zvp10 = curr_raw['zvp10']
+                        gust = zvp10 + ustar*ugn*( 1 + 0.5/12*hpbl*kappa*buoy/ustar**3 )**(1/3)
                         
                     elif field_name in G.FIELDS_BRA_GUST:
                         if field_name == G.GUST_BRASSEUR_ESTIM:
@@ -98,7 +143,7 @@ def calc_model_fields(data, i_model_fields):
                     values = curr_raw[k_field_name][maxid].values
                     field = pd.DataFrame(values, index=maxid.index.levels[1], columns=[field_name]).astype(int)
 
-                elif field_name == G.MEAN_WIND:
+                elif field_name == G.MODEL_MEAN_WIND:
                     
                     field = curr_raw['zvp10'].to_frame()
                     field = field.resample('H').mean()

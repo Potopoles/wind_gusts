@@ -7,7 +7,7 @@ import globals as G
 from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-case_index = 1
+case_index = 0
 CN = Case_Namelist(case_index)
 MISSING_VALUE = -9999
 sample_rate = '1H'
@@ -52,6 +52,14 @@ for obs_path in CN.raw_obs_path:
         data = pd.DataFrame(values, index=dts, columns=inp_station_names)
         # resample to corret sample_rate
         data = data.resample(sample_rate).mean()
+        
+        # remove weird extremly large values
+        data[(data.values > 150) | (data.values < 0)] = np.nan
+        #badsum =np.sum(data.values > 1000) 
+        #if badsum:
+        #    print(badsum)
+        #    print(data.values[data.values > 1000])
+        #quit()
         tmp[param] = data
 
     day_data.append(tmp)
@@ -85,7 +93,8 @@ for stat_key in inp_station_names:
         stations[stat_key] = df
 
     else:
-        print(stat_key)
+        #print(stat_key)
+        pass
 
 
 obs[G.STAT] = stations

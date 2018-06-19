@@ -12,7 +12,7 @@ from namelist_cases import Case_Namelist
 
 
 ############ USER INPUT #############
-case_index = 1
+case_index = 3
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -20,7 +20,7 @@ i_plot = 2
 i_model_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_MIX_COEF_NONLIN,
                 G.GUST_BRASSEUR_ESTIM]
-min_gust_levels = [0,10,20]
+min_gust_levels = [0,5,10,20]
 #min_gust_levels = [18]
 altitudes = [[0,1000],
             [1001,2000],
