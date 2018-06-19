@@ -23,11 +23,12 @@ i_stat = 'ABO'
 # load data
 data = pickle.load( open(CN.mod_path, 'rb') )
 
-model = data[G.MODEL][G.STAT][i_stat][G.RAW]['2018010300']
+#model = data[G.MODEL][G.STAT][i_stat][G.RAW]['2018010300']
+model = data[G.MODEL][G.STAT][i_stat][G.RAW]['2018061000']
 print(model.columns)
 
-#plt.plot(model.qvflx)
+plt.plot(model.qvflx)
 #plt.plot(model.qvl1)
-plt.plot(model.shflx)
+#plt.plot(model.shflx)
 #plt.plot(model.Tl1)
 plt.show()

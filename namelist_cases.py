@@ -22,6 +22,9 @@ class Case_Namelist:
 
 
     cases = [
+        ## 0 DEBUG
+        #{OBS_RAW:['20180610sfc.'],
+        #            OBS:'20180103_Sommer', MOD_RAW:'DEBUG_Sommer', MOD:'DEBUG'},
         # 0 DEBUG
         {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.'],
                     OBS:'20180103_Burglind', MOD_RAW:'DEBUG_Burglind', MOD:'DEBUG'},

@@ -37,7 +37,7 @@ mod_stations_file = CN.raw_mod_path + lm_runs[0] + '/fort.700'
 mod_stations = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,0]
 if case_index == 0:
     #mod_stations = ['ABO','AEG'] # debug
-    mod_stations = mod_stations[:200] # debug
+    mod_stations = mod_stations[:100] # debug
 
 # load main data file
 data = pd.read_pickle(CN.obs_path)

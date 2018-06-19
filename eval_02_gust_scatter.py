@@ -21,7 +21,7 @@ i_model_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.MODEL_MEAN_WIND,
                 G.GUST_BRASSEUR_ESTIM,
                 G.GUST_BRASSEUR_LOBOU,
-                G.GUST_BRASSEUR_UPBOU]
+                G.GUST_ICON]
 min_gust_levels = [0,5,10,20]
 min_gust_levels = [10]
 #####################################
@@ -93,6 +93,7 @@ for min_gust in min_gust_levels:
             ymax = max(np.max(y),ymax)
             ymin = min(np.min(y),ymin)
 
+            # calculate median
             dmp = 1
             mp_borders = np.arange(np.floor(ymin),np.ceil(ymax),dmp)
             mp_x = mp_borders[:-1] + np.diff(mp_borders)/2

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import globals as G
 from sklearn import metrics
+import matplotlib.pyplot as plt
 
 
 def check_prerequisites(data, prerequisites, hist_tag):
@@ -72,46 +73,49 @@ def calc_model_fields(data, i_model_fields):
                         
                         ugn = 7.71
                         hpbl = 1000
-                        kappa = 0.4
-                        g = 9.81
-                        Rd = 287
+                        g = 9.80665
+                        Rd = 287.05
                         etv = 0.6078
+                        cp = 1005.0
+                        kappa = Rd/cp
 
-                        umlev = curr_raw['ul1']
-                        vmlev = curr_raw['vl1']
-                        ps = curr_raw['ps']
-                        qvflx = curr_raw['qvflx']
-                        shflx = curr_raw['shflx']
-                        z0 = curr_raw['gz0']
-                        Tskin = curr_raw['Tskin']
-                        Tmlev = curr_raw['Tl1']
-                        qvmlev = curr_raw['qvl1']
-                        phimlev = curr_raw['phil1']
+                        umlev = curr_raw['ul1'].values
+                        vmlev = curr_raw['vl1'].values
+                        ps = curr_raw['ps'].values
+                        qvflx = curr_raw['qvflx'].values
+                        shflx = curr_raw['shflx'].values
+                        z0 = curr_raw['z0'].values
+                        Tskin = curr_raw['Tskin'].values
+                        Tmlev = curr_raw['Tl1'].values
+                        qvmlev = curr_raw['qvl1'].values
+                        phimlev = curr_raw['phil1'].values
 
                         # density
                         rho = ps / ( Rd*Tmlev * ( 1 + etv*qvmlev ) )
-                        print(rho)
-                        quit()
 
                         # buoyancy
-                        buoy = g * ( - etv*qflx - shflx/( tskin*cp ) ) / rho
+                        buoy = g * ( - etv*qvflx - shflx/( Tskin*cp ) ) / rho
 
                         # surface stress
                         zcdn = ( kappa / np.log( 1 + phimlev/(g*z0) ) )
-                        dua = np.sqrt( max( 0.1**2, umlev**2 + vmlev**2 ) )
+                        dua = np.sqrt( np.maximum( 0.1**2, umlev**2 + vmlev**2 ) )
                         ustr = rho*umlev*dua*zcdn
                         vstr = rho*vmlev*dua*zcdn
 
                         # friction velocity
                         ustar2 = np.sqrt( ustr**2 + vstr**2 ) / rho 
-                        if buoy > 0:
-                            wstar2 = ( buoy*hpbl )**(2/3)
-                            ustar2 += 2E-3*wstar2
-                        ustar = max( np.sqrt(ustar2), 0.001 )
+                        wstar2 = ( buoy*hpbl )**(2/3)
+                        #plt.plot(ustar2)
+                        ustar2[buoy > 0] = ustar2[buoy > 0] + 2E-3*wstar2[buoy > 0]
+                        ustar = np.maximum( np.sqrt(ustar2), 0.001 )
+                        #plt.plot(ustar2)
+                        #plt.show()
+                        #quit()
 
                         # wind gust
                         zvp10 = curr_raw['zvp10']
                         gust = zvp10 + ustar*ugn*( 1 + 0.5/12*hpbl*kappa*buoy/ustar**3 )**(1/3)
+                        gust = gust.to_frame()
                         
                     elif field_name in G.FIELDS_BRA_GUST:
                         if field_name == G.GUST_BRASSEUR_ESTIM:

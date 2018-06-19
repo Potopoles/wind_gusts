@@ -12,23 +12,25 @@ from namelist_cases import Case_Namelist
 
 
 ############ USER INPUT #############
-case_index = 3
+case_index = 0
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 2
+i_plot = 1
 # model fields to calculate 
 i_model_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_MIX_COEF_NONLIN,
-                G.GUST_BRASSEUR_ESTIM]
+                G.GUST_BRASSEUR_ESTIM,
+                G.GUST_ICON,
+                G.MODEL_MEAN_WIND]
 min_gust_levels = [0,5,10,20]
-#min_gust_levels = [18]
+min_gust_levels = [10]
 altitudes = [[0,1000],
             [1001,2000],
             [2001,4000]]
 #altitudes = [[0,800],
 #            [801,2000],
 #            [2001,4000]]
-i_plot_alt_hist = 2
+i_plot_alt_hist = 0
 #####################################
 
 # create directories
@@ -100,9 +102,10 @@ for min_gust in min_gust_levels:
         reg = LinearRegression(fit_intercept=True)
 
         # plot preparation
-        ncol = len(tags)
-        nrow = len(i_model_fields)
-        fig,axes = plt.subplots(nrow,ncol,figsize=(ncol*3.8,nrow*3.3))
+        ncol = len(i_model_fields)
+        nrow = len(tags)
+        #fig,axes = plt.subplots(nrow,ncol,figsize=(ncol*3.8,nrow*3.3))
+        fig,axes = plt.subplots(nrow,ncol,figsize=(ncol*3.5,nrow*3.3))
 
         ymax = -np.Inf
         ymin = np.Inf
@@ -113,7 +116,7 @@ for min_gust in min_gust_levels:
             df = filtered[tag][G.BOTH][G.ALL_STAT]
 
             for mi,field_name in enumerate(i_model_fields):
-                ax = axes[mi][ti]
+                ax = axes[ti][mi]
 
                 # prepare feature matrix
                 X = df[G.OBS_GUST_SPEED].values.reshape(-1,1)
@@ -133,13 +136,32 @@ for min_gust in min_gust_levels:
                     reg.fit(X,y)
                     line = reg.predict(X)
 
+                    # calculate median
+                    dmp = 1
+                    mp_borders = np.arange(np.floor(ymin),np.ceil(ymax),dmp)
+                    mp_x = mp_borders[:-1] + np.diff(mp_borders)/2
+                    mp_y = np.full(len(mp_x),np.nan)
+                    for i in range(0,len(mp_x)):
+                        #inds = np.squeeze(np.argwhere((X[:,0] > mp_borders[i]) & (X[:,0] <= mp_borders[i+1])))
+                        inds = (X[:,0] > mp_borders[i]) & (X[:,0] <= mp_borders[i+1])
+                        if np.sum(inds) > 20:
+                            mp_y[i] = np.median(y[inds])
+
                     # plotting
                     ax.scatter(X[:,0], y, color='black', marker=".")
                     ax.plot(X, line, color='red')
-                    if mi == len(i_model_fields)-1:
-                        ax.set_xlabel('Observed gust (OBS) [m/s]')
-                    if ti == 0:
-                        ax.set_ylabel('Model absolute error (MOD-OBS) [m/s]')
+                    ax.plot(mp_x, mp_y, color='orange')
+
+                    if field_name == G.MODEL_MEAN_WIND:
+                        xlab = 'Observed mean wind (OBS) [m/s]'
+                        ylab = 'Model mean wind error [m/s]'
+                    else:
+                        xlab = 'Observed gust (OBS) [m/s]'
+                        ylab = 'Model gust error [m/s]'
+                    if mi == 0:
+                        ax.set_ylabel(ylab)
+                    if ti == len(tags)-1:
+                        ax.set_xlabel(xlab)
                     ax.axhline(0, color='k', linewidth=0.8)
                     ax.set_title(field_name + '  ' + tag)
 

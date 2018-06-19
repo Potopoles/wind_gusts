@@ -50,7 +50,8 @@ FIELDS_GUST = [GUST_MIX_COEF_LINEAR,
                GUST_MIX_COEF_NONLIN,
                GUST_BRASSEUR_ESTIM,
                GUST_BRASSEUR_LOBOU,
-               GUST_BRASSEUR_UPBOU]
+               GUST_BRASSEUR_UPBOU,
+               GUST_ICON]
 FIELDS_BRA_GUST =  [GUST_BRASSEUR_ESTIM,
                     GUST_BRASSEUR_LOBOU,
                     GUST_BRASSEUR_UPBOU]

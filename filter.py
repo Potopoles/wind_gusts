@@ -122,7 +122,7 @@ class EntryFilter:
 
     def filter_according_obs_gust(self, data, min_gust):
         """
-        For data[G.BOTH] filters value with observed gusts < min_gust
+        For data[G.BOTH] filter out values with observed gusts < min_gust
 
         INPUT
         data:           dictionary containing [G.BOTH]
@@ -152,28 +152,33 @@ class EntryFilter:
 
              
 
-    #def filter_according_mean_wind_acc(self, data, rel_acc):
+    def filter_according_mean_wind_acc(self, data, max_err):
+        """
+        For data[G.BOTH] filter out values with relative accuracy in mean wind better
+        than max_err
 
-    #    for stat in data[G.STAT_NAMES]:
+        INPUT
+        data:           dictionary containing [G.BOTH]
+        max_err:        threshold value. Only entries with relative error in mean wind
+                        smaller than rel_acc are kept.
 
-    #        wind_obs = data[G.OBS][G.STAT][stat][G.PAR]['FF_10M'].values
-    #        wind_mod = data[G.MODEL][G.STAT][stat][G.FIELDS][G.MEAN_WIND]
-    #        abs_diff = np.abs(wind_obs - wind_mod)
+        OUTPUT
+        data:           data with data[G.BOTH] altered according to filter
+        """
+        hist_tag = 'filter_according_mean_wind_acc'
+        prerequisites = ['01_prep_obs', '02_prep_model',
+                        'calc_model_fields', 'join_model_and_obs', 'join_model_runs']
+        data = check_prerequisites(data, prerequisites, hist_tag)
 
-    #        mask = abs_diff > rel_acc*wind_obs
-    #        mask[np.isnan(wind_obs)] = True
-    #        #print('remove ' + str(np.sum(mask)) + ' values du to inaccurate mean wind')
+        for stat in data[G.STAT_NAMES]:
 
-    #        # remove in obs
-    #        obs_fields = data[G.OBS][G.PAR_NAMES]
-    #        for field in obs_fields:
-    #            data[G.OBS][G.STAT][stat][G.PAR][field][mask] = np.nan
-
-    #        # remove in model
-    #        mod_gust_fields = list(data[G.MODEL][G.STAT][stat][G.FIELDS].keys())
-    #        for field in mod_gust_fields:
-    #            data[G.MODEL][G.STAT][stat][G.FIELDS][field][mask] = np.nan
-
-    #    return(data)
+            both = data[G.BOTH][G.STAT][stat]
+            wind_obs = both[G.OBS_MEAN_WIND].values
+            wind_mod = both[G.MODEL_MEAN_WIND].values
+            abs_diff = np.abs(wind_obs - wind_mod)
+            mask = abs_diff <= max_err*wind_obs
+            mask[np.isnan(wind_obs)] = True
+            data[G.BOTH][G.STAT][stat] = data[G.BOTH][G.STAT][stat][mask]
             
+        return(data)
 
