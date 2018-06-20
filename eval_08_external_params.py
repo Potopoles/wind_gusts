@@ -26,7 +26,7 @@ i_model_fields = [G.GUST_MIX_COEF_LINEAR,
 min_gust_levels = [0,5,10,20]
 min_gust_levels = [5]
 varnames = ['dz','Height','sso_stdh','slo_ang',
-            'skyview','slo_asp','z0']
+            'skyview','slo_asp','z0', 'hsurf']
 #varname = 'dz'
 #varname = 'Height'
 #varname = 'sso_stdh'

@@ -129,6 +129,7 @@ def calc_model_fields(data, i_model_fields):
 
                     # resample to maximum hourly value
                     field = gust.resample('H').max()
+                    #field = gust.resample('H', how=lambda x: np.percentile(x, q=80))
 
                 elif field_name in G.FIELDS_BRA_KVAL:
 
@@ -144,6 +145,8 @@ def calc_model_fields(data, i_model_fields):
 
                     gust = curr_raw[gust_field_name]
                     maxid = gust.resample('H').agg({gust_field_name: np.argmax})
+                    #print(maxid)
+                    #quit()
                     values = curr_raw[k_field_name][maxid].values
                     field = pd.DataFrame(values, index=maxid.index.levels[1], columns=[field_name]).astype(int)
 

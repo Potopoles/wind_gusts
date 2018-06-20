@@ -23,7 +23,8 @@ i_model_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_BRASSEUR_LOBOU,
                 G.GUST_ICON]
 min_gust_levels = [0,5,10,20]
-#min_gust_levels = [10]
+min_gust_levels = [10]
+label = ''
 #####################################
 
 # create directories
@@ -136,7 +137,10 @@ for min_gust in min_gust_levels:
         if i_plot == 1:
             plt.show()
         elif i_plot > 1:
-            plot_name = CN.plot_path + 'scatter_minGust_'+str(min_gust).zfill(2)+'.png'
+            if label == '':
+                plot_name = CN.plot_path + 'scatter_minGust_'+str(min_gust).zfill(2)+'.png'
+            else:
+                plot_name = CN.plot_path + 'scatter_'+label+'_minGust_'+str(min_gust).zfill(2)+'.png'
             print(plot_name)
             plt.savefig(plot_name)
             plt.close('all')

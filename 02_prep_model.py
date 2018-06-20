@@ -33,6 +33,7 @@ slo_ang_file = '../extern_par/SLO_ANG.nc'
 skyview_file = '../extern_par/SKYVIEW.nc'
 slo_asp_file = '../extern_par/SLO_ASP.nc'
 z0_file = '../extern_par/Z0.nc'
+hsurf_file = '../extern_par/HSURF.nc'
 #####################################
 
 lm_runs = os.listdir(CN.raw_mod_path)
@@ -45,7 +46,7 @@ file_inds = ind0 + np.arange(0,len(mod_stations))
 stat_i_inds = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,9].astype(np.int)
 
 if case_index == 0:
-    use_stat = file_inds <= 1300
+    use_stat = file_inds <= 710
     use_stat[stat_i_inds == 0] = False
 else:
     use_stat = stat_i_inds != 0
@@ -63,6 +64,7 @@ slo_ang = Dataset(slo_ang_file, 'r')['SLO_ANG'][:]
 skyview = Dataset(skyview_file, 'r')['SKYVIEW'][:]
 slo_asp = Dataset(slo_asp_file, 'r')['SLO_ASP'][:]
 z0 = Dataset(z0_file, 'r')['Z0'][:]
+hsurf = Dataset(hsurf_file, 'r')['HSURF'][:]
 
 
 # load main data file
@@ -104,6 +106,10 @@ for i,stat_key in enumerate(mod_stations):
         series = pd.Series(z0[stat_i_inds[i],stat_j_inds[i]],
                         index=data[G.STAT_META][stat_key].index)
         data[G.STAT_META][stat_key]['z0'] = series
+
+        series = pd.Series(hsurf[stat_i_inds[i],stat_j_inds[i]],
+                        index=data[G.STAT_META][stat_key].index)
+        data[G.STAT_META][stat_key]['hsurf'] = series
 
 
         # add model data
