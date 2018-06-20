@@ -14,7 +14,7 @@ from namelist_cases import Case_Namelist
 case_index = 0
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 1
+i_plot = 2
 # model fields to calculate 
 i_model_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_MIX_COEF_NONLIN,
@@ -23,7 +23,7 @@ i_model_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_BRASSEUR_LOBOU,
                 G.GUST_ICON]
 min_gust_levels = [0,5,10,20]
-min_gust_levels = [10]
+#min_gust_levels = [10]
 #####################################
 
 # create directories
@@ -85,6 +85,7 @@ for min_gust in min_gust_levels:
 
             # delete NAN
             mask = np.isnan(X[:,0])
+            mask[np.isnan(y)] = True
             X = X[~mask,:]
             y = y[~mask]
 
@@ -92,6 +93,8 @@ for min_gust in min_gust_levels:
             # determine max/min y
             ymax = max(np.max(y),ymax)
             ymin = min(np.min(y),ymin)
+            ymax = 70
+            ymin = -50
 
             # calculate median
             dmp = 1
@@ -114,7 +117,7 @@ for min_gust in min_gust_levels:
             ax.plot(X, line, color='red')
             ax.plot(mp_x, mp_y, color='orange')
             ax.set_xlabel(xlab)
-            if (mi == 0) or (mi == 2):
+            if mi % ncol == 0 or field_name == G.MODEL_MEAN_WIND:
                 ax.set_ylabel(ylab)
             ax.axhline(0, color='k', linewidth=0.8)
             ax.set_title(field_name)

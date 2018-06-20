@@ -6,6 +6,7 @@ import pickle
 import globals as G
 from namelist_cases import Case_Namelist
 import os
+from netCDF4 import Dataset
 
 ############ USER INPUT #############
 case_index = 0
@@ -27,17 +28,42 @@ model_params = ['ntstep','k_bra_es','k_bra_lb','k_bra_ub', # time step and model
                 'phil1', # geopotential at lowest model level 
                 'ps']
 hist_tag = '02_prep_model'
+sso_stdh_file = '../extern_par/SSO_STDH.nc'
+slo_ang_file = '../extern_par/SLO_ANG.nc'
+skyview_file = '../extern_par/SKYVIEW.nc'
+slo_asp_file = '../extern_par/SLO_ASP.nc'
+z0_file = '../extern_par/Z0.nc'
 #####################################
 
 lm_runs = os.listdir(CN.raw_mod_path)
-
 mod_stations_file = CN.raw_mod_path + lm_runs[0] + '/fort.700'
+
 
 # read model station names
 mod_stations = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,0]
+file_inds = ind0 + np.arange(0,len(mod_stations))
+stat_i_inds = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,9].astype(np.int)
+
 if case_index == 0:
-    #mod_stations = ['ABO','AEG'] # debug
-    mod_stations = mod_stations[:100] # debug
+    use_stat = file_inds <= 1300
+    use_stat[stat_i_inds == 0] = False
+else:
+    use_stat = stat_i_inds != 0
+
+mod_stations = mod_stations[use_stat]
+file_inds = file_inds[use_stat]
+stat_i_inds = stat_i_inds[use_stat]
+stat_j_inds = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[use_stat,8].astype(np.int)
+stat_dz = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[use_stat,11].astype(np.float)
+
+
+# nc file for sso_stdh
+sso_stdh = Dataset(sso_stdh_file, 'r')['SSO_STDH'][:]
+slo_ang = Dataset(slo_ang_file, 'r')['SLO_ANG'][:]
+skyview = Dataset(skyview_file, 'r')['SKYVIEW'][:]
+slo_asp = Dataset(slo_asp_file, 'r')['SLO_ASP'][:]
+z0 = Dataset(z0_file, 'r')['Z0'][:]
+
 
 # load main data file
 data = pd.read_pickle(CN.obs_path)
@@ -47,15 +73,40 @@ obs_stations = list(data[G.OBS][G.STAT].keys())
 # add entry for model data
 data[G.MODEL] = {G.STAT:{}}
 
-# read model data
-for i,_ in enumerate(mod_stations):
-    ind = i+ind0 
-    #print(ind)
 
-    stat_key = mod_stations[i]
+# read model data
+for i,stat_key in enumerate(mod_stations):
+    ind = file_inds[i]
 
     if stat_key in obs_stations:
         print('use ' + stat_key)
+
+        # Add model related information to station metadata
+        series = pd.Series([stat_dz[i]], index=data[G.STAT_META][stat_key].index)
+        data[G.STAT_META][stat_key]['dz'] = series
+
+        series = pd.Series(sso_stdh[stat_i_inds[i],stat_j_inds[i]],
+                        index=data[G.STAT_META][stat_key].index)
+        data[G.STAT_META][stat_key]['sso_stdh'] = series
+
+        series = pd.Series(slo_ang[stat_i_inds[i],stat_j_inds[i]],
+                        index=data[G.STAT_META][stat_key].index)
+        data[G.STAT_META][stat_key]['slo_ang'] = series
+
+        series = pd.Series(skyview[stat_i_inds[i],stat_j_inds[i]],
+                        index=data[G.STAT_META][stat_key].index)
+        data[G.STAT_META][stat_key]['skyview'] = series
+
+        series = pd.Series(slo_asp[stat_i_inds[i],stat_j_inds[i]],
+                        index=data[G.STAT_META][stat_key].index)
+        data[G.STAT_META][stat_key]['slo_asp'] = series
+
+        series = pd.Series(z0[stat_i_inds[i],stat_j_inds[i]],
+                        index=data[G.STAT_META][stat_key].index)
+        data[G.STAT_META][stat_key]['z0'] = series
+
+
+        # add model data
         raw_data = {}
         stat_data = {G.RAW:raw_data}
         data[G.MODEL][G.STAT][stat_key] = stat_data
@@ -82,6 +133,7 @@ for i,_ in enumerate(mod_stations):
 
     else:
         print('do not use ' + stat_key)
+
 print('##################')
 
 # save names of used stations
