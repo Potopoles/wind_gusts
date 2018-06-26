@@ -265,6 +265,125 @@ def join_all_stations(data):
 
 
 
+
+def plot_error(obs, model_mean, obs_mean, gust, gust_init):
+    fig,axes = plt.subplots(2,3, figsize=(15,10))
+
+    xmin = 0
+    xmax = 40
+    ymin = -40
+    ymax = 40
+
+    err = gust - obs
+    err_init = gust_init - obs
+    err_mean = model_mean - obs_mean
+    rmse = np.sqrt(np.sum(err**2)/len(err))
+    rmse_init = np.sqrt(np.sum(err_init**2)/len(err))
+
+    # calculate median
+    dmp = 1
+    mp_borders = np.arange(np.floor(xmin),np.ceil(xmax),dmp)
+    mp_x = mp_borders[:-1] + np.diff(mp_borders)/2
+    mp_y = np.full(len(mp_x),np.nan)
+    mp_y_init = np.full(len(mp_x),np.nan)
+    mp_y_mm = np.full(len(mp_x),np.nan)
+    mp_y_mm_init = np.full(len(mp_x),np.nan)
+    mp_y_mean = np.full(len(mp_x),np.nan)
+    for i in range(0,len(mp_x)):
+        # obs gust
+        inds = (obs > mp_borders[i]) & (obs <= mp_borders[i+1])
+        if np.sum(inds) > 10:
+            mp_y[i] = np.median(err[inds])
+            mp_y_init[i] = np.median(err_init[inds])
+        # model mean
+        inds = (model_mean > mp_borders[i]) & (model_mean <= mp_borders[i+1])
+        if np.sum(inds) > 10:
+            mp_y_mm[i] = np.median(err[inds])
+            mp_y_mm_init[i] = np.median(err_init[inds])
+        # obs mean
+        inds = (obs_mean > mp_borders[i]) & (obs_mean <= mp_borders[i+1])
+        if np.sum(inds) > 10:
+            mp_y_mean[i] = np.median(err_mean[inds])
+
+    xlab = 'Observed gust (OBS) [m/s]'
+    ylab = 'Model gust error (MOD-OBS) [m/s]'
+
+    ax = axes[0,0]
+    ax.scatter(obs, gust_init-obs, color='black', marker=".")
+    ax.plot(mp_x, mp_y_init, color='orange')
+    ax.axhline(y=0,c='grey')
+    ax.set_xlim(xmin,xmax)
+    ax.set_ylim(ymin,ymax)
+    ax.set_title('original')
+    ax.set_xlabel(xlab)
+    ax.set_ylabel(ylab)
+    ax.text(xmax-0.3*(xmax-xmin), ymax-0.10*(ymax-ymin), 'rmse '+str(np.round(rmse_init,2)), color='red')
+    ax.grid()
+
+    ax = axes[0,1]
+    ax.scatter(obs, gust-obs, color='black', marker=".")
+    ax.plot(mp_x, mp_y, color='orange')
+    ax.axhline(y=0,c='grey')
+    ax.set_xlim(xmin,xmax)
+    ax.set_ylim(ymin,ymax)
+    ax.set_title('new')
+    ax.set_xlabel(xlab)
+    ax.set_ylabel(ylab)
+    ax.text(xmax-0.3*(xmax-xmin), ymax-0.10*(ymax-ymin), 'rmse '+str(np.round(rmse,2)), color='red')
+    ax.grid()
+
+    print('rmse '+str(np.round(rmse,2)))
+
+    # model mean wind
+    xlab = 'Model mean wind [m/s]'
+    ylab = 'Model gust error (MOD-OBS) [m/s]'
+
+    ax = axes[1,0]
+    ax.scatter(model_mean, gust_init-obs, color='black', marker=".")
+    ax.plot(mp_x, mp_y_mm_init, color='orange')
+    ax.axhline(y=0,c='grey')
+    ax.set_xlim(xmin,xmax/2)
+    ax.set_ylim(ymin,ymax)
+    ax.set_title('original')
+    ax.set_xlabel(xlab)
+    ax.set_ylabel(ylab)
+    ax.grid()
+
+    ax = axes[1,1]
+    ax.scatter(model_mean, gust-obs, color='black', marker=".")
+    ax.plot(mp_x, mp_y_mm, color='orange')
+    ax.axhline(y=0,c='grey')
+    ax.set_xlim(xmin,xmax/2)
+    ax.set_ylim(ymin,ymax)
+    ax.set_title('new')
+    ax.set_xlabel(xlab)
+    ax.set_ylabel(ylab)
+    ax.grid()
+
+    xlab = 'Obs mean wind [m/s]'
+    ylab = 'Model mean wind error (MOD-OBS) [m/s]'
+
+    ax = axes[1,2]
+    ax.scatter(obs_mean, model_mean - obs_mean, color='black', marker=".")
+    ax.plot(mp_x, mp_y_mean, color='orange')
+    ax.axhline(y=0,c='grey')
+    ax.set_xlim(xmin,xmax/2)
+    ax.set_ylim(ymin,ymax)
+    ax.set_title('mean wind error')
+    ax.set_xlabel(xlab)
+    ax.set_ylabel(ylab)
+    ax.grid()
+
+    #plt.tight_layout()
+
+
+
+
+
+
+
+
+
 #def calc_scores(data, i_scores):
 #
 #    """

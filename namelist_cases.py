@@ -37,10 +37,18 @@ class Case_Namelist:
         # 3 Foehnsturm
         {OBS_RAW:['20180428sfc.','20180429sfc.','20180430sfc.','20180501sfc.'],
                     OBS:'20180429_Foehnsturm', MOD_RAW:'20180429_Foehnsturm', MOD:'ref'},
-        # 4 all
+        # 4 Friederike
+        {OBS_RAW:['20180115sfc.','20180116sfc.','20180117sfc.','20180118sfc.','20180119sfc.'],
+                    OBS:'20180116_Friederike', MOD_RAW:'20180116_Friederike', MOD:'ref'},
+        # 5 JanuaryDays
+        {OBS_RAW:['20180119sfc.','20180120sfc.','20180121sfc.','20180122sfc.','20180123sfc.',
+                    '20180124sfc.','20180125sfc.','20180126sfc.','20180127sfc.','20180128sfc.'],
+                    OBS:'20180119_JanuaryDays', MOD_RAW:'20180119_JanuaryDays', MOD:'ref'},
+        # 6 all
         {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.',
                   '20180502sfc.','20180503sfc.','20180504sfc.','20180505sfc.',
-                  '20180428sfc.','20180429sfc.','20180430sfc.','20180501sfc.'],
+                  '20180428sfc.','20180429sfc.','20180430sfc.','20180501sfc.',
+                  '20180115sfc.','20180116sfc.','20180117sfc.','20180118sfc.','20180119sfc.'],
                     OBS:'All', MOD_RAW:'All', MOD:'ref'}
     ]
 
