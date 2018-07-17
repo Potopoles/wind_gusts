@@ -12,10 +12,10 @@ from namelist_cases import Case_Namelist
 
 
 ############ USER INPUT #############
-case_index = 0
+case_index = 6
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 1
+i_plot = 2
 # model fields to calculate 
 i_model_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_MIX_COEF_NONLIN,
@@ -124,6 +124,7 @@ for min_gust in min_gust_levels:
 
                 # delete NAN
                 mask = np.isnan(X[:,0])
+                mask[np.isnan(y)] = True
                 X = X[~mask,:]
                 y = y[~mask]
 

@@ -14,7 +14,7 @@ from namelist_cases import Case_Namelist
 
 
 ############ USER INPUT #############
-case_index = 0
+case_index = 6
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -75,6 +75,7 @@ for min_gust in min_gust_levels:
 
             # delete NAN
             mask = np.isnan(x)
+            mask[np.isnan(y)] = True
             x = x[~mask]
             y = y[~mask]
 

@@ -9,7 +9,7 @@ import os
 from netCDF4 import Dataset
 
 ############ USER INPUT #############
-case_index = 6
+case_index = 2
 CN = Case_Namelist(case_index)
 # time step [s] of model
 model_dt = 10
@@ -46,8 +46,9 @@ file_inds = ind0 + np.arange(0,len(mod_stations))
 stat_i_inds = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,9].astype(np.int)
 
 if case_index == 0:
-    use_stat = file_inds <= 731
-    use_stat[stat_i_inds == 0] = False
+    #use_stat = file_inds <= 731
+    #use_stat[stat_i_inds == 0] = False
+    use_stat = stat_i_inds != 0
 else:
     use_stat = stat_i_inds != 0
 
