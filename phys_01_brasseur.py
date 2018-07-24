@@ -8,27 +8,24 @@ import globals as G
 from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-case_index = 6
+case_index = 0
 CN = Case_Namelist(case_index)
-#min_gust = 10
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_scaling = 1
 i_label = ''
 i_load = 0
-
-#i_mode_ints = range(0,len(modes))
-#i_mode_ints = [len(modes)-1]
-#i_mode_ints = [1]
-min_gust = 0
-#i_post_process = 1
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'
 i_sample_weight = '1'
 max_mean_wind_error = 1.0
-#max_mean_wind_error = 0.5
-#max_mean_wind_error = 0.3
+modes = ['es',
+        'lb',
+        'es_rho',
+        'lb_rho']
+i_mode_ints = range(0,len(modes))
+#i_mode_ints = [2,3]
 #####################################
 
 
@@ -37,13 +34,9 @@ if not i_load:
     # load data
     data = pickle.load( open(CN.mod_path, 'rb') )
 
-    #stat_keys = ['AEG','ABO', 'AIG']
-    #stat_keys = ['ABO', 'AEG']
     stat_keys = data[G.STAT_NAMES]
 
-
     lm_runs = list(data[G.MODEL][G.STAT][stat_keys[0]][G.RAW].keys())
-    #lm_runs = [lm_runs[2]]
     n_hours = len(lm_runs)*24
     n_stats = len(stat_keys)
     ts_per_hour = int(3600/model_dt)
@@ -55,14 +48,15 @@ if not i_load:
     gust_est = np.full((n_hours, n_stats, ts_per_hour), np.nan)
     kval_lb = np.full((n_hours, n_stats, ts_per_hour), np.nan)
     gust_lb = np.full((n_hours, n_stats, ts_per_hour), np.nan)
-    tke_est = np.full((n_hours, n_stats, ts_per_hour), np.nan)
+    rho_est = np.full((n_hours, n_stats, ts_per_hour), np.nan)
+    rho_lb = np.full((n_hours, n_stats, ts_per_hour), np.nan)
+    rho_surf = np.full((n_hours, n_stats, ts_per_hour), np.nan)
     print('3D shape ' + str(kval_est.shape))
     # 2D
     obs_gust = np.full((n_hours, n_stats), np.nan)
     obs_mean = np.full((n_hours, n_stats), np.nan)
 
     for lmi,lm_run in enumerate(lm_runs):
-        print(lm_run)
         lm_inds = np.arange(lmi*24,(lmi+1)*24)
         model_hours_tmp = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
                                     ['k_bra_es'].resample('H').max().index
@@ -83,13 +77,16 @@ if not i_load:
                                             [lm_run]['zv_bra_es'].loc[loc_str].values
                 gust_lb[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
                                             [lm_run]['zv_bra_lb'].loc[loc_str].values
-                tke_est[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                            [lm_run]['tke_bra_es'].loc[loc_str].values
+                rho_est[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                                            [lm_run]['rho_bra_es'].loc[loc_str].values
+                rho_lb[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                                            [lm_run]['rho_bra_lb'].loc[loc_str].values
+                rho_surf[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                                            [lm_run]['rhol1'].loc[loc_str].values
 
             # 2D
             obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][model_hours_tmp] 
             obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_tmp] 
-
 
 
     # Process fields
@@ -115,7 +112,6 @@ if not i_load:
     # combine both
     obsmask[errormask] = True
 
-    print(kval_est.shape)
     obs_gust = obs_gust[~obsmask] 
     obs_mean = obs_mean[~obsmask]
     model_mean_hr = model_mean_hr[~obsmask]
@@ -124,17 +120,9 @@ if not i_load:
     gust_est = gust_est[~obsmask]
     kheight_lb = kheight_lb[~obsmask]
     gust_lb = gust_lb[~obsmask]
-    tke_est = tke_est[~obsmask]
-
-
-    ## observation to 1D and filter values
-    #obs_gust_flat = obs_gust.flatten()
-    #obs_mean_flat = obs_mean.flatten()
-    #obsmask = np.isnan(obs_gust_flat)
-    #obsmask[obs_gust_flat < min_gust] = True
-    #obs_gust_flat = obs_gust_flat[~obsmask] 
-    #obs_mean_flat = obs_mean_flat[~obsmask] 
-    ##N = obs_gust_flat.shape[0]
+    rho_est = rho_est[~obsmask]
+    rho_lb = rho_lb[~obsmask]
+    rho_surf = rho_surf[~obsmask]
 
     data = {}
     data['model_mean_hr'] = model_mean_hr
@@ -143,14 +131,16 @@ if not i_load:
     data['gust_lb'] = gust_lb
     data['kheight_est'] = kheight_est
     data['kheight_lb'] = kheight_lb
-    data['tke_est'] = tke_est
+    data['rho_est'] = rho_est
+    data['rho_lb'] = rho_lb
+    data['rho_surf'] = rho_surf
     data['obs_gust'] = obs_gust
     data['obs_mean'] = obs_mean 
 
-    pickle.dump(data, open(CN.phys_bralb_path, 'wb'))
+    pickle.dump(data, open(CN.phys_bra_path, 'wb'))
 
 else:
-    data = pickle.load( open(CN.phys_bralb_path, 'rb') )
+    data = pickle.load( open(CN.phys_bra_path, 'rb') )
 
     model_mean_hr = data['model_mean_hr']
     model_mean = data['model_mean']
@@ -158,23 +148,13 @@ else:
     gust_lb = data['gust_lb']
     kheight_est = data['kheight_est']
     kheight_lb = data['kheight_lb']
-    tke_est = data['tke_est']
+    rho_est = data['rho_est']
+    rho_lb = data['rho_lb']
+    rho_surf = data['rho_surf']
     obs_gust = data['obs_gust']
     obs_mean = data['obs_mean']
 
 
-
-
-
-tke_est[tke_est < 0.1] = 0.1
-
-
-
-modes = ['no_tke',
-        'lb_no_tke',
-        'times_tke',
-        'div_tke']
-i_mode_ints = range(0,len(modes))
 for mode_int in i_mode_ints:
     mode = modes[mode_int]
     print('#################################################################################')
@@ -204,19 +184,23 @@ for mode_int in i_mode_ints:
         sgd_model_mean = model_mean[sgd_inds,:]
         sgd_gust_est = gust_est[sgd_inds,:]
         sgd_kheight_est = kheight_est[sgd_inds,:]
-        sgd_tke_est = tke_est[sgd_inds,:]
+        sgd_rho_est = rho_est[sgd_inds,:]
+        sgd_rho_lb = rho_lb[sgd_inds,:]
+        sgd_rho_surf = rho_surf[sgd_inds,:]
         sgd_gust_lb = gust_lb[sgd_inds,:]
         sgd_kheight_lb = kheight_lb[sgd_inds,:]
 
         # calc current time step gusts
-        if mode == 'no_tke':
+        if mode == 'es':
             sgd_gust = sgd_gust_est - alphas[0]*sgd_kheight_est*(sgd_gust_est -  sgd_model_mean)
-        if mode == 'lb_no_tke':
+        if mode == 'lb':
             sgd_gust = sgd_gust_lb - alphas[0]*sgd_kheight_lb*(sgd_gust_lb -  sgd_model_mean)
-        elif mode == 'times_tke':
-            sgd_gust = sgd_gust_est - alphas[0]*sgd_kheight_est*sgd_tke_est*(sgd_gust_est -  sgd_model_mean)
-        elif mode == 'div_tke':
-            sgd_gust = sgd_gust_est - alphas[0]*sgd_kheight_est/sgd_tke_est*(sgd_gust_est -  sgd_model_mean)
+        elif mode == 'es_rho':
+            sgd_gust = sgd_gust_est*sgd_rho_est/sgd_rho_surf - alphas[0]*sgd_kheight_est*\
+                        (sgd_gust_est*sgd_rho_est/sgd_rho_surf -  sgd_model_mean)
+        elif mode == 'lb_rho':
+            sgd_gust = sgd_gust_lb*sgd_rho_lb/sgd_rho_surf - alphas[0]*sgd_kheight_lb*\
+                        (sgd_gust_lb*sgd_rho_lb/sgd_rho_surf -  sgd_model_mean)
 
         sgd_gust[sgd_gust < 0] = 0
 
@@ -228,7 +212,9 @@ for mode_int in i_mode_ints:
         sgd_model_mean = model_mean[sgd_inds,:][I,maxid].squeeze()
         sgd_gust_est = gust_est[sgd_inds,:][I,maxid].squeeze()
         sgd_kheight_est = kheight_est[sgd_inds,:][I,maxid].squeeze()
-        sgd_tke_est = tke_est[sgd_inds,:][I,maxid].squeeze()
+        sgd_rho_est = rho_est[sgd_inds,:][I,maxid].squeeze()
+        sgd_rho_lb = rho_lb[sgd_inds,:][I,maxid].squeeze()
+        sgd_rho_surf = rho_surf[sgd_inds,:][I,maxid].squeeze()
         sgd_kheight_lb = kheight_lb[sgd_inds,:][I,maxid].squeeze()
         sgd_gust_lb = gust_lb[sgd_inds,:][I,maxid].squeeze()
 
@@ -243,14 +229,16 @@ for mode_int in i_mode_ints:
             if c % 10 == 0:
                 print(str(c) + '\t' + str(error_now) + '\t' + str(np.abs(np.mean(d_errors))))
 
-        if mode == 'no_tke':
+        if mode == 'es':
             dalpha = -2/N * np.sum( -sgd_kheight_est*(sgd_gust_est -  sgd_model_mean) * deviation )
-        if mode == 'lb_no_tke':
+        if mode == 'lb':
             dalpha = -2/N * np.sum( -sgd_kheight_lb*(sgd_gust_lb -  sgd_model_mean) * deviation )
-        elif mode == 'times_tke':
-            dalpha = -2/N * np.sum( -sgd_kheight_est*sgd_tke_est*(sgd_gust_est -  sgd_model_mean) * deviation )
-        elif mode == 'div_tke':
-            dalpha = -2/N * np.sum( -sgd_kheight_est/sgd_tke_est*(sgd_gust_est -  sgd_model_mean) * deviation )
+        elif mode == 'es_rho':
+            dalpha = -2/N * np.sum( -sgd_kheight_est*\
+                                    (sgd_gust_est*sgd_rho_est/sgd_rho_surf -  sgd_model_mean) * deviation )
+        elif mode == 'lb_rho':
+            dalpha = -2/N * np.sum( -sgd_kheight_lb*\
+                                    (sgd_gust_lb*sgd_rho_lb/sgd_rho_surf -  sgd_model_mean) * deviation )
 
         alphas[0] = alphas[0] - learning_rate * dalpha
 
@@ -263,14 +251,16 @@ for mode_int in i_mode_ints:
 
 
     # final gust
-    if mode == 'no_tke':
+    if mode == 'es':
         gust = gust_est - alphas[0]*kheight_est*(gust_est - model_mean)
-    if mode == 'lb_no_tke':
+    if mode == 'lb':
         gust = gust_lb - alphas[0]*kheight_lb*(gust_lb - model_mean)
-    elif mode == 'times_tke':
-        gust = gust_est - alphas[0]*kheight_est*tke_est*(gust_est - model_mean)
-    elif mode == 'div_tke':
-        gust = gust_est - alphas[0]*kheight_est/tke_est*(gust_est - model_mean)
+    elif mode == 'es_rho':
+        gust = gust_est*rho_est/rho_surf - alphas[0]*kheight_est*\
+                                    (gust_est*rho_est/rho_surf -  model_mean)
+    elif mode == 'lb_rho':
+        gust = gust_lb*rho_lb/rho_surf - alphas[0]*kheight_lb*\
+                                    (gust_lb*rho_lb/rho_surf -  model_mean)
         
     gust[gust < 0] = 0
 
@@ -280,7 +270,7 @@ for mode_int in i_mode_ints:
     gust_max = gust[I,maxid].squeeze()
 
     # original gust
-    if mode == 'lb_no_tke':
+    if mode in ['lb', 'lb_rho']:
         maxid = gust_lb.argmax(axis=1)
         I = np.indices(maxid.shape)
         gust_max_orig = gust_lb[I,maxid].squeeze()

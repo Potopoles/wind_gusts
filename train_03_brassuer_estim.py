@@ -14,15 +14,15 @@ from sklearn.preprocessing import PolynomialFeatures
 from sklearn.preprocessing import StandardScaler
 
 ############ USER INPUT #############
-case_index = 1
+case_index = 0
 CN = Case_Namelist(case_index)
 #min_gust = 10
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_scaling = 1
-i_label = ''
-i_load = 1
+i_label =  ''
+i_load = 0
 modes = ['gust',
         'gust_kheight',
         'gust_height',

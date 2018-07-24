@@ -29,6 +29,9 @@ ALL_STAT = 'all_stations'
 # 3rd level: key in STAT leading to raw (time step) model output fields 
 # data[MODEL][STAT][RAW]
 RAW = 'raw'
+# 3rd level: key in STAT leading to raw (time step) model output fields for brasseur lower bound vertical profile wind & tke
+# data[MODEL][STAT][RAW2]
+RAW2 = 'raw2'
 # 3rd level MODEL:  key to hourly gust data
 # data[MODEL][STAT][FIELDS]
 FIELDS = 'fields'

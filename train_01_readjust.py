@@ -3,30 +3,27 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
-from functions import plot_error, scale
+from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-case_index = 6
+case_index = 0
 CN = Case_Namelist(case_index)
-#min_gust = 10
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_label = ''
 i_load = 1
-#i_label = 'fullscaled'
 i_output_error = 1
-#learning_rate_factor = 1E-4
-learning_rate_factor = 1E-3
+default_learning_rate_factor = 1E-2
 
 modes = ['ln',
          'nl']
 i_mode_ints = range(0,len(modes))
-#i_mode_ints = [0]
+i_mode_ints = [0]
 max_mean_wind_error = 1.0
-#max_mean_wind_error = 0.3
+i_overwrite_param_file = 0
 #####################################
 
 # create directories
@@ -139,8 +136,12 @@ for mode_int in i_mode_ints:
     print('#################################################################################')
     print('############################## ' + str(mode) + ' ################################')
 
+    if mode == 'nl':
+        learning_rate_factor = default_learning_rate_factor * 1/20
+    else:
+        learning_rate_factor = default_learning_rate_factor
 
-    alpha0= 0
+
     alpha1 = 0
     alpha2 = 0
     error_old = np.Inf
@@ -182,17 +183,14 @@ for mode_int in i_mode_ints:
 
         # gradient of parameters
         if mode == 'ln':
-            dalpha0 = 0
             dalpha1 = -2/N * np.sum( tcm_max*zvp10_max * deviation )
             dalpha2 = 0
         elif mode == 'nl':
-            dalpha0 = 0
             dalpha1 = -2/N * np.sum( tcm_max*zvp10_max * deviation )
             dalpha2 = -2/N * np.sum( tcm_max*zvp10_max**2 * deviation )
         else:
             raise ValueError('wrong mode')
 
-        alpha0 = alpha0 - learning_rate * dalpha0
         alpha1 = alpha1 - learning_rate * dalpha1
         alpha2 = alpha2 - learning_rate * dalpha2
 
@@ -202,11 +200,19 @@ for mode_int in i_mode_ints:
         c += 1
 
     print('############')
-    print('alpha0 ' + str(alpha0))
     print('alpha1 ' + str(alpha1))
     print('alpha2 ' + str(alpha2))
     print('############')
 
+    # SAVE PARAMETERS 
+    if os.path.exists(CN.params_readj_path):
+        params = pickle.load( open(CN.params_readj_path, 'rb') )
+    else:
+        params = {}
+    params[mode] = {'alphas':{'1':alpha1,'2':alpha2}}
+    pickle.dump(params, open(CN.params_readj_path, 'wb'))
+
+    # PLOT
     plot_error(obs_gust_flat, model_mean, obs_mean_flat, gust_max, gust_max_unscaled)
     plt.suptitle('ADJUST  '+mode)
 

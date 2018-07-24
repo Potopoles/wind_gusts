@@ -4,193 +4,50 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
-from functions import plot_error, scale
+from functions import plot_error, apply_scaling
 import globals as G
 from namelist_cases import Case_Namelist
+from functions_stat import calculate_gust, combine_features
 
 ############ USER INPUT #############
-case_index = 6
+case_index = 1
 CN = Case_Namelist(case_index)
-#min_gust = 10
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_label = ''
-i_load = 1
+i_load = 0
 i_output_error = 1
 learning_rate_factor = 1E-3
 d_error_thresh = 1E-5
 i_sample_weight = '1'
+i_overwrite_param_file = 0
 
 modes = ['mean',
          'mean_mean2',
-         #'mean_tcm',
-         #'mean_height',
+         'mean_tke',
+         'mean_height',
          #'mean_sso',
-         'mean_tkebra',
-         'mean_tkebra_mean2',
          'mean_gustbra',
+         'mean_gustbra_tke',
+         'mean_gustbra_height',
          'mean_gustbra_dvl3v10',
-         'mean_kbra',
+         'mean_zbra',
          'mean_dvl3v10',
          'mean_icon',
          'mean_gustbra_icon',
          #'mean_z0',
-         'mean_gustbra_mean2',
+         'mean_gustbra_mean2']
          #'mean_gustbra_mean2_icon',
-         'mean_gustbra_mean2_kbra',
-         'mean_gustbra_mean2_tkebra',
-         'mean_gustbra_mean2_tkebrakbra']
+         #'mean_gustbra_mean2_zbra']
 i_mode_ints = range(0,len(modes))
 #i_mode_ints = [len(modes)-1]
-#i_mode_ints = [12]
+#i_mode_ints = [6]
 max_mean_wind_error = 1.0
-#max_mean_wind_error = 0.3
 sgd_prob = 0.02
-feature_names = ['tcm','zvp10', 'hsurf', 'sso_stdh', 'tke_bra_es', 'zv_bra_es', 'k_bra_es', 'dvl3v10', 'z0', \
-                'icon_gust']
-
-def calculate_gust(mode, features, alphas, zvp10_unsc):
-    if mode == 'mean':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10']
-    elif mode == 'mean_mean2':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['zvp10']**2
-    #elif mode == 'mean_tcm':
-    #    gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['tcm']
-    #elif mode == 'mean_height':
-    #    gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['hsurf']
-    #elif mode == 'mean_sso':
-    #    gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['sso_stdh']
-    elif mode == 'mean_tkebra':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['tke_bra_es']
-    elif mode == 'mean_tkebra_mean2':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['tke_bra_es'] \
-                + alphas[3]*features['zvp10']**2
-    elif mode == 'mean_gustbra':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['zv_bra_es']
-    elif mode == 'mean_gustbra_dvl3v10':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['zv_bra_es'] \
-                + alphas[3]*features['dvl3v10']
-    elif mode == 'mean_kbra':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['k_bra_es']
-    elif mode == 'mean_dvl3v10':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['dvl3v10']
-    elif mode == 'mean_icon':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['icon_gust']
-    elif mode == 'mean_gustbra_icon':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['zv_bra_es'] + \
-                + alphas[3]*features['icon_gust']
-    #elif mode == 'mean_z0':
-    #    gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['z0']
-    elif mode == 'mean_gustbra_mean2':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['zv_bra_es'] \
-                + alphas[3]*features['zvp10']**2
-    elif mode == 'mean_gustbra_mean2_icon':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['zv_bra_es'] \
-                + alphas[3]*features['zvp10']**2 + alphas[4]*features['icon_gust']
-    elif mode == 'mean_gustbra_mean2_kbra':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['zv_bra_es'] \
-                + alphas[3]*features['zvp10']**2 + alphas[4]*features['k_bra_es']
-    elif mode == 'mean_gustbra_mean2_tkebra':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['zv_bra_es'] \
-                + alphas[3]*features['zvp10']**2 + alphas[4]*features['tke_bra_es']
-    elif mode == 'mean_gustbra_mean2_tkebrakbra':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['zv_bra_es'] \
-                + alphas[3]*features['zvp10']**2 + alphas[4]*features['tke_bra_es']*features['k_bra_es']
-    else:
-        raise ValueError('wrong mode')
-    return(gust)
-
-def combine_features(mode, features, zvp10_unsc):
-    if mode == 'mean':
-        X = np.full((zvp10_unsc.shape[0],2), np.nan)
-        X[:,1] = features['zvp10']
-    elif mode == 'mean_mean2':
-        X = np.full((zvp10_unsc.shape[0],3), np.nan)
-        X[:,1] = features['zvp10']
-        X[:,2] = features['zvp10']**2
-    #elif mode == 'mean_tcm':
-    #    X = np.full((zvp10_unsc.shape[0],3), np.nan)
-    #    X[:,1] = features['zvp10']
-    #    X[:,2] = features['tcm']
-    #elif mode == 'mean_height':
-    #    X = np.full((zvp10_unsc.shape[0],3), np.nan)
-    #    X[:,1] = features['zvp10']
-    #    X[:,2] = features['hsurf']
-    #elif mode == 'mean_sso':
-    #    X = np.full((zvp10_unsc.shape[0],3), np.nan)
-    #    X[:,1] = features['zvp10']
-    #    X[:,2] = features['sso_stdh']
-    elif mode == 'mean_tkebra':
-        X = np.full((zvp10_unsc.shape[0],3), np.nan)
-        X[:,1] = features['zvp10']
-        X[:,2] = features['tke_bra_es']
-    elif mode == 'mean_tkebra_mean2':
-        X = np.full((zvp10_unsc.shape[0],4), np.nan)
-        X[:,1] = features['zvp10']
-        X[:,2] = features['tke_bra_es']
-        X[:,3] = features['zvp10']**2
-    elif mode == 'mean_gustbra':
-        X = np.full((zvp10_unsc.shape[0],3), np.nan)
-        X[:,1] = features['zvp10']
-        X[:,2] = features['zv_bra_es']
-    elif mode == 'mean_gustbra_dvl3v10':
-        X = np.full((zvp10_unsc.shape[0],4), np.nan)
-        X[:,1] = features['zvp10']
-        X[:,2] = features['zv_bra_es']
-        X[:,3] = features['dvl3v10']
-    elif mode == 'mean_kbra':
-        X = np.full((zvp10_unsc.shape[0],3), np.nan)
-        X[:,1] = features['zvp10']
-        X[:,2] = features['k_bra_es']
-    elif mode == 'mean_dvl3v10':
-        X = np.full((zvp10_unsc.shape[0],3), np.nan)
-        X[:,1] = features['zvp10']
-        X[:,2] = features['dvl3v10']
-    elif mode == 'mean_icon':
-        X = np.full((zvp10_unsc.shape[0],3), np.nan)
-        X[:,1] = features['zvp10']
-        X[:,2] = features['icon_gust']
-    elif mode == 'mean_gustbra_icon':
-        X = np.full((zvp10_unsc.shape[0],4), np.nan)
-        X[:,1] = features['zvp10']
-        X[:,2] = features['zv_bra_es']
-        X[:,3] = features['icon_gust']
-    #elif mode == 'mean_z0':
-    #    X = np.full((zvp10_unsc.shape[0],3), np.nan)
-    #    X[:,1] = features['zvp10']
-    #    X[:,2] = features['z0']
-    elif mode == 'mean_gustbra_mean2':
-        X = np.full((zvp10_unsc.shape[0],4), np.nan)
-        X[:,1] = features['zvp10']
-        X[:,2] = features['zv_bra_es']
-        X[:,3] = features['zvp10']**2
-    elif mode == 'mean_gustbra_mean2_icon':
-        X = np.full((zvp10_unsc.shape[0],5), np.nan)
-        X[:,1] = features['zvp10']
-        X[:,2] = features['zv_bra_es']
-        X[:,3] = features['zvp10']**2
-        X[:,4] = features['icon_gust']
-    elif mode == 'mean_gustbra_mean2_kbra':
-        X = np.full((zvp10_unsc.shape[0],5), np.nan)
-        X[:,1] = features['zvp10']
-        X[:,2] = features['zv_bra_es']
-        X[:,3] = features['zvp10']**2
-        X[:,4] = features['k_bra_es']
-    elif mode == 'mean_gustbra_mean2_tkebra':
-        X = np.full((zvp10_unsc.shape[0],5), np.nan)
-        X[:,1] = features['zvp10']
-        X[:,2] = features['zv_bra_es']
-        X[:,3] = features['zvp10']**2
-        X[:,4] = features['tke_bra_es']
-    elif mode == 'mean_gustbra_mean2_tkebrakbra':
-        X = np.full((zvp10_unsc.shape[0],5), np.nan)
-        X[:,1] = features['zvp10']
-        X[:,2] = features['zv_bra_es']
-        X[:,3] = features['zvp10']**2
-        X[:,4] = features['tke_bra_es']*features['k_bra_es']
-    X[:,0] = 1
-    return(X)
+#feature_names = ['zvp10', 'tcm', 'tkel1', 'hsurf', 'sso_stdh', 'zv_bra_es', 'k_bra_es', 'dvl3v10', 'z0', \
+#                'icon_gust']
+feature_names = ['zvp10', 'tcm', 'tkel1', 'hsurf', 'zv_bra_es', 'zbra', 'dvl3v10', 'icon_gust']
 #####################################
 
 # create directories
@@ -202,8 +59,6 @@ if not i_load:
     # load data
     data = pickle.load( open(CN.mod_path, 'rb') )
 
-    #stat_keys = ['AEG','ABO', 'AIG']
-    #stat_keys = ['ABO', 'AEG']
     stat_keys = data[G.STAT_NAMES]
 
     lm_runs = list(data[G.MODEL][G.STAT][stat_keys[0]][G.RAW].keys())
@@ -226,6 +81,8 @@ if not i_load:
         model_hours_tmp = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
                                     ['tcm'].resample('H').max().index
         for si,stat_key in enumerate(stat_keys):
+            if si % 50 == 0:
+                print(str(int(100*si/len(stat_keys))) + ' %')
             # 3D
             tmp = data[G.MODEL][G.STAT][stat_key][G.RAW][lm_run]['tcm']
             for hi,hour in enumerate(model_hours_tmp):
@@ -233,16 +90,19 @@ if not i_load:
                 hr_ind = lm_inds[hi]
 
                 for feat in feature_names:
-                    if feat in ['zvp10', 'tcm', 'tke_bra_es', 'zv_bra_es', 'k_bra_es']:
+                    if feat in ['zvp10', 'tcm', 'tkel1', 'zv_bra_es']:
                         features[feat][hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
                                                     [lm_run][feat].loc[loc_str].values
-                    elif feat in ['hsurf', 'sso_stdh', 'z0']:
+                    #elif feat in ['hsurf', 'sso_stdh', 'z0']:
+                    elif feat in ['hsurf']:
                         features[feat][hr_ind,si,:] = data[G.STAT_META][stat_key][feat].values 
                     elif feat == 'dvl3v10':
                         features[feat][hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
                                                     [lm_run]['uvl3'].loc[loc_str].values - \
                                                       data[G.MODEL][G.STAT][stat_key][G.RAW]\
                                                     [lm_run]['zvp10'].loc[loc_str].values
+                    elif feat == 'zbra':
+                        features[feat][hr_ind,si,:] = data[G.STAT_META][stat_key]['k_bra_es'].values 
                     elif feat == 'icon_gust':
                         ugn = 7.71
                         hpbl = 1000
@@ -358,8 +218,10 @@ gust_max_unscaled = np.amax(gust,axis=1)
 
 # SCALING
 zvp10_unsc = copy.deepcopy(features['zvp10'])
+features_scale = {}
 for feat in feature_names:
-    features[feat] = scale(features[feat])
+    features[feat], scale = apply_scaling(features[feat])
+    features_scale[feat] = scale
 
 
 for mode_int in i_mode_ints:
@@ -368,6 +230,7 @@ for mode_int in i_mode_ints:
     print('############################## ' + str(mode) + ' ################################')
 
     alphas = {0:0,1:0,2:0,3:0,4:0}
+    scaling_mean = {0:0,1:0,2:0,3:0,4:0}
     error_old = np.Inf
     #d_error = 100
     d_errors = np.full(int(1/sgd_prob*6), 100.)
@@ -404,7 +267,7 @@ for mode_int in i_mode_ints:
         for feat in feature_names:
             sgd_features[feat] = sgd_features[feat][I,maxid].squeeze()
 
-        X = combine_features(mode, sgd_features, sgd_zvp10_unsc)
+        X,trained = combine_features(mode, sgd_features, sgd_zvp10_unsc)
 
         # error
         deviation = sgd_obs_gust - sgd_gust_max
@@ -445,11 +308,15 @@ for mode_int in i_mode_ints:
     print(alphas)
     print('############')
 
+
+
     # Calculate final gust
     gust = calculate_gust(mode, features, alphas, zvp10_unsc)
     maxid = gust.argmax(axis=1)
     I = np.indices(maxid.shape)
     gust_max = gust[I,maxid].squeeze()
+
+    #print(np.mean(gust_max))
     
     plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_unscaled)
     plt.suptitle('STAT  '+mode)
@@ -465,3 +332,18 @@ for mode_int in i_mode_ints:
         plt.savefig(plot_name)
         plt.close('all')
 
+
+    # RESCALE ALPHA VALUES
+    for key,val in alphas.items():
+        if key in trained:
+            alphas[key] = val/features_scale[trained[key]['feat']]**trained[key]['power']
+
+    # SAVE PARAMETERS 
+    if os.path.exists(CN.params_stat_path) and (i_overwrite_param_file == 0):
+        params = pickle.load( open(CN.params_stat_path, 'rb') )
+    else:
+        params = {}
+    params[mode] = alphas
+    pickle.dump(params, open(CN.params_stat_path, 'wb'))
+
+    #quit()

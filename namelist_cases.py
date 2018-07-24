@@ -7,6 +7,8 @@ class Case_Namelist:
     raw_mod_folder = '../model_out/'
     # folder where all the data except raw obs files is saved
     data_folder = '../data/'
+    # folder where the trained parameters are stored
+    param_folder = data_folder + 'params/'
     # plots are put here
     plot_base_dir = '../plots/'
 
@@ -46,18 +48,23 @@ class Case_Namelist:
         # 6 Sommersturm 17
         {OBS_RAW:['20170723sfc.','20170724sfc.','20170725sfc.','20170726sfc.'],
                     OBS:'20170724_Sommersturm', MOD_RAW:'20170724_Sommersturm', MOD:'ref'},
-        # 7 JanuaryDays
-        {OBS_RAW:['20180119sfc.','20180120sfc.','20180121sfc.','20180122sfc.','20180123sfc.',
-                    '20180124sfc.','20180125sfc.','20180126sfc.','20180127sfc.','20180128sfc.'],
-                    OBS:'20180119_JanuaryDays', MOD_RAW:'20180119_JanuaryDays', MOD:'ref'},
-        # 8 all
+        # 7 all
         {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.',
                   '20180502sfc.','20180503sfc.','20180504sfc.','20180505sfc.',
                   '20180428sfc.','20180429sfc.','20180430sfc.','20180501sfc.',
                   '20180115sfc.','20180116sfc.','20180117sfc.','20180118sfc.','20180119sfc.',
                   '20170304sfc.','20170305sfc.','20170306sfc.','20170307sfc.','20170308sfc.',
                   '20170723sfc.','20170724sfc.','20170725sfc.','20170726sfc.'],
-                    OBS:'All', MOD_RAW:'All', MOD:'ref'}
+                    OBS:'All', MOD_RAW:'All', MOD:'ref'},
+
+        # 8 DEBUG
+        {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.'],
+                    OBS:'20180103_Burglind', MOD_RAW:'DEBUG_Burglind', MOD:'DEBUG2'}
+
+        ## 7 JanuaryDays
+        #{OBS_RAW:['20180119sfc.','20180120sfc.','20180121sfc.','20180122sfc.','20180123sfc.',
+        #            '20180124sfc.','20180125sfc.','20180126sfc.','20180127sfc.','20180128sfc.'],
+        #            OBS:'20180119_JanuaryDays', MOD_RAW:'20180119_JanuaryDays', MOD:'ref'},
     ]
 
     def __init__(self, case_ind):
@@ -87,7 +94,7 @@ class Case_Namelist:
         self.train_stat_path = self.data_folder + 'train_stat_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
                         self.cases[case_ind][self.MOD] + '.pkl'
 
-        self.train_bra_path = self.data_folder + 'train_bra_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
+        self.train_braes_path = self.data_folder + 'train_braes_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
                         self.cases[case_ind][self.MOD] + '.pkl'
 
         self.train_bralb_path = self.data_folder + 'train_bralb_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
@@ -96,8 +103,32 @@ class Case_Namelist:
         self.train_icon_path = self.data_folder + 'train_icon_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
                         self.cases[case_ind][self.MOD] + '.pkl'
 
-        self.phys_bralb_path = self.data_folder + 'phys_bralb_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
+        self.phys_bra_path = self.data_folder + 'train_phys_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
                         self.cases[case_ind][self.MOD] + '.pkl'
+
+        #self.phys_braprof_path = self.data_folder + 'phys_braprof_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
+        #                self.cases[case_ind][self.MOD] + '.pkl'
+
+        #### PARAMETERS
+
+        self.params_readj_path = self.param_folder + 'readj_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
+                        self.cases[case_ind][self.MOD] + '.pkl'
+
+        self.params_stat_path = self.param_folder + 'stat_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
+                        self.cases[case_ind][self.MOD] + '.pkl'
+
+        self.params_braes_path = self.param_folder + 'braes_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
+                        self.cases[case_ind][self.MOD] + '.pkl'
+
+        self.params_bralb_path = self.param_folder + 'bralb_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
+                        self.cases[case_ind][self.MOD] + '.pkl'
+
+        self.params_icon_path = self.param_folder + 'icon_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
+                        self.cases[case_ind][self.MOD] + '.pkl'
+
+        self.params_phys_bra_path = self.param_folder + 'phys_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
+                        self.cases[case_ind][self.MOD] + '.pkl'
+
 
         print('##########################################')
         print(self.case_name)

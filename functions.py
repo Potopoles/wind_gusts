@@ -503,124 +503,18 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
 
 
 
-def scale(var):
-    mean_var = np.mean(var)
-    var = var - mean_var
+#def apply_full_scaling(var):
+#    mean_var = np.mean(var)
+#    var = var - mean_var
+#    sd_var = np.std(var)
+#    var = var/sd_var
+#    return(var, mean_var, sd_var)
+
+
+def apply_scaling(var):
     sd_var = np.std(var)
     var = var/sd_var
-    return(var)
+    return(var, sd_var)
 
 
 
-
-
-
-#def calc_scores(data, i_scores):
-#
-#    """
-#    Calculate scores for the hourly gusts in data
-#
-#    INPUT
-#    data:           dictionary containing [G.MODEL][G.FIELDS] (with calcualted gusts)
-#    i_scores:       list containing string of scores to calculate.
-#                    for options see globals.py section 'scores':
-#
-#    OUTPUT
-#    data:           added SCORE entry to data according to i_scores (data[SCORE][...][
-#    """
-#    data[G.SCORE] = {G.STAT:{}}
-#
-#    data = join_model_runs(data)
-#
-#    # loop through all stations
-#    for stat in data[G.STAT_NAMES]:
-#
-#        # add score dictionary entry
-#        data[G.SCORE][G.STAT][stat] = {}
-#
-#        for gust_method in G.FIELDS_GUST:
-#            if gust_method in data[G.BOTH][G.STAT][stat]:
-#                print(gust_method)
-#        
-#        quit()
-#    
-#        gust_methods = list(data[G.MODEL][G.STAT][stat][G.FIELDS].keys())
-#        #gust_methods = [gm for gm in gust_methods_inp if gm in G.FIELDS_GUST]
-#        #if len(gust_methods_inp) != len(gust_methods):
-#        #    raise ValueError('Non-gust field in score calculation!')
-#
-#        # vector of observed gusts
-#        gust_obs = data[G.OBS][G.STAT][stat][G.PAR]['VMAX_10M1'].values
-#        # vector of observed mean winds
-#        wind_obs = data[G.OBS][G.STAT][stat][G.PAR]['FF_10M'].values
-#
-#        for gust_method in gust_methods:
-#
-#            # add entry for gust method in score dictionary
-#            data[G.MODEL][G.STAT][stat][G.SCORE][gust_method] = {}
-#
-#            # vector of simulated gusts
-#            gust_mod = data[G.MODEL][G.STAT][stat][G.FIELDS][gust_method]
-#
-#            if gust_method in G.FIELDS_GUST:
-#                eval_field = gust_obs
-#            else:
-#                eval_field = wind_obs
-#    
-#            for score_name in i_scores:
-#                
-#                # Vector scores
-#                if score_name == G.SCORE_ME:
-#                    score = gust_mod - eval_field
-#                elif score_name == G.SCORE_AE:
-#                    score = np.abs(gust_mod - eval_field)
-#
-#                # scalar scores
-#                elif score_name == G.SCORE_MAE:
-#                    score = metrics.mean_absolute_error(eval_field, gust_mod)
-#
-#                # add score to gust method dictionary
-#                data[G.MODEL][G.STAT][stat][G.SCORE][gust_method][score_name] = score
-#        
-#
-#    return(data)
-
-
-
-
-
-
-
-
-#def remove_obs_nan_in_hourly_fields(data, obs_field):
-#
-#    """
-#    Remove nan in hourly fields:
-#    FIELDS
-#    OBS
-#    according to missing values given in the OBS field 'obs_field'
-#
-#    INPUT
-#    data:           dictionary containing data (with calcualted gusts)
-#    obs_field:      string of OBS field name according to which NaN's should be removed
-#
-#    OUTPUT
-#    data:           processed data dictionary
-#    """
-#    for stat in data[G.STAT_NAMES]:
-#        # vector of observed gusts
-#        gust_obs = data[G.OBS][G.STAT][stat][G.PAR][obs_field].values
-#        mask = np.isnan(gust_obs)
-#        keep = ~mask
-#
-#        # remove in obs
-#        obs_fields = data[G.OBS][G.PAR_NAMES]
-#        for field in obs_fields:
-#            data[G.OBS][G.STAT][stat][G.PAR][field] = data[G.OBS][G.STAT][stat][G.PAR][field][keep]
-#
-#        # remove in model
-#        mod_gust_fields = list(data[G.MODEL][G.STAT][stat][G.FIELDS].keys())
-#        for field in mod_gust_fields:
-#            data[G.MODEL][G.STAT][stat][G.GUST][field] = data[G.MODEL][G.STAT][stat][G.GUST][field][keep]
-#
-#    return(data)
