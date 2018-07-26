@@ -283,8 +283,9 @@ def bralb_feature_matrix(mode, gust_lb_max, kheight_lb_max,
 ####################################################################################################
 ####################################################################################################
 
-def icon_feature_matrix(mode, gust_lb_max, kheight_lb_max,
-                                height_max, model_mean_max):
+def icon_feature_matrix(mode, gust_ico_max, height_max,
+                                dvl3v10_max, model_mean_max,
+                                tkel1_max):
     if mode == 'gust':
         X = np.zeros((len(gust_ico_max), 1))
         X[:,0] = gust_ico_max
@@ -301,6 +302,17 @@ def icon_feature_matrix(mode, gust_lb_max, kheight_lb_max,
         X[:,0] = gust_ico_max
         X[:,1] = gust_ico_max**2
         X[:,2] = height_max
+    elif mode == 'gust_gust2_tkel1':
+        X = np.zeros((len(gust_ico_max), 3))
+        X[:,0] = gust_ico_max
+        X[:,1] = gust_ico_max**2
+        X[:,2] = tkel1_max
+    elif mode == 'gust_gust2_mean_tkel1':
+        X = np.zeros((len(gust_ico_max), 4))
+        X[:,0] = gust_ico_max
+        X[:,1] = gust_ico_max**2
+        X[:,2] = model_mean_max
+        X[:,3] = tkel1_max
     elif mode == 'gust_gust2_height_mean2':
         X = np.zeros((len(gust_ico_max), 4))
         X[:,0] = gust_ico_max
@@ -361,36 +373,6 @@ def icon_feature_matrix(mode, gust_lb_max, kheight_lb_max,
         X[:,2] = height_max
         X[:,3] = model_mean_max**2
         X[:,4] = gust_ico_max**2
-    elif mode == 'gust_braest':
-        X = np.zeros((len(gust_ico_max), 2))
-        X[:,0] = gust_ico_max
-        X[:,1] = gust_bra_est
-    elif mode == 'gust_bralb':
-        X = np.zeros((len(gust_ico_max), 2))
-        X[:,0] = gust_ico_max
-        X[:,1] = gust_bra_lb
-    elif mode == 'gust_braest_kheight':
-        X = np.zeros((len(gust_ico_max), 3))
-        X[:,0] = gust_ico_max
-        X[:,1] = gust_bra_est
-        X[:,2] = kheight_est_max
-    elif mode == 'gust_braest_height':
-        X = np.zeros((len(gust_ico_max), 3))
-        X[:,0] = gust_ico_max
-        X[:,1] = gust_bra_est
-        X[:,2] = height_max
-    elif mode == 'gust_braest_height_gust2':
-        X = np.zeros((len(gust_ico_max), 4))
-        X[:,0] = gust_ico_max
-        X[:,1] = gust_bra_est
-        X[:,2] = height_max
-        X[:,3] = gust_ico_max**2
-    elif mode == 'gust_braest_kheight_height':
-        X = np.zeros((len(gust_ico_max), 4))
-        X[:,0] = gust_ico_max
-        X[:,1] = gust_bra_est
-        X[:,2] = kheight_est_max
-        X[:,3] = height_max
     else:
         raise ValueError('wrong mode')
     X = np.append(np.ones( (X.shape[0],1) ), X, axis=1)

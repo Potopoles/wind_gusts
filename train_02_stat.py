@@ -52,7 +52,10 @@ if i_plot > 1 and not os.path.exists(CN.plot_path):
     os.mkdir(CN.plot_path)
 
 if delete_existing_param_file:
-   os.remove(CN.params_stat_path)
+    try:
+        os.remove(CN.params_stat_path)
+    except:
+        pass
 
 
 if not i_load:
@@ -349,6 +352,7 @@ for mode_int in i_mode_ints:
     for key,val in alphas.items():
         if key in trained:
             alphas[key] = val/features_scale[trained[key]['feat']]**trained[key]['power']
+
 
     # SAVE PARAMETERS 
     if os.path.exists(CN.params_stat_path):# and (i_overwrite_param_file == 0):

@@ -32,7 +32,10 @@ if i_plot > 1 and not os.path.exists(CN.plot_path):
     os.mkdir(CN.plot_path)
 
 if delete_existing_param_file:
-   os.remove(CN.params_readj_path)
+    try:
+        os.remove(CN.params_readj_path)
+    except:
+        pass
 
 
 if not i_load:

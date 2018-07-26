@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import copy
 import matplotlib.pyplot as plt
 import pickle
@@ -10,18 +11,20 @@ from sklearn.preprocessing import StandardScaler
 from functions_train import icon_feature_matrix
 
 ############ USER INPUT #############
-case_index = 6
+case_index = 0
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_scaling = 1
 i_label = ''
-i_load = 0
+i_load = 1
 delete_existing_param_file = 1
 modes = ['gust',
         'gust_gust2',
         'gust_gust2_height',
+        'gust_gust2_tkel1',
+        'gust_gust2_mean_tkel1',
         'gust_gust2_height_mean2',
         'gust_gust2_height_mean2_mean',
         'gust_gust2_height_mean2_mean_dvl3v10',
@@ -35,7 +38,6 @@ modes = ['gust',
 
 i_mode_ints = range(0,len(modes))
 i_mode_ints = [3,5]
-min_gust = 0
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'
 i_sample_weight = '1'
@@ -43,7 +45,10 @@ max_mean_wind_error = 1.0
 #####################################
 
 if delete_existing_param_file:
-   os.remove(CN.params_braes_path)
+    try:
+        os.remove(CN.params_icon_path)
+    except:
+        pass
 
 
 if not i_load:
@@ -84,9 +89,8 @@ if not i_load:
                                             [lm_run]['zvp10'].loc[loc_str].values
                 tkel1[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
                                             [lm_run]['tkel1'].loc[loc_str].values
-                raise NotImplementedError()
                 dvl3v10[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                            [lm_run]['tke_bra_es'].loc[loc_str].values - \
+                                            [lm_run]['uvl3'].loc[loc_str].values - \
                                               data[G.MODEL][G.STAT][stat_key][G.RAW] \
                                             [lm_run]['zvp10'].loc[loc_str].values
                 height[hr_ind,si,:] = data[G.STAT_META][stat_key]['hsurf'].values 
@@ -225,7 +229,9 @@ for mode_int in i_mode_ints:
     print('############################## ' + str(mode) + ' ################################')
 
     # calc current time step gusts
-    X = icon_feature_matrix(mode, )
+    X = icon_feature_matrix(mode, gust_ico_max, height_max,
+                                dvl3v10_max, model_mean_max,
+                                tkel1_max)
     y = obs_gust_flat
 
     # scaling

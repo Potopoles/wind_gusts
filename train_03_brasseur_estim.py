@@ -42,7 +42,10 @@ max_mean_wind_error = 1.0
 #####################################
 
 if delete_existing_param_file:
-   os.remove(CN.params_braes_path)
+    try:
+        os.remove(CN.params_braes_path)
+    except:
+        pass
 
 
 if not i_load:

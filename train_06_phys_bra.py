@@ -1,5 +1,6 @@
 import numpy as np
-import pandas as pd
+import os
+#import pandas as pd
 import copy
 import matplotlib.pyplot as plt
 import pickle
@@ -13,21 +14,30 @@ CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
-i_scaling = 1
 i_label = ''
 i_load = 0
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'
 i_sample_weight = '1'
 max_mean_wind_error = 1.0
+delete_existing_param_file = 1
 modes = ['es',
         'lb',
         'es_rho',
         'lb_rho']
 i_mode_ints = range(0,len(modes))
-#i_mode_ints = [2,3]
+#i_mode_ints = [2]
 #####################################
 
+# create directories
+if i_plot > 1 and not os.path.exists(CN.plot_path):
+    os.mkdir(CN.plot_path)
+
+if delete_existing_param_file:
+    try:
+        os.remove(CN.params_phys_bra_path)
+    except:
+        pass
 
 if not i_load:
 
@@ -283,19 +293,31 @@ for mode_int in i_mode_ints:
         suptitle = 'PHY BRAES  '
         plot_name_title = 'phys_braes_'
 
-    plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_max_orig)
-    plt.suptitle(suptitle + mode)
+    try:
+        plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_max_orig)
+        plt.suptitle(suptitle + mode)
 
-    if i_plot == 1:
-        plt.show()
-    elif i_plot > 1:
-        if i_label == '':
-            plot_name = CN.plot_path + plot_name_title +str(mode)+'.png'
-        else:
-            plot_name = CN.plot_path + plot_name_title+str(i_label)+'_'+str(mode)+'.png'
-        print(plot_name)
-        plt.savefig(plot_name)
-        plt.close('all')
+        if i_plot == 1:
+            plt.show()
+        elif i_plot > 1:
+            if i_label == '':
+                plot_name = CN.plot_path + plot_name_title +str(mode)+'.png'
+            else:
+                plot_name = CN.plot_path + plot_name_title+str(i_label)+'_'+str(mode)+'.png'
+            print(plot_name)
+            plt.savefig(plot_name)
+            plt.close('all')
+    except:
+        print('Tkinter ERROR while plotting!')
+
+    # SAVE PARAMETERS 
+    if os.path.exists(CN.params_phys_bra_path):
+        params = pickle.load( open(CN.params_phys_bra_path, 'rb') )
+    else:
+        params = {}
+    params[mode] = alphas
+    pickle.dump(params, open(CN.params_phys_bra_path, 'wb'))
+
 
 
 
