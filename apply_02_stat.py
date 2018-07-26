@@ -7,7 +7,7 @@ import pickle
 from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
-from functions_stat import calculate_gust, combine_features
+from functions_train import stat_calculate_gust, stat_combine_features
 
 ############ USER INPUT #############
 train_case_index = 0

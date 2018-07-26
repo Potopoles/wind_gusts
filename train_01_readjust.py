@@ -23,13 +23,16 @@ modes = ['ln',
 i_mode_ints = range(0,len(modes))
 #i_mode_ints = [0]
 max_mean_wind_error = 1.0
-i_overwrite_param_file = 0
+delete_existing_param_file = 1
 sgd_prob = 0.10
 #####################################
 
 # create directories
 if i_plot > 1 and not os.path.exists(CN.plot_path):
     os.mkdir(CN.plot_path)
+
+if delete_existing_param_file:
+   os.remove(CN.params_readj_path)
 
 
 if not i_load:
@@ -202,13 +205,6 @@ for mode_int in i_mode_ints:
     print('alpha2 ' + str(alpha2))
     print('############')
 
-    # SAVE PARAMETERS 
-    if os.path.exists(CN.params_readj_path):
-        params = pickle.load( open(CN.params_readj_path, 'rb') )
-    else:
-        params = {}
-    params[mode] = {'alphas':{'1':alpha1,'2':alpha2}}
-    pickle.dump(params, open(CN.params_readj_path, 'wb'))
 
 
     # Calculate final gust
@@ -225,17 +221,32 @@ for mode_int in i_mode_ints:
 
 
     # PLOT
-    plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_orig)
-    plt.suptitle('READJUST  '+mode)
+    try:
+        plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_orig)
+        plt.suptitle('READJUST  '+mode)
 
-    if i_plot == 1:
-        plt.show()
-    elif i_plot > 1:
-        if i_label == '':
-            plot_name = CN.plot_path + 'tuning_readj_'+str(mode)+'.png'
-        else:
-            plot_name = CN.plot_path + 'tuning_readj_'+str(i_label)+'_'+str(mode)+'.png'
-        print(plot_name)
-        plt.savefig(plot_name)
-        plt.close('all')
+        if i_plot == 1:
+            plt.show()
+        elif i_plot > 1:
+            if i_label == '':
+                plot_name = CN.plot_path + 'tuning_readj_'+str(mode)+'.png'
+            else:
+                plot_name = CN.plot_path + 'tuning_readj_'+str(i_label)+'_'+str(mode)+'.png'
+            print(plot_name)
+            plt.savefig(plot_name)
+            plt.close('all')
+    except:
+        print('Tkinter ERROR while plotting!')
 
+
+    # RESCALE ALPHA VALUES
+    # not scaled
+
+
+    # SAVE PARAMETERS 
+    if os.path.exists(CN.params_readj_path):
+        params = pickle.load( open(CN.params_readj_path, 'rb') )
+    else:
+        params = {}
+    params[mode] = {'alphas':{'1':alpha1,'2':alpha2}}
+    pickle.dump(params, open(CN.params_readj_path, 'wb'))

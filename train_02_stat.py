@@ -7,10 +7,10 @@ import pickle
 from functions import plot_error, apply_scaling
 import globals as G
 from namelist_cases import Case_Namelist
-from functions_stat import calculate_gust, combine_features
+from functions_train import stat_calculate_gust, stat_combine_features
 
 ############ USER INPUT #############
-case_index = 4
+case_index = 5
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -21,7 +21,7 @@ i_output_error = 1
 learning_rate_factor = 1E-3
 d_error_thresh = 1E-5
 i_sample_weight = '1'
-#i_overwrite_param_file = 0
+delete_existing_param_file = 1
 
 modes = ['mean',
          'mean_mean2',
@@ -41,7 +41,7 @@ i_mode_ints = range(0,len(modes))
 #i_mode_ints = [len(modes)-1]
 #i_mode_ints = [8]
 max_mean_wind_error = 1.0
-sgd_prob = 0.02
+sgd_prob = 0.05
 #feature_names = ['zvp10', 'tcm', 'tkel1', 'hsurf', 'sso_stdh', 'zv_bra_es', 'k_bra_es', 'dvl3v10', 'z0', \
 #                'icon_gust']
 feature_names = ['zvp10', 'tcm', 'tkel1', 'hsurf', 'zv_bra_es', 'zbra', 'dvl3v10', 'icon_gust']
@@ -50,6 +50,9 @@ feature_names = ['zvp10', 'tcm', 'tkel1', 'hsurf', 'zv_bra_es', 'zbra', 'dvl3v10
 # create directories
 if i_plot > 1 and not os.path.exists(CN.plot_path):
     os.mkdir(CN.plot_path)
+
+if delete_existing_param_file:
+   os.remove(CN.params_stat_path)
 
 
 if not i_load:
@@ -355,4 +358,3 @@ for mode_int in i_mode_ints:
     params[mode] = alphas
     pickle.dump(params, open(CN.params_stat_path, 'wb'))
 
-    #quit()
