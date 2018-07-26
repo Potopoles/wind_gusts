@@ -21,9 +21,10 @@ default_learning_rate_factor = 1E-2
 modes = ['ln',
          'nl']
 i_mode_ints = range(0,len(modes))
-i_mode_ints = [0]
+#i_mode_ints = [0]
 max_mean_wind_error = 1.0
 i_overwrite_param_file = 0
+sgd_prob = 0.10
 #####################################
 
 # create directories
@@ -35,10 +36,7 @@ if not i_load:
     # load data
     data = pickle.load( open(CN.mod_path, 'rb') )
 
-    #stat_keys = ['AEG','ABO', 'AIG']
-    #stat_keys = ['ABO', 'AEG']
     stat_keys = data[G.STAT_NAMES]
-
 
     lm_runs = list(data[G.MODEL][G.STAT][stat_keys[0]][G.RAW].keys())
     n_hours = len(lm_runs)*24
@@ -47,7 +45,6 @@ if not i_load:
 
 
     # 3D
-    model_mean = np.full((n_hours, n_stats, ts_per_hour), np.nan)
     tcm = np.full((n_hours, n_stats, ts_per_hour), np.nan)
     zvp10 = np.full((n_hours, n_stats, ts_per_hour), np.nan)
     print('3D shape ' + str(tcm.shape))
@@ -77,22 +74,19 @@ if not i_load:
             obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_tmp] 
 
 
-
     # Process fields
     tcm[tcm < 5E-4] = 5E-4
     tcm = np.sqrt(tcm)
 
         
     # observation to 1D and filter values
-    obs_gust_flat = obs_gust.flatten()
-    obs_mean_flat = obs_mean.flatten()
-    model_mean = np.mean(zvp10, axis=2).flatten()
+    model_mean = np.mean(zvp10, axis=2)
 
 
     data = {}
     data['model_mean'] = model_mean
-    data['obs_gust_flat'] = obs_gust_flat
-    data['obs_mean_flat'] = obs_mean_flat 
+    data['obs_gust'] = obs_gust
+    data['obs_mean'] = obs_mean 
     data['tcm'] = tcm 
     data['zvp10'] = zvp10 
 
@@ -103,33 +97,31 @@ else:
     data = pickle.load( open(CN.train_readj_path, 'rb') )
 
     model_mean = data['model_mean']
-    obs_gust_flat = data['obs_gust_flat']
-    obs_mean_flat = data['obs_mean_flat']
+    obs_gust = data['obs_gust']
+    obs_mean = data['obs_mean']
     tcm = data['tcm']
     zvp10 = data['zvp10']
 
 
-
 # obs nan mask
-obsmask = np.isnan(obs_gust_flat)
-obsmask[np.isnan(obs_mean_flat)] = True
+obsmask = np.isnan(obs_gust)
+obsmask[np.isnan(obs_mean)] = True
 # bad mean wind accuracy mask
-mean_abs_error = np.abs(model_mean - obs_mean_flat)
-mean_rel_error = mean_abs_error/obs_mean_flat
+mean_abs_error = np.abs(model_mean - obs_mean)
+mean_rel_error = mean_abs_error/obs_mean
 errormask = mean_rel_error > max_mean_wind_error
 # combine both
 obsmask[errormask] = True
 
-obs_gust_flat = obs_gust_flat[~obsmask] 
-obs_mean_flat = obs_mean_flat[~obsmask]
+obs_gust = obs_gust[~obsmask] 
+obs_mean = obs_mean[~obsmask]
 model_mean = model_mean[~obsmask]
+tcm = tcm[~obsmask]
+zvp10 = zvp10[~obsmask]
 
 # initial gust
 gust = zvp10 + 7.2*tcm*zvp10
-#gust_diff = 7.2*tcm*zvp10
-gust_max_unscaled = np.amax(gust,axis=2).flatten()[~obsmask]
-
-N = obs_gust_flat.shape[0]
+gust_max_orig = np.amax(gust,axis=1)
 
 for mode_int in i_mode_ints:
     mode = modes[mode_int]
@@ -138,56 +130,62 @@ for mode_int in i_mode_ints:
 
     if mode == 'nl':
         learning_rate_factor = default_learning_rate_factor * 1/20
+        d_error_thresh = 1E-5
     else:
         learning_rate_factor = default_learning_rate_factor
+        d_error_thresh = 1E-4
 
 
     alpha1 = 0
     alpha2 = 0
     error_old = np.Inf
-    d_error = 100
+    d_errors = np.full(int(1/sgd_prob*10), 100.)
     learning_rate = 1E-5
-    d_error_thresh = 1E-4
 
     c = 0
-    while (np.abs(d_error) > d_error_thresh) or (c < 10):
+    while np.abs(np.mean(d_errors)) > d_error_thresh:
+
+
+        # SGD selection
+        sgd_inds = np.random.choice([True, False], (zvp10.shape[0]), p=[sgd_prob,1-sgd_prob])
+        sgd_zvp10 = zvp10[sgd_inds,:]
+        sgd_tcm = tcm[sgd_inds,:]
+        sgd_obs_gust = obs_gust[sgd_inds]
+        N = len(sgd_obs_gust)
 
         # calc current time step gusts
         if mode == 'ln':
-            gust = zvp10 + alpha1*tcm*zvp10
+            sgd_gust = sgd_zvp10 + alpha1*sgd_tcm*sgd_zvp10
         elif mode == 'nl':
-            gust = zvp10 + alpha1*tcm*zvp10 + alpha2*tcm*zvp10**2
+            sgd_gust = sgd_zvp10 + alpha1*sgd_tcm*sgd_zvp10 + alpha2*sgd_tcm*sgd_zvp10**2
         else:
             raise ValueError('wrong mode')
 
         # find maximum gust
-        maxid = gust.argmax(axis=2)
-        I,J = np.indices(maxid.shape)
-        #print(maxid[0,0])
-
-        tcm_max = tcm[I,J,maxid].flatten()[~obsmask]
-        zvp10_max = zvp10[I,J,maxid].flatten()[~obsmask]
-        gust_max = gust[I,J,maxid].flatten()[~obsmask]
+        maxid = sgd_gust.argmax(axis=1)
+        I = np.indices(maxid.shape)
+        sgd_tcm_max = sgd_tcm[I,maxid]
+        sgd_zvp10_max = sgd_zvp10[I,maxid]
+        sgd_gust_max = sgd_gust[I,maxid]
 
         # error
-        deviation = obs_gust_flat - gust_max
-        #quit()
-        #error_now = np.sqrt(np.sum(deviation**2)/N)
+        deviation = sgd_obs_gust - sgd_gust_max
         error_now = np.sqrt(np.sum(deviation**2)/N)
         d_error = error_old - error_now
+        d_errors = np.roll(d_errors, shift=1)
+        d_errors[0] = d_error
         error_old = error_now
-        #print(d_error)
         if i_output_error:
-            print(str(c) + '   ' + str(error_now) + '   ' + str(d_error))
-            #pass
+            if c % 10 == 0:
+                print(str(c) + '\t' + str(error_now) + '\t' + str(np.abs(np.mean(d_errors))))
 
         # gradient of parameters
         if mode == 'ln':
-            dalpha1 = -2/N * np.sum( tcm_max*zvp10_max * deviation )
+            dalpha1 = -2/N * np.sum( sgd_tcm_max*sgd_zvp10_max * deviation )
             dalpha2 = 0
         elif mode == 'nl':
-            dalpha1 = -2/N * np.sum( tcm_max*zvp10_max * deviation )
-            dalpha2 = -2/N * np.sum( tcm_max*zvp10_max**2 * deviation )
+            dalpha1 = -2/N * np.sum( sgd_tcm_max*sgd_zvp10_max    * deviation )
+            dalpha2 = -2/N * np.sum( sgd_tcm_max*sgd_zvp10_max**2 * deviation )
         else:
             raise ValueError('wrong mode')
 
@@ -212,9 +210,23 @@ for mode_int in i_mode_ints:
     params[mode] = {'alphas':{'1':alpha1,'2':alpha2}}
     pickle.dump(params, open(CN.params_readj_path, 'wb'))
 
+
+    # Calculate final gust
+    if mode == 'ln':
+        gust = zvp10 + alpha1*tcm*zvp10
+    elif mode == 'nl':
+        gust = zvp10 + alpha1*tcm*zvp10 + alpha2*tcm*zvp10**2
+    else:
+        raise ValueError('wrong mode')
+    # find maximum gust
+    maxid = gust.argmax(axis=1)
+    I = np.indices(maxid.shape)
+    gust_max = gust[I,maxid].squeeze()
+
+
     # PLOT
-    plot_error(obs_gust_flat, model_mean, obs_mean_flat, gust_max, gust_max_unscaled)
-    plt.suptitle('ADJUST  '+mode)
+    plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_orig)
+    plt.suptitle('READJUST  '+mode)
 
     if i_plot == 1:
         plt.show()

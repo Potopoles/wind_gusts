@@ -20,8 +20,8 @@ def calculate_gust(mode, features, alphas, zvp10_unsc):
     elif mode == 'mean_gustbra_dvl3v10':
         gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['zv_bra_es'] \
                 + alphas[3]*features['dvl3v10']
-    elif mode == 'mean_kbra':
-        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['k_bra_es']
+    elif mode == 'mean_zbra':
+        gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['zbra']
     elif mode == 'mean_dvl3v10':
         gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['dvl3v10']
     elif mode == 'mean_icon':
@@ -35,9 +35,9 @@ def calculate_gust(mode, features, alphas, zvp10_unsc):
     elif mode == 'mean_gustbra_mean2_icon':
         gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['zv_bra_es'] \
                 + alphas[3]*features['zvp10']**2 + alphas[4]*features['icon_gust']
-    elif mode == 'mean_gustbra_mean2_kbra':
+    elif mode == 'mean_gustbra_mean2_zbra':
         gust = zvp10_unsc + alphas[0] + alphas[1]*features['zvp10'] + alphas[2]*features['zv_bra_es'] \
-                + alphas[3]*features['zvp10']**2 + alphas[4]*features['k_bra_es']
+                + alphas[3]*features['zvp10']**2 + alphas[4]*features['zbra']
     else:
         raise ValueError('wrong mode')
     return(gust)
@@ -70,9 +70,9 @@ def combine_features(mode, features, zvp10_unsc):
         trained[1] = {'feat':'zvp10','power':1}
         trained[2] = {'feat':'zv_bra_es','power':1}
         trained[3] = {'feat':'dvl3v10','power':1}
-    elif mode == 'mean_kbra':
+    elif mode == 'mean_zbra':
         trained[1] = {'feat':'zvp10','power':1}
-        trained[2] = {'feat':'k_bra_es','power':1}
+        trained[2] = {'feat':'zbra','power':1}
     elif mode == 'mean_dvl3v10':
         trained[1] = {'feat':'zvp10','power':1}
         trained[2] = {'feat':'dvl3v10','power':1}
@@ -92,9 +92,9 @@ def combine_features(mode, features, zvp10_unsc):
         trained[2] = {'feat':'zv_bra_es','power':1}
         trained[3] = {'feat':'zvp10','power':2}
         trained[4] = {'feat':'icon_gust','power':1}
-    elif mode == 'mean_gustbra_mean2_kbra':
+    elif mode == 'mean_gustbra_mean2_zbra':
         trained[1] = {'feat':'zvp10','power':1}
-        trained[2] = {'feat':'zv_bra_es','power':1}
+        trained[2] = {'feat':'zbra','power':1}
         trained[3] = {'feat':'zvp10','power':2}
         trained[4] = {'feat':'k_bra_es','power':1}
 

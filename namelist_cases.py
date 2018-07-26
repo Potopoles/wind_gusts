@@ -30,34 +30,45 @@ class Case_Namelist:
         # 0 DEBUG
         {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.'],
                     OBS:'20180103_Burglind', MOD_RAW:'DEBUG_Burglind', MOD:'DEBUG'},
-        # 1 Burglind
-        {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.'],
-                    OBS:'20180103_Burglind', MOD_RAW:'20180103_Burglind', MOD:'ref'},
-        # 2 Bisensturm
-        {OBS_RAW:['20180502sfc.','20180503sfc.','20180504sfc.','20180505sfc.'],
-                    OBS:'20180503_Bisensturm', MOD_RAW:'20180503_Bisensturm', MOD:'ref'},
-        # 3 Foehnsturm
-        {OBS_RAW:['20180428sfc.','20180429sfc.','20180430sfc.','20180501sfc.'],
-                    OBS:'20180429_Foehnsturm', MOD_RAW:'20180429_Foehnsturm', MOD:'ref'},
-        # 4 Friederike
-        {OBS_RAW:['20180115sfc.','20180116sfc.','20180117sfc.','20180118sfc.','20180119sfc.'],
-                    OBS:'20180116_Friederike', MOD_RAW:'20180116_Friederike', MOD:'ref'},
-        # 5 Zeus 17
+        # 1 Zeus 17
         {OBS_RAW:['20170304sfc.','20170305sfc.','20170306sfc.','20170307sfc.','20170308sfc.'],
                     OBS:'20170305_Zeus', MOD_RAW:'20170305_Zeus', MOD:'ref'},
-        # 6 Sommersturm 17
+        # 2 Konvektion 17
+        {OBS_RAW:['20170719sfc.'],
+                    OBS:'20170719_Konvektion', MOD_RAW:'20170719_Konvektion', MOD:'ref'},
+        # 3 Sommersturm 17
         {OBS_RAW:['20170723sfc.','20170724sfc.','20170725sfc.','20170726sfc.'],
                     OBS:'20170724_Sommersturm', MOD_RAW:'20170724_Sommersturm', MOD:'ref'},
-        # 7 all
-        {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.',
-                  '20180502sfc.','20180503sfc.','20180504sfc.','20180505sfc.',
-                  '20180428sfc.','20180429sfc.','20180430sfc.','20180501sfc.',
+        # 4 Burglind
+        {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.'],
+                    OBS:'20180103_Burglind', MOD_RAW:'20180103_Burglind', MOD:'ref'},
+        # 5 Friederike
+        {OBS_RAW:['20180115sfc.','20180116sfc.','20180117sfc.','20180118sfc.','20180119sfc.'],
+                    OBS:'20180116_Friederike', MOD_RAW:'20180116_Friederike', MOD:'ref'},
+        # 6 Foehntaeler
+        {OBS_RAW:['20180228sfc.','20180301sfc.','20180302sfc.'],
+                    OBS:'20180301_Foehntaeler', MOD_RAW:'20180301_Foehntaeler', MOD:'ref'},
+        # 7 Foehnsturm
+        {OBS_RAW:['20180428sfc.','20180429sfc.','20180430sfc.','20180501sfc.'],
+                    OBS:'20180429_Foehnsturm', MOD_RAW:'20180429_Foehnsturm', MOD:'ref'},
+        # 8 Bisensturm
+        {OBS_RAW:['20180502sfc.','20180503sfc.','20180504sfc.','20180505sfc.'],
+                    OBS:'20180503_Bisensturm', MOD_RAW:'20180503_Bisensturm', MOD:'ref'},
+        # 9 Gewittertage
+        {OBS_RAW:['20180529sfc.','20180530sfc.','20180531sfc.','20180601sfc.'],
+                    OBS:'20180530_Gewittertage', MOD_RAW:'20180530_Gewittertage', MOD:'ref'},
+        # 10 all
+        {OBS_RAW:['20170304sfc.','20170305sfc.','20170306sfc.','20170307sfc.','20170308sfc.',
+                  '20170719sfc.',
+                  '20170723sfc.','20170724sfc.','20170725sfc.','20170726sfc.',
+                  '20180102sfc.','20180103sfc.','20180104sfc.',
                   '20180115sfc.','20180116sfc.','20180117sfc.','20180118sfc.','20180119sfc.',
-                  '20170304sfc.','20170305sfc.','20170306sfc.','20170307sfc.','20170308sfc.',
-                  '20170723sfc.','20170724sfc.','20170725sfc.','20170726sfc.'],
+                  '20180228sfc.','20180301sfc.','20180302sfc.',
+                  '20180428sfc.','20180429sfc.','20180430sfc.','20180501sfc.',
+                  '20180502sfc.','20180503sfc.','20180504sfc.','20180505sfc.',
+                  '20180529sfc.','20180530sfc.','20180531sfc.','20180601sfc.'],
                     OBS:'All', MOD_RAW:'All', MOD:'ref'},
-
-        # 8 DEBUG
+        # 11 DEBUG2
         {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.'],
                     OBS:'20180103_Burglind', MOD_RAW:'DEBUG_Burglind', MOD:'DEBUG2'}
 

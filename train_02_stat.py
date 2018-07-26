@@ -10,7 +10,7 @@ from namelist_cases import Case_Namelist
 from functions_stat import calculate_gust, combine_features
 
 ############ USER INPUT #############
-case_index = 1
+case_index = 4
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -21,13 +21,12 @@ i_output_error = 1
 learning_rate_factor = 1E-3
 d_error_thresh = 1E-5
 i_sample_weight = '1'
-i_overwrite_param_file = 0
+#i_overwrite_param_file = 0
 
 modes = ['mean',
          'mean_mean2',
          'mean_tke',
          'mean_height',
-         #'mean_sso',
          'mean_gustbra',
          'mean_gustbra_tke',
          'mean_gustbra_height',
@@ -36,13 +35,11 @@ modes = ['mean',
          'mean_dvl3v10',
          'mean_icon',
          'mean_gustbra_icon',
-         #'mean_z0',
          'mean_gustbra_mean2']
-         #'mean_gustbra_mean2_icon',
-         #'mean_gustbra_mean2_zbra']
+
 i_mode_ints = range(0,len(modes))
 #i_mode_ints = [len(modes)-1]
-#i_mode_ints = [6]
+#i_mode_ints = [8]
 max_mean_wind_error = 1.0
 sgd_prob = 0.02
 #feature_names = ['zvp10', 'tcm', 'tkel1', 'hsurf', 'sso_stdh', 'zv_bra_es', 'k_bra_es', 'dvl3v10', 'z0', \
@@ -75,6 +72,12 @@ if not i_load:
     obs_gust = np.full((n_hours, n_stats), np.nan)
     obs_mean = np.full((n_hours, n_stats), np.nan)
 
+    # level_alts gives an altitude (value) to a model level (key)
+    level_altitudes_file = np.loadtxt('../data/kaltitudes.txt')
+    level_alts = {}
+    for i,line in enumerate(level_altitudes_file[:-1]):
+        level_alts[int(line[0])] = (level_altitudes_file[i,1] + level_altitudes_file[i+1,1])/2
+
     for lmi,lm_run in enumerate(lm_runs):
         print(lm_run)
         lm_inds = np.arange(lmi*24,(lmi+1)*24)
@@ -102,7 +105,10 @@ if not i_load:
                                                       data[G.MODEL][G.STAT][stat_key][G.RAW]\
                                                     [lm_run]['zvp10'].loc[loc_str].values
                     elif feat == 'zbra':
-                        features[feat][hr_ind,si,:] = data[G.STAT_META][stat_key]['k_bra_es'].values 
+                        features[feat][hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                                                    [lm_run]['k_bra_es'].loc[loc_str].values 
+                        for ind,level in enumerate(features[feat][hr_ind,si,:]):
+                            features[feat][hr_ind,si,:][ind] = level_alts[int(level)]
                     elif feat == 'icon_gust':
                         ugn = 7.71
                         hpbl = 1000
@@ -318,19 +324,22 @@ for mode_int in i_mode_ints:
 
     #print(np.mean(gust_max))
     
-    plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_unscaled)
-    plt.suptitle('STAT  '+mode)
+    try:
+        plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_unscaled)
+        plt.suptitle('STAT  '+mode)
 
-    if i_plot == 1:
-        plt.show()
-    elif i_plot > 1:
-        if i_label == '':
-            plot_name = CN.plot_path + 'tuning_stat_sw_'+i_sample_weight+'_'+str(mode)+'.png'
-        else:
-            plot_name = CN.plot_path + 'tuning_stat_sw_'+i_sample_weight+'_'+str(i_label)+'_'+str(mode)+'.png'
-        print(plot_name)
-        plt.savefig(plot_name)
-        plt.close('all')
+        if i_plot == 1:
+            plt.show()
+        elif i_plot > 1:
+            if i_label == '':
+                plot_name = CN.plot_path + 'tuning_stat_sw_'+i_sample_weight+'_'+str(mode)+'.png'
+            else:
+                plot_name = CN.plot_path + 'tuning_stat_sw_'+i_sample_weight+'_'+str(i_label)+'_'+str(mode)+'.png'
+            print(plot_name)
+            plt.savefig(plot_name)
+            plt.close('all')
+    except:
+        print('Tkinter ERROR while plotting!')
 
 
     # RESCALE ALPHA VALUES
@@ -339,7 +348,7 @@ for mode_int in i_mode_ints:
             alphas[key] = val/features_scale[trained[key]['feat']]**trained[key]['power']
 
     # SAVE PARAMETERS 
-    if os.path.exists(CN.params_stat_path) and (i_overwrite_param_file == 0):
+    if os.path.exists(CN.params_stat_path):# and (i_overwrite_param_file == 0):
         params = pickle.load( open(CN.params_stat_path, 'rb') )
     else:
         params = {}
