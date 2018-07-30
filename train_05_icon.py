@@ -11,14 +11,14 @@ from sklearn.preprocessing import StandardScaler
 from functions_train import icon_feature_matrix
 
 ############ USER INPUT #############
-case_index = 0
+case_index = 12
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_scaling = 1
 i_label = ''
-i_load = 1
+i_load = 0
 delete_existing_param_file = 1
 modes = ['gust',
         'gust_gust2',
@@ -37,7 +37,7 @@ modes = ['gust',
         #'gust_dvl3v10_height_mean2_gust2',
 
 i_mode_ints = range(0,len(modes))
-i_mode_ints = [3,5]
+#i_mode_ints = [3,5]
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'
 i_sample_weight = '1'
@@ -164,7 +164,6 @@ if not i_load:
     obs_gust_flat = obs_gust.flatten()
     obs_mean_flat = obs_mean.flatten()
     obsmask = np.isnan(obs_gust_flat)
-    obsmask[obs_gust_flat < min_gust] = True
     obs_gust_flat = obs_gust_flat[~obsmask] 
     obs_mean_flat = obs_mean_flat[~obsmask] 
     N = obs_gust_flat.shape[0]

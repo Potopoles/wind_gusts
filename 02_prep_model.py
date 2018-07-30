@@ -9,7 +9,7 @@ import os
 from netCDF4 import Dataset
 
 ############ USER INPUT #############
-case_index = 4
+case_index = 12
 CN = Case_Namelist(case_index)
 # time step [s] of model
 model_dt = 10
@@ -129,6 +129,7 @@ for i,stat_key in enumerate(mod_stations):
 
         # load data from all lm runs
         for lm_run in lm_runs:
+            #print(lm_run)
 
             # construct file path
             mod_file_path = CN.raw_mod_path + lm_run + '/' + 'fort.' + str(ind)

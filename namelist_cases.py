@@ -70,7 +70,14 @@ class Case_Namelist:
                     OBS:'All', MOD_RAW:'All', MOD:'ref'},
         # 11 DEBUG2
         {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.'],
-                    OBS:'20180103_Burglind', MOD_RAW:'DEBUG_Burglind', MOD:'DEBUG2'}
+                    OBS:'20180103_Burglind', MOD_RAW:'DEBUG_Burglind', MOD:'DEBUG2'},
+        # 12 June_18
+        {OBS_RAW:['20180620sfc.','20180621sfc.','20180622sfc.','20180623sfc.',
+                  '20180624sfc.','20180625sfc.','20180626sfc.','20180627sfc.',
+                  '20180628sfc.','20180629sfc.','20180630sfc.'],
+                    OBS:'June_18', MOD_RAW:'June_18', MOD:'ref'},
+
+
 
         ## 7 JanuaryDays
         #{OBS_RAW:['20180119sfc.','20180120sfc.','20180121sfc.','20180122sfc.','20180123sfc.',

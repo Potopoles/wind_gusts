@@ -8,13 +8,13 @@ import globals as G
 from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-case_index = 0
+case_index = 12
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_label = ''
-i_load = 1
+i_load = 0
 i_output_error = 1
 default_learning_rate_factor = 1E-2
 
@@ -24,7 +24,7 @@ i_mode_ints = range(0,len(modes))
 #i_mode_ints = [0]
 max_mean_wind_error = 1.0
 delete_existing_param_file = 1
-sgd_prob = 0.10
+sgd_prob = 0.2
 #####################################
 
 # create directories
@@ -125,21 +125,24 @@ model_mean = model_mean[~obsmask]
 tcm = tcm[~obsmask]
 zvp10 = zvp10[~obsmask]
 
-# initial gust
-gust = zvp10 + 7.2*tcm*zvp10
-gust_max_orig = np.amax(gust,axis=1)
 
 for mode_int in i_mode_ints:
     mode = modes[mode_int]
     print('#################################################################################')
     print('############################## ' + str(mode) + ' ################################')
 
+    # initial gust
+    if mode == 'ln':
+        gust = zvp10 + 7.2*tcm*zvp10
+    elif mode == 'nl':
+        gust = zvp10 + 7.2*tcm*zvp10 + 0.09*tcm*zvp10**2
+    gust_max_orig = np.amax(gust,axis=1)
+
     if mode == 'nl':
         learning_rate_factor = default_learning_rate_factor * 1/20
-        d_error_thresh = 1E-5
     else:
         learning_rate_factor = default_learning_rate_factor
-        d_error_thresh = 1E-4
+    d_error_thresh = 1E-5
 
 
     alpha1 = 0

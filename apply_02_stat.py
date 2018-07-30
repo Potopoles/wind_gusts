@@ -7,15 +7,15 @@ import pickle
 from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
-from functions_train import stat_calculate_gust, stat_combine_features
+from functions_train import stat_calculate_gust
 
 ############ USER INPUT #############
-train_case_index = 0
+train_case_index = 10
 CNtrain = Case_Namelist(train_case_index)
-apply_case_index = 3
+apply_case_index = 12
 CNapply = Case_Namelist(apply_case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 1
+i_plot = 2
 model_dt = 10
 i_label = ''
 
@@ -72,7 +72,7 @@ for mode in params.keys():
     print(alphas)
 
     # Calculate final gust
-    gust = calculate_gust(mode, features, alphas, zvp10)
+    gust = stat_calculate_gust(mode, features, alphas, zvp10)
     maxid = gust.argmax(axis=1)
     I = np.indices(maxid.shape)
     gust_max = gust[I,maxid].squeeze()

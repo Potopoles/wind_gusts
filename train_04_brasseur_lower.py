@@ -11,7 +11,7 @@ from sklearn.preprocessing import StandardScaler
 from functions_train import bralb_feature_matrix
 
 ############ USER INPUT #############
-case_index = 0
+case_index = 12
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -32,7 +32,7 @@ modes = ['gust',
         'gust_mean_height_mean2']
 
 i_mode_ints = range(0,len(modes))
-i_mode_ints = [3,5]
+#i_mode_ints = [3,5]
 min_gust = 0
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'
@@ -41,7 +41,10 @@ max_mean_wind_error = 1.0
 #####################################
 
 if delete_existing_param_file:
-   os.remove(CN.params_bralb_path)
+    try:
+        os.remove(CN.params_bralb_path)
+    except:
+        pass
 
 
 if not i_load:

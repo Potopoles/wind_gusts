@@ -9,7 +9,7 @@ import globals as G
 from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-case_index = 0
+case_index = 12
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -67,6 +67,8 @@ if not i_load:
     obs_mean = np.full((n_hours, n_stats), np.nan)
 
     for lmi,lm_run in enumerate(lm_runs):
+        print(lm_run)
+
         lm_inds = np.arange(lmi*24,(lmi+1)*24)
         model_hours_tmp = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
                                     ['k_bra_es'].resample('H').max().index

@@ -7,12 +7,11 @@ import pickle
 from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
-from functions_stat import calculate_gust, combine_features
 
 ############ USER INPUT #############
-train_case_index = 0
+train_case_index = 10
 CNtrain = Case_Namelist(train_case_index)
-apply_case_index = 0
+apply_case_index = 12
 CNapply = Case_Namelist(apply_case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2

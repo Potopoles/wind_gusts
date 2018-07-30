@@ -10,7 +10,7 @@ from namelist_cases import Case_Namelist
 from functions_train import stat_calculate_gust, stat_combine_features
 
 ############ USER INPUT #############
-case_index = 5
+case_index = 12
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -41,7 +41,7 @@ i_mode_ints = range(0,len(modes))
 #i_mode_ints = [len(modes)-1]
 #i_mode_ints = [8]
 max_mean_wind_error = 1.0
-sgd_prob = 0.05
+sgd_prob = 0.10
 #feature_names = ['zvp10', 'tcm', 'tkel1', 'hsurf', 'sso_stdh', 'zv_bra_es', 'k_bra_es', 'dvl3v10', 'z0', \
 #                'icon_gust']
 feature_names = ['zvp10', 'tcm', 'tkel1', 'hsurf', 'zv_bra_es', 'zbra', 'dvl3v10', 'icon_gust']
@@ -90,8 +90,8 @@ if not i_load:
         model_hours_tmp = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
                                     ['tcm'].resample('H').max().index
         for si,stat_key in enumerate(stat_keys):
-            if si % 50 == 0:
-                print(str(int(100*si/len(stat_keys))) + ' %')
+            #if si % 150 == 0:
+            #    print(str(int(100*si/len(stat_keys))) + ' %')
             # 3D
             tmp = data[G.MODEL][G.STAT][stat_key][G.RAW][lm_run]['tcm']
             for hi,hour in enumerate(model_hours_tmp):
@@ -227,6 +227,8 @@ for feat in feature_names:
 gust = features['zvp10'] + 7.2*features['tcm']*features['zvp10']
 gust_max_unscaled = np.amax(gust,axis=1)
 
+print('total hours: ' + str(gust_max_unscaled.shape[0]))
+
 
 # SCALING
 zvp10_unsc = copy.deepcopy(features['zvp10'])
@@ -269,7 +271,7 @@ for mode_int in i_mode_ints:
             sgd_features[feat] = features[feat][sgd_inds,:]
 
         # calc current time step gusts
-        sgd_gust = calculate_gust(mode, sgd_features, alphas, sgd_zvp10_unsc)
+        sgd_gust = stat_calculate_gust(mode, sgd_features, alphas, sgd_zvp10_unsc)
 
         # find maximum gust
         maxid = sgd_gust.argmax(axis=1)
@@ -279,7 +281,7 @@ for mode_int in i_mode_ints:
         for feat in feature_names:
             sgd_features[feat] = sgd_features[feat][I,maxid].squeeze()
 
-        X,trained = combine_features(mode, sgd_features, sgd_zvp10_unsc)
+        X,trained = stat_combine_features(mode, sgd_features, sgd_zvp10_unsc)
 
         # error
         deviation = sgd_obs_gust - sgd_gust_max
@@ -323,7 +325,7 @@ for mode_int in i_mode_ints:
 
 
     # Calculate final gust
-    gust = calculate_gust(mode, features, alphas, zvp10_unsc)
+    gust = stat_calculate_gust(mode, features, alphas, zvp10_unsc)
     maxid = gust.argmax(axis=1)
     I = np.indices(maxid.shape)
     gust_max = gust[I,maxid].squeeze()

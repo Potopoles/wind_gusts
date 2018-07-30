@@ -11,14 +11,14 @@ from sklearn.preprocessing import StandardScaler
 from functions_train import braes_feature_matrix
 
 ############ USER INPUT #############
-case_index = 1
+case_index = 12
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_scaling = 1
 i_label =  ''
-i_load = 1
+i_load = 0
 delete_existing_param_file = 1
 modes = ['gust',
         'gust_kheight',
@@ -28,12 +28,12 @@ modes = ['gust',
         'gust_mean_mean2',
         'gust_mean_mean2_height',
         'gust_mean_mean2_mean3',
-        'gust_mean_mean2_mean3_height']
+        'gust_mean_mean2_mean3_height',
         'gust_mean_kheight',
         'gust_mean_height_mean2_kheight']
 
 i_mode_ints = range(0,len(modes))
-i_mode_ints = [3,5]
+#i_mode_ints = [3,5]
 min_gust = 0
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'
@@ -162,6 +162,7 @@ height_max = height_max[~errormask]
 obs_gust_flat = obs_gust_flat[~errormask]
 obs_mean_flat = obs_mean_flat[~errormask]
 gust_est_max_unscaled = gust_est_max_unscaled[~errormask]
+
 
 regr = LinearRegression(fit_intercept=False)
 
