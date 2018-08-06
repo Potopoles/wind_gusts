@@ -6,7 +6,7 @@ import pickle
 from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
-from functions_train import icon_feature_matrix
+from functions_train import icon_feature_matrix, icon_feature_matrix_timestep
 
 ############ USER INPUT #############
 train_case_index = 0
@@ -14,13 +14,12 @@ CNtrain = Case_Namelist(train_case_index)
 apply_case_index = 0
 CNapply = Case_Namelist(apply_case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 2
+i_plot = 1
 i_scaling = 1
 i_label = ''
 max_mean_wind_error = 1.0
-#i_sample_weight = 'linear'
-#i_sample_weight = 'squared'
 i_sample_weight = '1'
+apply_on_hourly_gusts = 0
 #####################################
 
 # create directories
@@ -31,29 +30,45 @@ if i_plot > 1 and not os.path.exists(CNapply.plot_path):
 params = pickle.load( open(CNtrain.params_icon_path, 'rb') )
 
 data = pickle.load( open(CNapply.train_icon_path, 'rb') )
-model_mean_max = data['model_mean_max']
 model_mean = data['model_mean']
-gust_ico_max = data['gust_ico_max']
-tkel1_max = data['tkel1_max']
-dvl3v10_max = data['dvl3v10_max']
-height_max = data['height_max']
-obs_gust_flat = data['obs_gust_flat']
-obs_mean_flat = data['obs_mean_flat']
-gust_ico_max_unscaled = data['gust_ico_max_unscaled']
+model_mean = data['model_mean']
+gust_ico = data['gust_ico']
+tkel1 = data['tkel1']
+dvl3v10 = data['dvl3v10']
+height = data['height']
+obs_gust = data['obs_gust']
+obs_mean = data['obs_mean']
 
-mean_abs_error = np.abs(model_mean - obs_mean_flat)
-mean_rel_error = mean_abs_error/obs_mean_flat
-errormask = mean_rel_error > max_mean_wind_error
+obsmask = np.isnan(obs_gust)
+model_mean_hr = np.mean(model_mean, axis=2)
+mean_abs_error = np.abs(model_mean_hr - obs_mean)
+mean_rel_error = mean_abs_error/obs_mean
+obsmask[mean_rel_error > max_mean_wind_error] = True
+obs_gust = obs_gust[~obsmask] 
+obs_mean = obs_mean[~obsmask] 
+model_mean = model_mean[~obsmask]
+model_mean_hr = model_mean_hr[~obsmask]
+gust_ico = gust_ico[~obsmask]
+tkel1 = tkel1[~obsmask]
+dvl3v10 = dvl3v10[~obsmask]
+height = height[~obsmask]
+N = obs_gust.flatten().shape[0]
 
-model_mean_max = model_mean_max[~errormask]
-model_mean = model_mean[~errormask]
-gust_ico_max = gust_ico_max[~errormask]
-tkel1_max = tkel1_max[~errormask]
-dvl3v10_max = dvl3v10_max[~errormask]
-height_max = height_max[~errormask]
-obs_gust_flat = obs_gust_flat[~errormask]
-obs_mean_flat = obs_mean_flat[~errormask]
-gust_ico_max_unscaled = gust_ico_max_unscaled[~errormask]
+# find maximum gust
+
+if apply_on_hourly_gusts:
+    maxid = gust_ico.argmax(axis=1)
+    I = np.indices(maxid.shape)
+    model_mean_max = model_mean[I,maxid].flatten() 
+    gust_ico_max = gust_ico[I,maxid].flatten()
+    gust_ico_max_unscaled = gust_ico[I,maxid].flatten()
+    tkel1_max = tkel1[I,maxid].flatten()
+    dvl3v10_max = dvl3v10[I,maxid].flatten()
+    height_max = height[I,maxid].flatten()
+else:
+    maxid = gust_ico.argmax(axis=1)
+    I = np.indices(maxid.shape)
+    gust_ico_max_unscaled = gust_ico[I,maxid].flatten()
 
 for mode in params.keys():
     print('#################################################################################')
@@ -61,24 +76,30 @@ for mode in params.keys():
 
     alphas = params[mode]
 
-    # calc current time step gusts
-    X = icon_feature_matrix(mode, gust_ico_max, height_max,
-                                dvl3v10_max, model_mean_max,
-                                tkel1_max)
-    # Calculate final gust
-    gust_max = np.sum(X*alphas, axis=1)
+    if apply_on_hourly_gusts:
+        X = icon_feature_matrix(mode, gust_ico_max, height_max,
+                                    dvl3v10_max, model_mean_max,
+                                    tkel1_max)
+        gust_max = np.sum(X*alphas, axis=1)
+    else:
+        X = icon_feature_matrix_timestep(mode, gust_ico, height,
+                                    dvl3v10, model_mean,
+                                    tkel1)
+        gust = np.sum(X*alphas, axis=2)
+        gust_max = np.max(gust,axis=1)
 
-    plot_error(obs_gust_flat, model_mean, obs_mean_flat, gust_max, gust_ico_max_unscaled)
+
+    plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_ico_max_unscaled)
     plt.suptitle('ICON  '+mode)
 
     if i_plot == 1:
         plt.show()
     elif i_plot > 1:
         if i_label == '':
-            plot_name = CNapply.plot_path + 'tuning_icon_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
+            plot_name = CNapply.plot_path + 'applied_icon_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
                                         +str(mode)+'.png'
         else:
-            plot_name = CNapply.plot_path + 'tuning_icon_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
+            plot_name = CNapply.plot_path + 'applied_icon_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
                                         +str(i_label)+'_'+str(mode)+'.png'
         print(plot_name)
         plt.savefig(plot_name)

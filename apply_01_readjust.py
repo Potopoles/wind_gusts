@@ -55,10 +55,6 @@ model_mean = model_mean[~obsmask]
 tcm = tcm[~obsmask]
 zvp10 = zvp10[~obsmask]
 
-# initial gust
-gust = zvp10 + 7.2*tcm*zvp10
-gust_max_orig = np.amax(gust,axis=1)
-
 
 for mode in params.keys():
     print('#################################################################################')
@@ -68,10 +64,17 @@ for mode in params.keys():
     print(alphas)
 
     # Calculate final gust
+    # Calculate final gust
     gust = zvp10 + alphas['1']*tcm*zvp10 + alphas['2']*tcm*zvp10**2
     maxid = gust.argmax(axis=1)
     I = np.indices(maxid.shape)
     gust_max = gust[I,maxid].squeeze()
+
+    if mode == 'ln':
+        gust_orig = zvp10 + 7.2*tcm*zvp10
+    elif mode == 'nl':
+        gust_orig = zvp10 + 7.2*tcm*zvp10 + 0.09*tcm*zvp10**2
+    gust_max_orig = np.amax(gust_orig,axis=1)
 
     plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_orig)
     plt.suptitle('apply READJUST  '+mode)

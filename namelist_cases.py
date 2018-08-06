@@ -74,8 +74,12 @@ class Case_Namelist:
         # 12 June_18
         {OBS_RAW:['20180620sfc.','20180621sfc.','20180622sfc.','20180623sfc.',
                   '20180624sfc.','20180625sfc.','20180626sfc.','20180627sfc.',
-                  '20180628sfc.','20180629sfc.','20180630sfc.'],
+                  '20180628sfc.','20180629sfc.','20180630sfc.','20180701sfc.'],
                     OBS:'June_18', MOD_RAW:'June_18', MOD:'ref'},
+
+        # 13 test case 180620 12 
+        {OBS_RAW:['20180620sfc.','20180621sfc.'],
+                OBS:'test_gust', MOD_RAW:'test_gust', MOD:'ref'},
 
 
 

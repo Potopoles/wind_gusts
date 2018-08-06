@@ -6,12 +6,12 @@ import pickle
 from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
-from functions_train import bralb_feature_matrix
+from functions_train import bralb_feature_matrix, bralb_feature_matrix_timestep
 
 ############ USER INPUT #############
-train_case_index = 10
+train_case_index = 11
 CNtrain = Case_Namelist(train_case_index)
-apply_case_index = 12
+apply_case_index = 11
 CNapply = Case_Namelist(apply_case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -20,6 +20,7 @@ i_label = ''
 
 max_mean_wind_error = 1.0
 i_sample_weight = '1'
+apply_on_hourly_gusts = 0
 #####################################
 
 # create directories
@@ -31,28 +32,41 @@ params = pickle.load( open(CNtrain.params_bralb_path, 'rb') )
 
 # LAOD DATA
 data = pickle.load( open(CNapply.train_bralb_path, 'rb') )
-model_mean_max = data['model_mean_max']
 model_mean = data['model_mean']
-gust_lb_max = data['gust_lb_max']
-kheight_lb_max = data['kheight_lb_max']
-height_max = data['height_max']
-obs_gust_flat = data['obs_gust_flat']
-obs_mean_flat = data['obs_mean_flat']
-gust_lb_max_original = data['gust_lb_max_unscaled']
+gust_lb = data['gust_lb']
+kheight_lb = data['kheight_lb']
+height = data['height']
+obs_gust = data['obs_gust']
+obs_mean = data['obs_mean']
 
+# observation to 1D and filter values
+obsmask = np.isnan(obs_gust)
+model_mean_hr = np.mean(model_mean, axis=2)
+mean_abs_error = np.abs(model_mean_hr - obs_mean)
+mean_rel_error = mean_abs_error/obs_mean
+obsmask[mean_rel_error > max_mean_wind_error] = True
+obs_gust = obs_gust[~obsmask] 
+obs_mean = obs_mean[~obsmask] 
+model_mean = model_mean[~obsmask]
+model_mean_hr = model_mean_hr[~obsmask]
+gust_lb = gust_lb[~obsmask]
+kheight_lb = kheight_lb[~obsmask]
+height = height[~obsmask]
 
-mean_abs_error = np.abs(model_mean - obs_mean_flat)
-mean_rel_error = mean_abs_error/obs_mean_flat
-errormask = mean_rel_error > max_mean_wind_error
-
-model_mean_max = model_mean_max[~errormask]
-model_mean = model_mean[~errormask]
-gust_lb_max = gust_lb_max[~errormask]
-kheight_lb_max = kheight_lb_max[~errormask]
-height_max = height_max[~errormask]
-obs_gust_flat = obs_gust_flat[~errormask]
-obs_mean_flat = obs_mean_flat[~errormask]
-gust_lb_max_original = gust_lb_max_original[~errormask]
+# find maximum gust
+if apply_on_hourly_gusts:
+    maxid = gust_lb.argmax(axis=1)
+    I = np.indices(maxid.shape)
+    gust_lb_max = gust_lb[I,maxid].flatten()
+    gust_lb_max_unscaled = gust_lb[I,maxid].flatten()
+    model_mean_max = model_mean[I,maxid].flatten() 
+    gust_lb_max = gust_lb[I,maxid].flatten()
+    kheight_lb_max = kheight_lb[I,maxid].flatten()
+    height_max = height[I,maxid].flatten()
+else:
+    maxid = gust_lb.argmax(axis=1)
+    I = np.indices(maxid.shape)
+    gust_lb_max_unscaled = gust_lb[I,maxid].flatten()
 
 for mode in params.keys():
     print('#################################################################################')
@@ -60,15 +74,18 @@ for mode in params.keys():
 
     alphas = params[mode]
 
-    # calc current time step gusts
-    X = bralb_feature_matrix(mode, gust_lb_max, kheight_lb_max,
-                                    height_max, model_mean_max)
+    if apply_on_hourly_gusts:
+        X = bralb_feature_matrix(mode, gust_lb_max, kheight_lb_max,
+                                        height_max, model_mean_max)
+        gust_max = np.sum(X*alphas, axis=1)
+    else:
+        X = bralb_feature_matrix_timestep(mode, gust_lb, kheight_lb,
+                                        height, model_mean)
+        gust = np.sum(X*alphas, axis=2)
+        gust_max = np.max(gust,axis=1)
 
-    # Calculate final gust
-    gust_max = np.sum(X*alphas, axis=1)
-
-    plot_error(obs_gust_flat, model_mean, obs_mean_flat, gust_max, gust_lb_max_original)
-    plt.suptitle('apply BRAEST  '+mode)
+    plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_lb_max_unscaled)
+    plt.suptitle('apply BRALB  '+mode)
 
     if i_plot == 1:
         plt.show()

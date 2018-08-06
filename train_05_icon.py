@@ -37,9 +37,10 @@ modes = ['gust',
         #'gust_dvl3v10_height_mean2_gust2',
 
 i_mode_ints = range(0,len(modes))
-#i_mode_ints = [3,5]
+i_mode_ints = [3,5]
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'
+min_gust = 0
 i_sample_weight = '1'
 max_mean_wind_error = 1.0
 #####################################
@@ -160,65 +161,53 @@ if not i_load:
             obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_tmp] 
 
 
-    # observation to 1D and filter values
-    obs_gust_flat = obs_gust.flatten()
-    obs_mean_flat = obs_mean.flatten()
-    obsmask = np.isnan(obs_gust_flat)
-    obs_gust_flat = obs_gust_flat[~obsmask] 
-    obs_mean_flat = obs_mean_flat[~obsmask] 
-    N = obs_gust_flat.shape[0]
-
-    # find maximum gust
-    maxid = gust_ico.argmax(axis=2)
-    I,J = np.indices(maxid.shape)
-
-    gust_ico_max_unscaled = gust_ico[I,J,maxid].flatten()[~obsmask]
-
-    model_mean_max = model_mean[I,J,maxid].flatten()[~obsmask] 
-    model_mean = np.mean(model_mean, axis=2).flatten()[~obsmask]
-    gust_ico_max = gust_ico[I,J,maxid].flatten()[~obsmask]
-    tkel1_max = tkel1[I,J,maxid].flatten()[~obsmask]
-    dvl3v10_max = dvl3v10[I,J,maxid].flatten()[~obsmask]
-    height_max = height[I,J,maxid].flatten()[~obsmask]
-
     data = {}
-    data['model_mean_max'] = model_mean_max
     data['model_mean'] = model_mean
-    data['gust_ico_max'] = gust_ico_max
-    data['tkel1_max'] = tkel1_max
-    data['dvl3v10_max'] = dvl3v10_max 
-    data['height_max'] = height_max
-    data['obs_gust_flat'] = obs_gust_flat
-    data['obs_mean_flat'] = obs_mean_flat 
-    data['gust_ico_max_unscaled'] = gust_ico_max_unscaled
+    data['gust_ico'] = gust_ico
+    data['tkel1'] = tkel1
+    data['dvl3v10'] = dvl3v10 
+    data['height'] = height
+    data['obs_gust'] = obs_gust
+    data['obs_mean'] = obs_mean 
 
     pickle.dump(data, open(CN.train_icon_path, 'wb'))
 else:
     data = pickle.load( open(CN.train_icon_path, 'rb') )
 
-    model_mean_max = data['model_mean_max']
     model_mean = data['model_mean']
-    gust_ico_max = data['gust_ico_max']
-    tkel1_max = data['tkel1_max']
-    dvl3v10_max = data['dvl3v10_max']
-    height_max = data['height_max']
-    obs_gust_flat = data['obs_gust_flat']
-    obs_mean_flat = data['obs_mean_flat']
-    gust_ico_max_unscaled = data['gust_ico_max_unscaled']
+    model_mean = data['model_mean']
+    gust_ico = data['gust_ico']
+    tkel1 = data['tkel1']
+    dvl3v10 = data['dvl3v10']
+    height = data['height']
+    obs_gust = data['obs_gust']
+    obs_mean = data['obs_mean']
 
-mean_abs_error = np.abs(model_mean - obs_mean_flat)
-mean_rel_error = mean_abs_error/obs_mean_flat
-errormask = mean_rel_error > max_mean_wind_error
 
-model_mean_max = model_mean_max[~errormask]
-model_mean = model_mean[~errormask]
-gust_ico_max = gust_ico_max[~errormask]
-tkel1_max = tkel1_max[~errormask]
-dvl3v10_max = dvl3v10_max[~errormask]
-height_max = height_max[~errormask]
-obs_gust_flat = obs_gust_flat[~errormask]
-obs_mean_flat = obs_mean_flat[~errormask]
-gust_ico_max_unscaled = gust_ico_max_unscaled[~errormask]
+obsmask = np.isnan(obs_gust)
+model_mean_hr = np.mean(model_mean, axis=2)
+mean_abs_error = np.abs(model_mean_hr - obs_mean)
+mean_rel_error = mean_abs_error/obs_mean
+obsmask[mean_rel_error > max_mean_wind_error] = True
+obs_gust = obs_gust[~obsmask] 
+obs_mean = obs_mean[~obsmask] 
+model_mean = model_mean[~obsmask]
+model_mean_hr = model_mean_hr[~obsmask]
+gust_ico = gust_ico[~obsmask]
+tkel1 = tkel1[~obsmask]
+dvl3v10 = dvl3v10[~obsmask]
+height = height[~obsmask]
+N = obs_gust.flatten().shape[0]
+
+# find maximum gust
+maxid = gust_ico.argmax(axis=1)
+I = np.indices(maxid.shape)
+model_mean_max = model_mean[I,maxid].flatten() 
+gust_ico_max = gust_ico[I,maxid].flatten()
+gust_ico_max_unscaled = gust_ico[I,maxid].flatten()
+tkel1_max = tkel1[I,maxid].flatten()
+dvl3v10_max = dvl3v10[I,maxid].flatten()
+height_max = height[I,maxid].flatten()
 
 regr = LinearRegression(fit_intercept=False)
 
@@ -231,7 +220,7 @@ for mode_int in i_mode_ints:
     X = icon_feature_matrix(mode, gust_ico_max, height_max,
                                 dvl3v10_max, model_mean_max,
                                 tkel1_max)
-    y = obs_gust_flat
+    y = obs_gust
 
     # scaling
     if i_scaling:
@@ -239,18 +228,18 @@ for mode_int in i_mode_ints:
         X = scaler.fit_transform(X)
 
     if i_sample_weight == 'linear':
-        regr.fit(X,y, sample_weight=obs_gust_flat)
+        regr.fit(X,y, sample_weight=obs_gust)
     elif i_sample_weight == 'squared':
-        regr.fit(X,y, sample_weight=obs_gust_flat**2)
+        regr.fit(X,y, sample_weight=obs_gust**2)
     else:
-        regr.fit(X,y, sample_weight=np.repeat(1,len(obs_gust_flat)))
+        regr.fit(X,y, sample_weight=np.repeat(1,len(obs_gust)))
  
     alphas = regr.coef_
     print('alphas scaled  ' + str(alphas))
     gust_max = regr.predict(X)
 
     try:
-        plot_error(obs_gust_flat, model_mean, obs_mean_flat, gust_max, gust_ico_max_unscaled)
+        plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_ico_max_unscaled)
         plt.suptitle('ICON  '+mode)
 
         if i_plot == 1:

@@ -246,14 +246,8 @@ for mode_int in i_mode_ints:
     alphas = {0:0,1:0,2:0,3:0,4:0}
     scaling_mean = {0:0,1:0,2:0,3:0,4:0}
     error_old = np.Inf
-    #d_error = 100
     d_errors = np.full(int(1/sgd_prob*6), 100.)
     learning_rate = 1E-2
-    #d_error_thresh = learning_rate_factor
-
-    #alpha0 = []
-    #alpha1 = []
-    #alpha2 = []
 
     c = 0
     while np.abs(np.mean(d_errors)) > d_error_thresh:

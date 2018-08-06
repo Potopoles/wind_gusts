@@ -203,6 +203,69 @@ def braes_feature_matrix(mode, gust_est_max, kheight_est_max,
     return(X)
 
 
+def braes_feature_matrix_timestep(mode, gust_est, kheight_est,
+                                height, model_mean):
+    if mode == 'gust':
+        X = np.zeros((gust_est.shape[0], gust_est.shape[1], 1))
+        X[:,:,0] = gust_est
+    elif mode == 'gust_kheight':
+        X = np.zeros((gust_est.shape[0], gust_est.shape[1], 2))
+        X[:,:,0] = gust_est
+        X[:,:,1] = kheight_est
+    elif mode == 'gust_height':
+        X = np.zeros((gust_est.shape[0], gust_est.shape[1], 2))
+        X[:,:,0] = gust_est
+        X[:,:,1] = height
+    elif mode == 'gust_mean':
+        X = np.zeros((gust_est.shape[0], gust_est.shape[1], 2))
+        X[:,:,0] = gust_est
+        X[:,:,1] = model_mean
+    elif mode == 'gust_mean_mean2':
+        X = np.zeros((gust_est.shape[0], gust_est.shape[1], 3))
+        X[:,:,0] = gust_est
+        X[:,:,1] = model_mean
+        X[:,:,2] = model_mean**2
+    elif mode == 'gust_mean_mean2_height':
+        X = np.zeros((gust_est.shape[0], gust_est.shape[1], 4))
+        X[:,:,0] = gust_est
+        X[:,:,1] = model_mean
+        X[:,:,2] = model_mean**2
+        X[:,:,3] = height
+    elif mode == 'gust_mean_mean2_mean3':
+        X = np.zeros((gust_est.shape[0], gust_est.shape[1], 4))
+        X[:,:,0] = gust_est
+        X[:,:,1] = model_mean
+        X[:,:,2] = model_mean**2
+        X[:,:,3] = model_mean**3
+    elif mode == 'gust_mean_mean2_mean3_height':
+        X = np.zeros((gust_est.shape[0], gust_est.shape[1], 5))
+        X[:,:,0] = gust_est
+        X[:,:,1] = model_mean
+        X[:,:,2] = model_mean**2
+        X[:,:,3] = model_mean**3
+        X[:,:,4] = height
+    elif mode == 'gust_mean_kheight':
+        X = np.zeros((gust_est.shape[0], gust_est.shape[1], 3))
+        X[:,:,0] = gust_est
+        X[:,:,1] = model_mean
+        X[:,:,2] = kheight_est
+    elif mode == 'gust_mean_height':
+        X = np.zeros((gust_est.shape[0], gust_est.shape[1], 3))
+        X[:,:,0] = gust_est
+        X[:,:,1] = model_mean
+        X[:,:,2] = height
+    elif mode == 'gust_mean_height_mean2_kheight':
+        X = np.zeros((gust_est.shape[0], gust_est.shape[1], 5))
+        X[:,:,0] = gust_est
+        X[:,:,1] = model_mean
+        X[:,:,2] = height
+        X[:,:,3] = model_mean**2
+        X[:,:,4] = kheight_est
+    else:
+        raise ValueError('wrong mode')
+    X = np.append(np.ones( (X.shape[0],X.shape[1],1) ), X, axis=2)
+
+    return(X)
 
 
 
@@ -271,6 +334,60 @@ def bralb_feature_matrix(mode, gust_lb_max, kheight_lb_max,
     return(X)
 
 
+def bralb_feature_matrix_timestep(mode, gust_lb, kheight_lb,
+                                height, model_mean):
+    if mode == 'gust':
+        X = np.zeros((gust_lb.shape[0], gust_lb.shape[1], 1))
+        X[:,:,0] = gust_lb
+    elif mode == 'gust_gust2':
+        X = np.zeros((gust_lb.shape[0], gust_lb.shape[1], 2))
+        X[:,:,0] = gust_lb
+        X[:,:,1] = gust_lb**2
+    elif mode == 'gust_kheight':
+        X = np.zeros((gust_lb.shape[0], gust_lb.shape[1], 2))
+        X[:,:,0] = gust_lb
+        X[:,:,1] = kheight_lb
+    elif mode == 'gust_height':
+        X = np.zeros((gust_lb.shape[0], gust_lb.shape[1], 2))
+        X[:,:,0] = gust_lb
+        X[:,:,1] = height
+    elif mode == 'gust_mean':
+        X = np.zeros((gust_lb.shape[0], gust_lb.shape[1], 2))
+        X[:,:,0] = gust_lb
+        X[:,:,1] = model_mean
+    elif mode == 'gust_mean_mean2':
+        X = np.zeros((gust_lb.shape[0], gust_lb.shape[1], 3))
+        X[:,:,0] = gust_lb
+        X[:,:,1] = model_mean
+        X[:,:,2] = model_mean**2
+    elif mode == 'gust_mean_kheight':
+        X = np.zeros((gust_lb.shape[0], gust_lb.shape[1], 3))
+        X[:,:,0] = gust_lb
+        X[:,:,1] = model_mean
+        X[:,:,2] = kheight_lb
+    elif mode == 'gust_mean_height':
+        X = np.zeros((gust_lb.shape[0], gust_lb.shape[1], 3))
+        X[:,:,0] = gust_lb
+        X[:,:,1] = model_mean
+        X[:,:,2] = height
+    elif mode == 'gust_mean_height_mean2':
+        X = np.zeros((gust_lb.shape[0], gust_lb.shape[1], 4))
+        X[:,:,0] = gust_lb
+        X[:,:,1] = model_mean
+        X[:,:,2] = height
+        X[:,:,3] = model_mean**2
+    elif mode == 'gust_mean_height_mean2_kheight':
+        X = np.zeros((gust_lb.shape[0], gust_lb.shape[1], 5))
+        X[:,:,0] = gust_lb
+        X[:,:,1] = model_mean
+        X[:,:,2] = height
+        X[:,:,3] = model_mean**2
+        X[:,:,4] = kheight_lb
+    else:
+        raise ValueError('wrong mode')
+    X = np.append(np.ones( (X.shape[0],X.shape[1],1) ), X, axis=2)
+
+    return(X)
 
 
 
@@ -376,6 +493,104 @@ def icon_feature_matrix(mode, gust_ico_max, height_max,
     else:
         raise ValueError('wrong mode')
     X = np.append(np.ones( (X.shape[0],1) ), X, axis=1)
+
+    return(X)
+
+
+
+def icon_feature_matrix_timestep(mode, gust_ico, height,
+                                dvl3v10, model_mean,
+                                tkel1):
+    if mode == 'gust':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 1))
+        X[:,:,0] = gust_ico
+    elif mode == 'gust_mean2':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 2))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = model_mean**2
+    elif mode == 'gust_gust2':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 2))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = gust_ico**2
+    elif mode == 'gust_gust2_height':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 3))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = gust_ico**2
+        X[:,:,2] = height
+    elif mode == 'gust_gust2_tkel1':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 3))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = gust_ico**2
+        X[:,:,2] = tkel1
+    elif mode == 'gust_gust2_mean_tkel1':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 4))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = gust_ico**2
+        X[:,:,2] = model_mean
+        X[:,:,3] = tkel1
+    elif mode == 'gust_gust2_height_mean2':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 4))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = gust_ico**2
+        X[:,:,2] = height
+        X[:,:,3] = model_mean**2
+    elif mode == 'gust_gust2_height_mean2_mean':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 5))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = gust_ico**2
+        X[:,:,2] = height
+        X[:,:,3] = model_mean**2
+        X[:,:,4] = model_mean
+    elif mode == 'gust_gust2_height_mean2_mean_dvl3v10':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 6))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = gust_ico**2
+        X[:,:,2] = height
+        X[:,:,3] = model_mean**2
+        X[:,:,4] = model_mean
+        X[:,:,5] = dvl3v10
+    elif mode == 'gust_gust2_height_mean2_mean_dvl3v10_tke1':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 7))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = gust_ico**2
+        X[:,:,2] = height
+        X[:,:,3] = model_mean**2
+        X[:,:,4] = model_mean
+        X[:,:,5] = dvl3v10
+        X[:,:,6] = tkel1
+    elif mode == 'gust_kheight':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 2))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = kheight_est
+    elif mode == 'gust_height':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 2))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = height
+    elif mode == 'gust_dvl3v10':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 2))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = dvl3v10
+    elif mode == 'gust_dvl3v10_height':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 3))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = dvl3v10
+        X[:,:,2] = height
+    elif mode == 'gust_dvl3v10_height_mean2':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 4))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = dvl3v10
+        X[:,:,2] = height
+        X[:,:,3] = model_mean**2
+    elif mode == 'gust_dvl3v10_height_mean2_gust2':
+        X = np.zeros((gust_ico.shape[0], gust_ico.shape[1], 5))
+        X[:,:,0] = gust_ico
+        X[:,:,1] = dvl3v10
+        X[:,:,2] = height
+        X[:,:,3] = model_mean**2
+        X[:,:,4] = gust_ico**2
+    else:
+        raise ValueError('wrong mode')
+    X = np.append(np.ones( (X.shape[0],X.shape[1],1) ), X, axis=2)
 
     return(X)
 

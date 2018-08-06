@@ -11,28 +11,28 @@ from sklearn.preprocessing import StandardScaler
 from functions_train import bralb_feature_matrix
 
 ############ USER INPUT #############
-case_index = 12
+case_index = 11
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_scaling = 1
-i_label = ''
-i_load = 0
+i_label =  ''
+i_load = 1
 delete_existing_param_file = 1
 modes = ['gust',
-        'gust_gust2',
-        'gust_kheight',
-        'gust_height',
-        'gust_mean',
-        'gust_mean_mean2',
-        'gust_mean_kheight',
-        'gust_mean_height',
-        'gust_mean_height_mean2_kheight',
-        'gust_mean_height_mean2']
+         'gust_gust2',
+         'gust_kheight',
+         'gust_height',
+         'gust_mean',
+         'gust_mean_mean2',
+         'gust_mean_kheight',
+         'gust_mean_height',
+         'gust_mean_height_mean2_kheight',
+         'gust_mean_height_mean2']
 
 i_mode_ints = range(0,len(modes))
-#i_mode_ints = [3,5]
+i_mode_ints = [3,9]
 min_gust = 0
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'
@@ -46,9 +46,7 @@ if delete_existing_param_file:
     except:
         pass
 
-
 if not i_load:
-
     # load data
     data = pickle.load( open(CN.mod_path, 'rb') )
     stat_keys = data[G.STAT_NAMES]
@@ -63,6 +61,7 @@ if not i_load:
     kval_lb = np.full((n_hours, n_stats, ts_per_hour), np.nan)
     gust_lb = np.full((n_hours, n_stats, ts_per_hour), np.nan)
     height = np.full((n_hours, n_stats, ts_per_hour), np.nan)
+    sso = np.full((n_hours, n_stats, ts_per_hour), np.nan)
     print('3D shape ' + str(kval_lb.shape))
     # 2D
     obs_gust = np.full((n_hours, n_stats), np.nan)
@@ -93,7 +92,6 @@ if not i_load:
             obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_tmp] 
 
 
-
     # Process fields
     kheight_lb = copy.deepcopy(kval_lb)
     kalts = np.loadtxt('../data/kaltitudes.txt')
@@ -102,64 +100,50 @@ if not i_load:
     for i,kind in enumerate(kinds):
         kheight_lb[kval_lb == kind] = kalts[i]
 
-        
-    # observation to 1D and filter values
-    obs_gust_flat = obs_gust.flatten()
-    obs_mean_flat = obs_mean.flatten()
-    obsmask = np.isnan(obs_gust_flat)
-    obsmask[obs_gust_flat < min_gust] = True
-    obs_gust_flat = obs_gust_flat[~obsmask] 
-    obs_mean_flat = obs_mean_flat[~obsmask] 
-    N = obs_gust_flat.shape[0]
-
-
-    # find maximum gust
-    maxid = gust_lb.argmax(axis=2)
-    I,J = np.indices(maxid.shape)
-
-    gust_lb_max_unscaled = gust_lb[I,J,maxid].flatten()[~obsmask]
-
-    model_mean_max = model_mean[I,J,maxid].flatten()[~obsmask] 
-    model_mean = np.mean(model_mean, axis=2).flatten()[~obsmask]
-    gust_lb_max = gust_lb[I,J,maxid].flatten()[~obsmask]
-    kheight_lb_max = kheight_lb[I,J,maxid].flatten()[~obsmask]
-    height_max = height[I,J,maxid].flatten()[~obsmask]
-
     data = {}
-    data['model_mean_max'] = model_mean_max
     data['model_mean'] = model_mean
-    data['gust_lb_max'] = gust_lb_max
-    data['kheight_lb_max'] = kheight_lb_max
-    data['height_max'] = height_max
-    data['obs_gust_flat'] = obs_gust_flat
-    data['obs_mean_flat'] = obs_mean_flat 
-    data['gust_lb_max_unscaled'] = gust_lb_max_unscaled
+    data['gust_lb'] = gust_lb
+    data['kheight_lb'] = kheight_lb
+    data['height'] = height
+    data['obs_gust'] = obs_gust
+    data['obs_mean'] = obs_mean 
 
     pickle.dump(data, open(CN.train_bralb_path, 'wb'))
 else:
     data = pickle.load( open(CN.train_bralb_path, 'rb') )
 
-    model_mean_max = data['model_mean_max']
     model_mean = data['model_mean']
-    gust_lb_max = data['gust_lb_max']
-    kheight_lb_max = data['kheight_lb_max']
-    height_max = data['height_max']
-    obs_gust_flat = data['obs_gust_flat']
-    obs_mean_flat = data['obs_mean_flat']
-    gust_lb_max_unscaled = data['gust_lb_max_unscaled']
+    gust_lb = data['gust_lb']
+    kheight_lb = data['kheight_lb']
+    height = data['height']
+    obs_gust = data['obs_gust']
+    obs_mean = data['obs_mean']
 
-mean_abs_error = np.abs(model_mean - obs_mean_flat)
-mean_rel_error = mean_abs_error/obs_mean_flat
-errormask = mean_rel_error > max_mean_wind_error
+# observation to 1D and filter values
+obsmask = np.isnan(obs_gust)
+obsmask[obs_gust < min_gust] = True
+model_mean_hr = np.mean(model_mean, axis=2)
+mean_abs_error = np.abs(model_mean_hr - obs_mean)
+mean_rel_error = mean_abs_error/obs_mean
+obsmask[mean_rel_error > max_mean_wind_error] = True
+obs_gust = obs_gust[~obsmask] 
+obs_mean = obs_mean[~obsmask] 
+model_mean = model_mean[~obsmask]
+model_mean_hr = model_mean_hr[~obsmask]
+gust_lb = gust_lb[~obsmask]
+kheight_lb = kheight_lb[~obsmask]
+height = height[~obsmask]
+N = obs_gust.flatten().shape[0]
 
-model_mean_max = model_mean_max[~errormask]
-model_mean = model_mean[~errormask]
-gust_lb_max = gust_lb_max[~errormask]
-kheight_lb_max = kheight_lb_max[~errormask]
-height_max = height_max[~errormask]
-obs_gust_flat = obs_gust_flat[~errormask]
-obs_mean_flat = obs_mean_flat[~errormask]
-gust_lb_max_unscaled = gust_lb_max_unscaled[~errormask]
+# find maximum gust
+maxid = gust_lb.argmax(axis=1)
+I = np.indices(maxid.shape)
+gust_lb_max = gust_lb[I,maxid].flatten()
+gust_lb_max_unscaled = gust_lb[I,maxid].flatten()
+model_mean_max = model_mean[I,maxid].flatten() 
+gust_lb_max = gust_lb[I,maxid].flatten()
+kheight_lb_max = kheight_lb[I,maxid].flatten()
+height_max = height[I,maxid].flatten()
 
 regr = LinearRegression(fit_intercept=False)
 
@@ -171,7 +155,7 @@ for mode_int in i_mode_ints:
     # calc current time step gusts
     X = bralb_feature_matrix(mode, gust_lb_max, kheight_lb_max,
                                     height_max, model_mean_max)
-    y = obs_gust_flat
+    y = obs_gust
 
     # scaling
     if i_scaling:
@@ -179,18 +163,18 @@ for mode_int in i_mode_ints:
         X = scaler.fit_transform(X)
 
     if i_sample_weight == 'linear':
-        regr.fit(X,y, sample_weight=obs_gust_flat)
+        regr.fit(X,y, sample_weight=obs_gust)
     elif i_sample_weight == 'squared':
-        regr.fit(X,y, sample_weight=obs_gust_flat**2)
+        regr.fit(X,y, sample_weight=obs_gust**2)
     else:
-        regr.fit(X,y, sample_weight=np.repeat(1,len(obs_gust_flat)))
+        regr.fit(X,y, sample_weight=np.repeat(1,len(obs_gust)))
  
     alphas = regr.coef_
     print('alphas scaled  ' + str(alphas))
     gust_max = regr.predict(X)
 
     try:
-        plot_error(obs_gust_flat, model_mean, obs_mean_flat, gust_max, gust_lb_max_unscaled)
+        plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_lb_max_unscaled)
         plt.suptitle('BRALB  '+mode)
 
         if i_plot == 1:
@@ -220,4 +204,5 @@ for mode_int in i_mode_ints:
     else:
         params = {}
     params[mode] = alphas
+    print(CN.params_bralb_path)
     pickle.dump(params, open(CN.params_bralb_path, 'wb'))

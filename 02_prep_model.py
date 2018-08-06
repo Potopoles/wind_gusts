@@ -9,7 +9,7 @@ import os
 from netCDF4 import Dataset
 
 ############ USER INPUT #############
-case_index = 12
+case_index = 13
 CN = Case_Namelist(case_index)
 # time step [s] of model
 model_dt = 10
@@ -41,6 +41,7 @@ hsurf_file = '../extern_par/HSURF.nc'
 
 lm_runs = os.listdir(CN.raw_mod_path)
 mod_stations_file = CN.raw_mod_path + lm_runs[0] + '/fort.700'
+print(mod_stations_file)
 
 # read model station names
 mod_stations = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,0]
@@ -50,11 +51,15 @@ stat_i_inds = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,9]
 
 if case_index == 0:
     use_stat = file_inds <= 731
+    # Filter out stations with i_ind = 0 (thos with height = -99999999)
     use_stat[stat_i_inds == 0] = False
 elif case_index == 9:
     use_stat = file_inds <= 911
+    # Filter out stations with i_ind = 0 (thos with height = -99999999)
     use_stat[stat_i_inds == 0] = False
+    #use_stat = stat_i_inds != 0
 else:
+    # Filter out stations with i_ind = 0 (thos with height = -99999999)
     use_stat = stat_i_inds != 0
 
 
@@ -65,7 +70,6 @@ stat_i_inds = stat_i_inds[use_stat]
 stat_j_inds = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[use_stat,8].astype(np.int)
 stat_dz = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[use_stat,11].astype(np.float)
 
-
 # nc file for sso_stdh
 #sso_stdh = Dataset(sso_stdh_file, 'r')['SSO_STDH'][:]
 #slo_ang = Dataset(slo_ang_file, 'r')['SLO_ANG'][:]
@@ -73,7 +77,6 @@ stat_dz = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[use_stat
 #slo_asp = Dataset(slo_asp_file, 'r')['SLO_ASP'][:]
 #z0 = Dataset(z0_file, 'r')['Z0'][:]
 hsurf = Dataset(hsurf_file, 'r')['HSURF'][:]
-
 
 # load main data file
 data = pd.read_pickle(CN.obs_path)

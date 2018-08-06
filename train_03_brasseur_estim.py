@@ -33,7 +33,7 @@ modes = ['gust',
         'gust_mean_height_mean2_kheight']
 
 i_mode_ints = range(0,len(modes))
-#i_mode_ints = [3,5]
+#i_mode_ints = [5,9]
 min_gust = 0
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'
@@ -58,7 +58,6 @@ if not i_load:
     n_hours = len(lm_runs)*24
     n_stats = len(stat_keys)
     ts_per_hour = int(3600/model_dt)
-
 
     # 3D
     model_mean = np.full((n_hours, n_stats, ts_per_hour), np.nan)
@@ -105,64 +104,50 @@ if not i_load:
     for i,kind in enumerate(kinds):
         kheight_est[kval_est == kind] = kalts[i]
 
-        
-    # observation to 1D and filter values
-    obs_gust_flat = obs_gust.flatten()
-    obs_mean_flat = obs_mean.flatten()
-    obsmask = np.isnan(obs_gust_flat)
-    obsmask[obs_gust_flat < min_gust] = True
-    obs_gust_flat = obs_gust_flat[~obsmask] 
-    obs_mean_flat = obs_mean_flat[~obsmask] 
-    N = obs_gust_flat.shape[0]
-
-    # find maximum gust
-    maxid = gust_est.argmax(axis=2)
-    I,J = np.indices(maxid.shape)
-
-    gust_est_max_unscaled = gust_est[I,J,maxid].flatten()[~obsmask]
-
-    model_mean_max = model_mean[I,J,maxid].flatten()[~obsmask] 
-    model_mean = np.mean(model_mean, axis=2).flatten()[~obsmask]
-    gust_est_max = gust_est[I,J,maxid].flatten()[~obsmask]
-    kheight_est_max = kheight_est[I,J,maxid].flatten()[~obsmask]
-    height_max = height[I,J,maxid].flatten()[~obsmask]
-
     data = {}
-    data['model_mean_max'] = model_mean_max
     data['model_mean'] = model_mean
-    data['gust_est_max'] = gust_est_max
-    data['kheight_est_max'] = kheight_est_max
-    data['height_max'] = height_max
-    data['obs_gust_flat'] = obs_gust_flat
-    data['obs_mean_flat'] = obs_mean_flat 
-    data['gust_est_max_unscaled'] = gust_est_max_unscaled
+    data['gust_est'] = gust_est
+    data['kheight_est'] = kheight_est
+    data['height'] = height
+    data['obs_gust'] = obs_gust
+    data['obs_mean'] = obs_mean 
 
     pickle.dump(data, open(CN.train_braes_path, 'wb'))
 else:
     data = pickle.load( open(CN.train_braes_path, 'rb') )
 
-    model_mean_max = data['model_mean_max']
     model_mean = data['model_mean']
-    gust_est_max = data['gust_est_max']
-    kheight_est_max = data['kheight_est_max']
-    height_max = data['height_max']
-    obs_gust_flat = data['obs_gust_flat']
-    obs_mean_flat = data['obs_mean_flat']
-    gust_est_max_unscaled = data['gust_est_max_unscaled']
+    gust_est = data['gust_est']
+    kheight_est = data['kheight_est']
+    height = data['height']
+    obs_gust = data['obs_gust']
+    obs_mean = data['obs_mean']
 
-mean_abs_error = np.abs(model_mean - obs_mean_flat)
-mean_rel_error = mean_abs_error/obs_mean_flat
-errormask = mean_rel_error > max_mean_wind_error
+# observation to 1D and filter values
+obsmask = np.isnan(obs_gust)
+obsmask[obs_gust < min_gust] = True
+model_mean_hr = np.mean(model_mean, axis=2)
+mean_abs_error = np.abs(model_mean_hr - obs_mean)
+mean_rel_error = mean_abs_error/obs_mean
+obsmask[mean_rel_error > max_mean_wind_error] = True
+obs_gust = obs_gust[~obsmask] 
+obs_mean = obs_mean[~obsmask] 
+model_mean = model_mean[~obsmask]
+model_mean_hr = model_mean_hr[~obsmask]
+gust_est = gust_est[~obsmask]
+kheight_est = kheight_est[~obsmask]
+height = height[~obsmask]
+N = obs_gust.flatten().shape[0]
 
-model_mean_max = model_mean_max[~errormask]
-model_mean = model_mean[~errormask]
-gust_est_max = gust_est_max[~errormask]
-kheight_est_max = kheight_est_max[~errormask]
-height_max = height_max[~errormask]
-obs_gust_flat = obs_gust_flat[~errormask]
-obs_mean_flat = obs_mean_flat[~errormask]
-gust_est_max_unscaled = gust_est_max_unscaled[~errormask]
-
+# find maximum gust
+maxid = gust_est.argmax(axis=1)
+I = np.indices(maxid.shape)
+gust_est_max = gust_est[I,maxid].flatten()
+gust_est_max_unscaled = gust_est[I,maxid].flatten()
+model_mean_max = model_mean[I,maxid].flatten() 
+gust_est_max = gust_est[I,maxid].flatten()
+kheight_est_max = kheight_est[I,maxid].flatten()
+height_max = height[I,maxid].flatten()
 
 regr = LinearRegression(fit_intercept=False)
 
@@ -174,7 +159,7 @@ for mode_int in i_mode_ints:
     # calc current time step gusts
     X = braes_feature_matrix(mode, gust_est_max, kheight_est_max,
                                     height_max, model_mean_max)
-    y = obs_gust_flat
+    y = obs_gust
 
     # scaling
     if i_scaling:
@@ -182,18 +167,18 @@ for mode_int in i_mode_ints:
         X = scaler.fit_transform(X)
 
     if i_sample_weight == 'linear':
-        regr.fit(X,y, sample_weight=obs_gust_flat)
+        regr.fit(X,y, sample_weight=obs_gust)
     elif i_sample_weight == 'squared':
-        regr.fit(X,y, sample_weight=obs_gust_flat**2)
+        regr.fit(X,y, sample_weight=obs_gust**2)
     else:
-        regr.fit(X,y, sample_weight=np.repeat(1,len(obs_gust_flat)))
+        regr.fit(X,y, sample_weight=np.repeat(1,len(obs_gust)))
  
     alphas = regr.coef_
     print('alphas scaled  ' + str(alphas))
     gust_max = regr.predict(X)
 
     try:
-        plot_error(obs_gust_flat, model_mean, obs_mean_flat, gust_max, gust_est_max_unscaled)
+        plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_est_max_unscaled)
         plt.suptitle('BRAEST  '+mode)
 
         if i_plot == 1:
