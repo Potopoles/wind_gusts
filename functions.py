@@ -3,6 +3,8 @@ import pandas as pd
 import globals as G
 from sklearn import metrics
 import matplotlib.pyplot as plt
+from matplotlib import cm
+from datetime import timedelta
 
 
 def check_prerequisites(data, prerequisites, hist_tag):
@@ -16,6 +18,8 @@ def check_prerequisites(data, prerequisites, hist_tag):
 
 
 def calc_model_fields(data, i_model_fields):
+    
+    offset = timedelta(hours=1)
 
     """
     Calculate model fields (also gusts according to all methods)
@@ -130,7 +134,7 @@ def calc_model_fields(data, i_model_fields):
                         gust = curr_raw[gust_field_name].to_frame()
 
                     # resample to maximum hourly value
-                    field = gust.resample('H').max()
+                    field = gust.resample('H', loffset=offset).max()
                     #field = gust.resample('H', how=lambda x: np.percentile(x, q=80))
 
                 elif field_name in G.FIELDS_BRA_KVAL:
@@ -146,16 +150,15 @@ def calc_model_fields(data, i_model_fields):
                         k_field_name = 'k_bra_ub'
 
                     gust = curr_raw[gust_field_name]
-                    maxid = gust.resample('H').agg({gust_field_name: np.argmax})
-                    #print(maxid)
-                    #quit()
+                    maxid = gust.resample('H', convention='end').agg({gust_field_name: np.argmax})
                     values = curr_raw[k_field_name][maxid].values
+                    raise NotImplementedError()
                     field = pd.DataFrame(values, index=maxid.index.levels[1], columns=[field_name]).astype(int)
 
                 elif field_name == G.MODEL_MEAN_WIND:
                     
                     field = curr_raw['zvp10'].to_frame()
-                    field = field.resample('H').mean()
+                    field = field.resample('H', loffset=offset).mean()
 
                 else:
                     raise ValueError('Unknown user input "' + field_name + '" in list i_gust_fields!')
@@ -271,6 +274,8 @@ def join_all_stations(data):
 def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     fig,axes = plt.subplots(2,5, figsize=(19,8))
 
+    cmap = plt.cm.get_cmap('gray')
+
     xmin = 0
     xmax = 60
     ymin = -50
@@ -289,12 +294,21 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     err_init = gust_init - obs
     err_mean = model_mean - obs_mean
     rmse = np.sqrt(np.sum(err**2)/len(err))
-    rmse_init = np.sqrt(np.sum(err_init**2)/len(err))
+    rmse_init = np.sqrt(np.sum(err_init**2)/len(err_init))
+    err_mean_nonan = err_mean[~np.isnan(err_mean)] 
+    rmse_mean = np.sqrt(np.sum(err_mean_nonan**2)/len(err_mean_nonan))
+    print('RMSE mean wind: ' + str(rmse_mean))
+
+    N = len(err)
+
+    col_amplify = 6
 
     # calculate median
-    dmp = 1
+    dmp = 0.5
     mp_borders = np.arange(np.floor(xmin),np.ceil(xmax),dmp)
     mp_x = mp_borders[:-1] + np.diff(mp_borders)/2
+    mp_borders_me = np.arange(np.floor(ymin),np.ceil(ymax),dmp)
+    mp_x_me = mp_borders_me[:-1] + np.diff(mp_borders_me)/2
     mp_y_og = np.full((len(mp_x),3),np.nan)
     mp_y_init_og = np.full((len(mp_x),3),np.nan)
     mp_y_mg = np.full((len(mp_x),3),np.nan)
@@ -305,45 +319,76 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     mp_y_om_init = np.full((len(mp_x),3),np.nan)
     mp_y_mean = np.full((len(mp_x),3),np.nan)
     mp_y_gg = np.full((len(mp_x),3),np.nan)
+    mp_y_geme = np.full((len(mp_x_me),3),np.nan)
+
+    col_mm = np.zeros(N)
+    col_om = np.zeros(N)
+    col_mg = np.zeros(N)
+    col_mg_init = np.zeros(N)
+    col_og = np.zeros(N)
+
     for qi in range(0,len(qs)):
         for i in range(0,len(mp_x)):
             # model gust err vs obs gust
             inds = (obs > mp_borders[i]) & (obs <= mp_borders[i+1])
+            col_og[inds] = np.sum(inds)/N*col_amplify
             if np.sum(inds) > 10:
                 mp_y_og[i,qi] = np.percentile(err[inds],q=qs[qi])
                 mp_y_init_og[i,qi] = np.percentile(err_init[inds],q=qs[qi])
+
             # model gust err vs model gust
             inds = (gust > mp_borders[i]) & (gust <= mp_borders[i+1])
+            col_mg[inds] = np.sum(inds)/N*col_amplify
             if np.sum(inds) > 10:
                 mp_y_mg[i,qi] = np.percentile(err[inds],q=qs[qi])
+
             inds = (gust_init > mp_borders[i]) & (gust_init <= mp_borders[i+1])
+            col_mg_init[inds] = np.sum(inds)/N*col_amplify
             if np.sum(inds) > 10:
                 mp_y_mg_init[i,qi] = np.percentile(err_init[inds],q=qs[qi])
+
             # model gust err vs model mean
             inds = (model_mean > mp_borders[i]) & (model_mean <= mp_borders[i+1])
+            col_mm[inds] = np.sum(inds)/N*col_amplify
             if np.sum(inds) > 10:
                 mp_y_mm[i,qi] = np.percentile(err[inds],q=qs[qi])
                 mp_y_mm_init[i,qi] = np.percentile(err_init[inds],q=qs[qi])
+
             # model gust err vs obs mean
             inds = (obs_mean > mp_borders[i]) & (obs_mean <= mp_borders[i+1])
+            col_om[inds] = np.sum(inds)/N*col_amplify
             if np.sum(inds) > 10:
                 mp_y_om[i,qi] = np.percentile(err[inds],q=qs[qi])
                 mp_y_om_init[i,qi] = np.percentile(err_init[inds],q=qs[qi])
+
             # model mean err vs model mean
-            inds = (model_mean > mp_borders[i]) & (model_mean <= mp_borders[i+1])
+            #inds = (model_mean > mp_borders[i]) & (model_mean <= mp_borders[i+1])
             inds = (obs_mean > mp_borders[i]) & (obs_mean <= mp_borders[i+1])
             if np.sum(inds) > 10:
                 mp_y_mean[i,qi] = np.nanpercentile(err_mean[inds],q=qs[qi])
-            # obs gust vs model gust
-            inds = (gust > mp_borders[i]) & (gust <= mp_borders[i+1])
+            ## obs gust vs model gust
+            #inds = (gust > mp_borders[i]) & (gust <= mp_borders[i+1])
+            #if np.sum(inds) > 10:
+            #    mp_y_gg[i,qi] = np.percentile(obs[inds],q=qs[qi])
+
+            # model gust err vs model mean err
+            inds = (err_mean > mp_borders_me[i]) & (err_mean <= mp_borders_me[i+1])
             if np.sum(inds) > 10:
-                mp_y_gg[i,qi] = np.percentile(obs[inds],q=qs[qi])
+                #mp_y_geme[i,qi] = np.percentile(err[inds],q=qs[qi])
+                mp_y_geme[i,qi] = np.percentile(err_init[inds],q=qs[qi])
+
+    col_mm      = [cmap(np.sqrt(val)) for val in col_mm]
+    col_om      = [cmap(np.sqrt(val)) for val in col_om]
+    col_mg      = [cmap(np.sqrt(val)) for val in col_mg]
+    col_mg_init = [cmap(np.sqrt(val)) for val in col_mg_init]
+    col_og      = [cmap(np.sqrt(val)) for val in col_og]
+
 
     xlab = 'Observed gust (OBS) [m/s]'
     ylab = 'Model gust error (MOD-OBS) [m/s]'
     # gust error vs obs gust initial
     ax = axes[0,0]
-    ax.scatter(obs, err_init, color='black', marker=".")
+    ax.scatter(obs, err_init, color=col_og, marker=".")
     for qi in range(0,len(qs)):
         ax.plot(mp_x, mp_y_init_og[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
     ax.axhline(y=0,c='grey')
@@ -356,7 +401,7 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     ax.grid()
     # gust error vs obs gust 
     ax = axes[1,0]
-    ax.scatter(obs, err, color='black', marker=".")
+    ax.scatter(obs, err, color=col_og, marker=".")
     for qi in range(0,len(qs)):
         ax.plot(mp_x, mp_y_og[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
     ax.axhline(y=0,c='grey')
@@ -373,10 +418,9 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     ylab = 'Model gust error (MOD-OBS) [m/s]'
     # model mean wind init
     ax = axes[0,1]
-    ax.scatter(obs_mean, err_init, color='black', marker=".")
+    ax.scatter(obs_mean, err_init, color=col_om, marker=".")
     for qi in range(0,len(qs)):
         ax.plot(mp_x, mp_y_om_init[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
-    #ax.plot(mp_x, mp_y_om_init, color='orange')
     ax.axhline(y=0,c='grey')
     ax.set_xlim(xmin,xmax/2)
     ax.set_ylim(ymin,ymax)
@@ -386,10 +430,9 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     ax.grid()
     # model mean wind 
     ax = axes[1,1]
-    ax.scatter(obs_mean, err, color='black', marker=".")
+    ax.scatter(obs_mean, err, color=col_om, marker=".")
     for qi in range(0,len(qs)):
         ax.plot(mp_x, mp_y_om[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
-    #ax.plot(mp_x, mp_y_om, color='orange')
     ax.axhline(y=0,c='grey')
     ax.set_xlim(xmin,xmax/2)
     ax.set_ylim(ymin,ymax)
@@ -403,10 +446,9 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     ylab = 'Model gust error (MOD-OBS) [m/s]'
     # gust error vs model gust initial
     ax = axes[0,2]
-    ax.scatter(gust_init, err_init, color='black', marker=".")
+    ax.scatter(gust_init, err_init, color=col_mg_init, marker=".")
     for qi in range(0,len(qs)):
         ax.plot(mp_x, mp_y_mg_init[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
-    #ax.plot(mp_x, mp_y_mg_init, color='orange')
     ax.axhline(y=0,c='grey')
     ax.set_xlim(xmin,xmax)
     ax.set_ylim(ymin,ymax)
@@ -416,10 +458,9 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     ax.grid()
     # gust error vs model gust
     ax = axes[1,2]
-    ax.scatter(gust, err, color='black', marker=".")
+    ax.scatter(gust, err, color=col_mg, marker=".")
     for qi in range(0,len(qs)):
         ax.plot(mp_x, mp_y_mg[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
-    #ax.plot(mp_x, mp_y_mg, color='orange')
     ax.axhline(y=0,c='grey')
     ax.set_xlim(xmin,xmax)
     ax.set_ylim(ymin,ymax)
@@ -434,10 +475,9 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     ylab = 'Model gust error (MOD-OBS) [m/s]'
     # model mean wind init
     ax = axes[0,3]
-    ax.scatter(model_mean, err_init, color='black', marker=".")
+    ax.scatter(model_mean, err_init, color=col_mm, marker=".")
     for qi in range(0,len(qs)):
         ax.plot(mp_x, mp_y_mm_init[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
-    #ax.plot(mp_x, mp_y_mm_init, color='orange')
     ax.axhline(y=0,c='grey')
     ax.set_xlim(xmin,xmax/2)
     ax.set_ylim(ymin,ymax)
@@ -447,10 +487,9 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     ax.grid()
     # model mean wind 
     ax = axes[1,3]
-    ax.scatter(model_mean, err, color='black', marker=".")
+    ax.scatter(model_mean, err, color=col_mm, marker=".")
     for qi in range(0,len(qs)):
         ax.plot(mp_x, mp_y_mm[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
-    #ax.plot(mp_x, mp_y_mm, color='orange')
     ax.axhline(y=0,c='grey')
     ax.set_xlim(xmin,xmax/2)
     ax.set_ylim(ymin,ymax)
@@ -460,38 +499,51 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     ax.grid()
 
 
-
-
     # mean wind error
-    xlab = 'Model mean wind [m/s]'
+    xlab = 'Obs mean wind [m/s]'
     ylab = 'Model mean wind error (MOD-OBS) [m/s]'
     ax = axes[0,4]
-    #ax.scatter(model_mean, err_mean, color='black', marker=".")
-    ax.scatter(obs_mean, err_mean, color='black', marker=".")
+    ax.scatter(obs_mean, err_mean, color=col_om, marker=".")
     for qi in range(0,len(qs)):
         ax.plot(mp_x, mp_y_mean[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
-    #ax.plot(mp_x, mp_y_mean, color='orange')
     ax.axhline(y=0,c='grey')
     ax.set_xlim(xmin,xmax/2)
     ax.set_ylim(ymin,ymax)
+    ax.text(xmax/2-0.3*(xmax/2-xmin), ymax-0.10*(ymax-ymin), 'rmse '+str(np.round(rmse_mean,2)), color='red')
     ax.set_title('mean wind error')
     ax.set_xlabel(xlab)
     ax.set_ylabel(ylab)
     ax.grid()
 
 
-    # obs gust vs model gust initial
-    xlab = 'Model gust (MOD) [m/s]'
-    ylab = 'Obs gust (OBS) [m/s]'
+    ## obs gust vs model gust initial
+    #xlab = 'Model gust (MOD) [m/s]'
+    #ylab = 'Obs gust (OBS) [m/s]'
+    #ax = axes[1,4]
+    #ax.scatter(gust, obs, color=col_mg, marker=".")
+    #for qi in range(0,len(qs)):
+    #    ax.plot(mp_x, mp_y_gg[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
+    ##ax.plot(mp_x, mp_y_gg, color='orange')
+    #ax.axhline(y=0,c='grey')
+    #ax.set_xlim(0,xmax)
+    #ax.set_ylim(0,xmax)
+    #ax.set_title('gust vs gust new')
+    #ax.set_xlabel(xlab)
+    #ax.set_ylabel(ylab)
+    #ax.grid()
+
+    # gust error vs mean wind error
+    xlab = 'Model mean wind error (MOD-OBS) [m/s]'
+    ylab = 'Model gust error (MOD-OBS) [m/s]'
     ax = axes[1,4]
-    ax.scatter(gust, obs, color='black', marker=".")
+    #ax.scatter(err_mean, err, color='black', marker=".")
+    ax.scatter(err_mean, err_init, color='black', marker=".")
     for qi in range(0,len(qs)):
-        ax.plot(mp_x, mp_y_gg[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
-    #ax.plot(mp_x, mp_y_gg, color='orange')
+        ax.plot(mp_x_me, mp_y_geme[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
     ax.axhline(y=0,c='grey')
-    ax.set_xlim(0,xmax)
-    ax.set_ylim(0,xmax)
-    ax.set_title('gust vs gust new')
+    ax.set_xlim(ymin,ymax)
+    ax.set_ylim(ymin,ymax)
+    ax.set_title('gust err vs mean err')
     ax.set_xlabel(xlab)
     ax.set_ylabel(ylab)
     ax.grid()

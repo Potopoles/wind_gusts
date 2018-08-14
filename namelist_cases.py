@@ -15,6 +15,7 @@ class Case_Namelist:
    
     # 01_prep_obs: path to file containing meta information about stations (mainly column 'Use' is interesting)
     stations_meta_path = '../obs_out/ps_fkl010b1_2262.csv'
+    stations_meta_path = '../obs_out/ps_fkl010b1_2262_SMN.csv'
 
 
     OBS_RAW = 'obs_raw'
@@ -76,10 +77,19 @@ class Case_Namelist:
                   '20180624sfc.','20180625sfc.','20180626sfc.','20180627sfc.',
                   '20180628sfc.','20180629sfc.','20180630sfc.','20180701sfc.'],
                     OBS:'June_18', MOD_RAW:'June_18', MOD:'ref'},
-
-        # 13 test case 180620 12 
+        # 13 December_17
+        {OBS_RAW:['20171206sfc.','20171207sfc.','20171208sfc.','20171209sfc.',
+                  '20171210sfc.','20171211sfc.','20171212sfc.','20171213sfc.',
+                  '20171214sfc.','20171215sfc.','20171216sfc.','20171217sfc.'],
+                    OBS:'December_17', MOD_RAW:'December_17', MOD:'ref'},
+        # 14 test case 180620 12 for gust testing with Guy's file VBM10M_all
         {OBS_RAW:['20180620sfc.','20180621sfc.'],
                 OBS:'test_gust', MOD_RAW:'test_gust', MOD:'ref'},
+        # 15 December_SMN
+        {OBS_RAW:['20171206sfc.','20171207sfc.','20171208sfc.','20171209sfc.',
+                  '20171210sfc.','20171211sfc.','20171212sfc.','20171213sfc.',
+                  '20171214sfc.','20171215sfc.','20171216sfc.','20171217sfc.'],
+                    OBS:'December_SMN', MOD_RAW:'December_SMN', MOD:'ref'},
 
 
 

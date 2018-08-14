@@ -9,7 +9,7 @@ import os
 from netCDF4 import Dataset
 
 ############ USER INPUT #############
-case_index = 13
+case_index = 15
 CN = Case_Namelist(case_index)
 # time step [s] of model
 model_dt = 10

@@ -9,17 +9,19 @@ from namelist_cases import Case_Namelist
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from functions_train import braes_feature_matrix
+from datetime import timedelta
 
 ############ USER INPUT #############
-case_index = 12
+case_index = 10
+#case_index = 0
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_scaling = 1
 i_label =  ''
-i_load = 0
-delete_existing_param_file = 1
+i_load = 1
+delete_existing_param_file = 0
 modes = ['gust',
         'gust_kheight',
         'gust_height',
@@ -33,12 +35,13 @@ modes = ['gust',
         'gust_mean_height_mean2_kheight']
 
 i_mode_ints = range(0,len(modes))
-#i_mode_ints = [5,9]
+i_mode_ints = [8]
 min_gust = 0
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'
 i_sample_weight = '1'
 max_mean_wind_error = 1.0
+model_time_shift = 1
 #####################################
 
 if delete_existing_param_file:
@@ -75,6 +78,10 @@ if not i_load:
         lm_inds = np.arange(lmi*24,(lmi+1)*24)
         model_hours_tmp = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
                                     ['k_bra_es'].resample('H').max().index
+        #print(model_hours_tmp)
+        #print(lm_inds)
+        model_hours_shifted = [hr+timedelta(hours=model_time_shift) for hr in model_hours_tmp]
+        #print(model_hours_shifted)
         for si,stat_key in enumerate(stat_keys):
             # 3D
             tmp = data[G.MODEL][G.STAT][stat_key][G.RAW][lm_run]['k_bra_es']
@@ -91,10 +98,18 @@ if not i_load:
                 height[hr_ind,si,:] = data[G.STAT_META][stat_key]['hsurf'].values 
 
             # 2D
-            obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][model_hours_tmp] 
-            obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_tmp] 
+            #obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][model_hours_tmp] 
+            #obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_tmp] 
+            obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][model_hours_shifted] 
+            obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_shifted] 
 
-
+    #obs_mean = np.nanmean(obs_mean, axis=1)
+    #model_mean = np.max(model_mean, axis=2)
+    #model_mean = np.mean(model_mean, axis=1)
+    #plt.plot(obs_mean)
+    #plt.plot(model_mean)
+    #plt.show()
+    #quit()
 
     # Process fields
     kheight_est = copy.deepcopy(kval_est)

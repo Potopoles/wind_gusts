@@ -9,7 +9,7 @@ import globals as G
 from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-case_index = 12
+case_index = 2
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -287,13 +287,13 @@ for mode_int in i_mode_ints:
         I = np.indices(maxid.shape)
         gust_max_orig = gust_lb[I,maxid].squeeze()
         suptitle = 'PHY BRALB  '
-        plot_name_title = 'phys_bralb_'
+        plot_name_title = 'tuning_phys_bralb_'
     else:
         maxid = gust_est.argmax(axis=1)
         I = np.indices(maxid.shape)
         gust_max_orig = gust_est[I,maxid].squeeze()
         suptitle = 'PHY BRAES  '
-        plot_name_title = 'phys_braes_'
+        plot_name_title = 'tuning_phys_braes_'
 
     try:
         plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_max_orig)

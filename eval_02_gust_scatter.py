@@ -11,10 +11,10 @@ from filter import EntryFilter
 from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-case_index = 6
+case_index = 15
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 2
+i_plot = 1
 # model fields to calculate 
 i_model_fields = [G.GUST_MIX_COEF_LINEAR,
                 G.GUST_MIX_COEF_NONLIN,

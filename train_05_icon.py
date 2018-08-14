@@ -11,33 +11,28 @@ from sklearn.preprocessing import StandardScaler
 from functions_train import icon_feature_matrix
 
 ############ USER INPUT #############
-case_index = 12
+case_index = 13
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_scaling = 1
 i_label = ''
-i_load = 0
+i_load = 1
 delete_existing_param_file = 1
-modes = ['gust',
-        'gust_gust2',
-        'gust_gust2_height',
-        'gust_gust2_tkel1',
-        'gust_gust2_mean_tkel1',
-        'gust_gust2_height_mean2',
-        'gust_gust2_height_mean2_mean',
-        'gust_gust2_height_mean2_mean_dvl3v10',
-        'gust_gust2_height_mean2_mean_dvl3v10_tkel1',
-        #'gust_mean2',
-        'gust_height']
-        #'gust_dvl3v10',
-        #'gust_dvl3v10_height',
-        #'gust_dvl3v10_height_mean2',
-        #'gust_dvl3v10_height_mean2_gust2',
+modes = ['gust_mean',
+        'gust_mean_mean2',
+        'gust_mean_height',
+        'gust_mean_mean2_height',
+        'gust_mean_tkel1',
+        'gust_mean_mean2_tkel1',
+        'gust_mean_mean2_height_tkel1',
+        'gust_mean_mean2_height_tkel1_dvl3v10',
+        'gust_mean_mean2_height_dvl3v10',
+        'gust_mean_mean2_tkel1_dvl3v10']
 
 i_mode_ints = range(0,len(modes))
-i_mode_ints = [3,5]
+#i_mode_ints = [10]
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'
 min_gust = 0

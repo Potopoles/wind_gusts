@@ -10,22 +10,20 @@ from namelist_cases import Case_Namelist
 from functions_train import stat_calculate_gust, stat_combine_features
 
 ############ USER INPUT #############
-case_index = 12
+case_index = 10
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_label = ''
-i_load = 0
+i_load = 1
 i_output_error = 1
 learning_rate_factor = 1E-3
 d_error_thresh = 1E-5
 i_sample_weight = '1'
 delete_existing_param_file = 1
 
-modes = ['mean',
-         'mean_mean2',
-         'mean_tke',
+modes = ['mean_tke',
          'mean_height',
          'mean_gustbra',
          'mean_gustbra_tke',
@@ -35,11 +33,12 @@ modes = ['mean',
          'mean_dvl3v10',
          'mean_icon',
          'mean_gustbra_icon',
-         'mean_gustbra_mean2']
+         'mean_gustbra_mean2',
+         'mean_mean2_gustbra_dvl3v10']
 
 i_mode_ints = range(0,len(modes))
 #i_mode_ints = [len(modes)-1]
-#i_mode_ints = [8]
+i_mode_ints = [11]
 max_mean_wind_error = 1.0
 sgd_prob = 0.10
 #feature_names = ['zvp10', 'tcm', 'tkel1', 'hsurf', 'sso_stdh', 'zv_bra_es', 'k_bra_es', 'dvl3v10', 'z0', \

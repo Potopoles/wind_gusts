@@ -12,7 +12,7 @@ from functions_train import stat_calculate_gust
 ############ USER INPUT #############
 train_case_index = 10
 CNtrain = Case_Namelist(train_case_index)
-apply_case_index = 12
+apply_case_index = 10
 CNapply = Case_Namelist(apply_case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -30,6 +30,8 @@ if i_plot > 1 and not os.path.exists(CNapply.plot_path):
 
 # LOAD PARAMS
 params = pickle.load( open(CNtrain.params_stat_path, 'rb') )
+#print(params)
+#quit()
 
 
 # LAOD DATA

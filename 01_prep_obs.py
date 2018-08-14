@@ -2,12 +2,12 @@ import numpy as np
 import pandas as pd
 #import matplotlib.pyplot as plt
 import pickle
-from datetime import datetime
+from datetime import datetime, timedelta
 import globals as G
 from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-case_index = 13
+case_index = 15
 CN = Case_Namelist(case_index)
 MISSING_VALUE = -9999
 sample_rate = '1H'
@@ -31,6 +31,7 @@ stations_meta_use = station_meta[station_meta['Use'] == 'y']
 # load obs data day by day
 day_data = []
 for obs_path in CN.raw_obs_path:
+    #obs_path = '../obs_out/20171214sfc.'
     print(obs_path)
 
     inp_all_contents = np.genfromtxt(obs_path, skip_header=17, dtype=np.str)
@@ -45,21 +46,21 @@ for obs_path in CN.raw_obs_path:
     # temporary dictionary with parameters separated
     tmp = {}
     for param in obs_params:
+        #param = 'FF_10M'
+
         mask_inds = np.argwhere(inp_params == param).squeeze()
         values = inp_values[mask_inds]
         dts = [inp_dts[i] for i in mask_inds]
+
+        # remove weird extremly large values or negative values
+        values[(values > 150) | (values < 0)] = np.nan
+
         # create data frame
         data = pd.DataFrame(values, index=dts, columns=inp_station_names)
+
         # resample to corret sample_rate
-        data = data.resample(sample_rate).mean()
+        #data = data.resample(sample_rate).mean()
         
-        # remove weird extremly large values
-        data[(data.values > 150) | (data.values < 0)] = np.nan
-        #badsum =np.sum(data.values > 1000) 
-        #if badsum:
-        #    print(badsum)
-        #    print(data.values[data.values > 1000])
-        #quit()
         tmp[param] = data
 
     day_data.append(tmp)

@@ -8,7 +8,7 @@ import globals as G
 from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-case_index = 12
+case_index = 2
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -21,10 +21,10 @@ default_learning_rate_factor = 1E-2
 modes = ['ln',
          'nl']
 i_mode_ints = range(0,len(modes))
-#i_mode_ints = [0]
+#i_mode_ints = [1]
 max_mean_wind_error = 1.0
 delete_existing_param_file = 1
-sgd_prob = 0.2
+sgd_prob = 0.1
 #####################################
 
 # create directories
@@ -140,15 +140,16 @@ for mode_int in i_mode_ints:
 
     if mode == 'nl':
         learning_rate_factor = default_learning_rate_factor * 1/20
+        d_error_thresh = 1E-6
     else:
         learning_rate_factor = default_learning_rate_factor
-    d_error_thresh = 1E-5
+        d_error_thresh = 1E-5
 
 
-    alpha1 = 0
+    alpha1 = 7
     alpha2 = 0
     error_old = np.Inf
-    d_errors = np.full(int(1/sgd_prob*10), 100.)
+    d_errors = np.full(int(1/sgd_prob*5), 100.)
     learning_rate = 1E-5
 
     c = 0
@@ -187,6 +188,7 @@ for mode_int in i_mode_ints:
         if i_output_error:
             if c % 10 == 0:
                 print(str(c) + '\t' + str(error_now) + '\t' + str(np.abs(np.mean(d_errors))))
+                print('alpha 1 ' + str(alpha1) + ' alpha 2 ' + str(alpha2))
 
         # gradient of parameters
         if mode == 'ln':

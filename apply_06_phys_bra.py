@@ -10,7 +10,7 @@ from namelist_cases import Case_Namelist
 ############ USER INPUT #############
 train_case_index = 10
 CNtrain = Case_Namelist(train_case_index)
-apply_case_index = 12
+apply_case_index = 10
 CNapply = Case_Namelist(apply_case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -28,6 +28,8 @@ if i_plot > 1 and not os.path.exists(CNapply.plot_path):
 
 # LOAD PARAMS
 params = pickle.load( open(CNtrain.params_phys_bra_path, 'rb') )
+#print(params)
+#quit()
 
 # LOAD FILES
 data = pickle.load( open(CNapply.phys_bra_path, 'rb') )
@@ -74,13 +76,13 @@ for mode in params.keys():
         I = np.indices(maxid.shape)
         gust_max_orig = gust_lb[I,maxid].squeeze()
         suptitle = 'PHY BRALB  '
-        plot_name_title = 'phys_bralb_'
+        plot_name_title = 'applied_phys_bralb_'
     else:
         maxid = gust_est.argmax(axis=1)
         I = np.indices(maxid.shape)
         gust_max_orig = gust_est[I,maxid].squeeze()
         suptitle = 'PHY BRAES  '
-        plot_name_title = 'phys_braes_'
+        plot_name_title = 'applied_phys_braes_'
 
     plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_max_orig)
     plt.suptitle(suptitle + mode)

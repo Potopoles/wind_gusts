@@ -11,12 +11,13 @@ from filter import EntryFilter
 from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-case_index = 13
+case_index = 14
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 0
 # model fields to calculate 
 i_model_fields = [G.GUST_MIX_COEF_LINEAR]
+#i_model_fields = [G.MODEL_MEAN_WIND]
 #####################################
 
 # create directories
@@ -35,9 +36,9 @@ data = calc_model_fields(data, i_model_fields)
 data = join_model_and_obs(data)
 # join all model runs
 data = join_model_runs(data)
-#print(data[G.MODEL][G.STAT]['ABO'])
+print(data[G.MODEL][G.STAT]['ABO'])
 #print(data[G.MODEL][G.STAT]['SLFCSL'])
-print(data[G.MODEL][G.STAT]['CIM'])
+#print(data[G.MODEL][G.STAT]['CIM'])
 quit()
 # join stations
 data = join_all_stations(data)

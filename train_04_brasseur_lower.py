@@ -11,14 +11,14 @@ from sklearn.preprocessing import StandardScaler
 from functions_train import bralb_feature_matrix
 
 ############ USER INPUT #############
-case_index = 11
+case_index = 2
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_scaling = 1
 i_label =  ''
-i_load = 1
+i_load = 0
 delete_existing_param_file = 1
 modes = ['gust',
          'gust_gust2',
@@ -32,7 +32,7 @@ modes = ['gust',
          'gust_mean_height_mean2']
 
 i_mode_ints = range(0,len(modes))
-i_mode_ints = [3,9]
+#i_mode_ints = [3,9]
 min_gust = 0
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'
