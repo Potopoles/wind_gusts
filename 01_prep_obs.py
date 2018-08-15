@@ -7,7 +7,7 @@ import globals as G
 from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-case_index = 15
+case_index = 16
 CN = Case_Namelist(case_index)
 MISSING_VALUE = -9999
 sample_rate = '1H'

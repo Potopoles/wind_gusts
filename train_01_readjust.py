@@ -6,9 +6,10 @@ import pickle
 from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
+from datetime import timedelta
 
 ############ USER INPUT #############
-case_index = 2
+case_index = 10
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -22,9 +23,14 @@ modes = ['ln',
          'nl']
 i_mode_ints = range(0,len(modes))
 #i_mode_ints = [1]
+max_mean_wind_error = 0.1
 max_mean_wind_error = 1.0
+max_mean_wind_error = 5.0
+max_mean_wind_error = 100.0
 delete_existing_param_file = 1
 sgd_prob = 0.1
+
+model_time_shift = 1
 #####################################
 
 # create directories
@@ -63,6 +69,7 @@ if not i_load:
         lm_inds = np.arange(lmi*24,(lmi+1)*24)
         model_hours_tmp = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
                                     ['tcm'].resample('H').max().index
+        model_hours_shifted = [hr+timedelta(hours=model_time_shift) for hr in model_hours_tmp]
         for si,stat_key in enumerate(stat_keys):
             # 3D
             tmp = data[G.MODEL][G.STAT][stat_key][G.RAW][lm_run]['tcm']
@@ -76,8 +83,8 @@ if not i_load:
                                             [lm_run]['zvp10'].loc[loc_str].values
 
             # 2D
-            obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][model_hours_tmp] 
-            obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_tmp] 
+            obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][model_hours_shifted] 
+            obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_shifted] 
 
 
     # Process fields

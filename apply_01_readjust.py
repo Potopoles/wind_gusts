@@ -18,7 +18,6 @@ i_plot = 2
 model_dt = 10
 i_label = ''
 
-max_mean_wind_error = 1.0
 i_sample_weight = '1'
 #####################################
 
@@ -42,12 +41,6 @@ zvp10 = data['zvp10']
 # obs nan mask
 obsmask = np.isnan(obs_gust)
 obsmask[np.isnan(obs_mean)] = True
-# bad mean wind accuracy mask
-mean_abs_error = np.abs(model_mean - obs_mean)
-mean_rel_error = mean_abs_error/obs_mean
-errormask = mean_rel_error > max_mean_wind_error
-# combine both
-obsmask[errormask] = True
 
 obs_gust = obs_gust[~obsmask] 
 obs_mean = obs_mean[~obsmask]

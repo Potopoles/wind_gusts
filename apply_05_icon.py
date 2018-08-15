@@ -17,7 +17,7 @@ CNapply = Case_Namelist(apply_case_index)
 i_plot = 2
 i_scaling = 1
 i_label = ''
-max_mean_wind_error = 1.0
+
 i_sample_weight = '1'
 apply_on_hourly_gusts = 0
 #####################################
@@ -43,9 +43,6 @@ obs_mean = data['obs_mean']
 
 obsmask = np.isnan(obs_gust)
 model_mean_hr = np.mean(model_mean, axis=2)
-mean_abs_error = np.abs(model_mean_hr - obs_mean)
-mean_rel_error = mean_abs_error/obs_mean
-obsmask[mean_rel_error > max_mean_wind_error] = True
 obs_gust = obs_gust[~obsmask] 
 obs_mean = obs_mean[~obsmask] 
 model_mean = model_mean[~obsmask]

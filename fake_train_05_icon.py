@@ -9,7 +9,6 @@ from namelist_cases import Case_Namelist
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from functions_train import icon_feature_matrix
-from datetime import timedelta
 
 ############ USER INPUT #############
 case_index = 10
@@ -19,7 +18,7 @@ i_plot = 2
 model_dt = 10
 i_scaling = 1
 i_label = ''
-i_load = 0
+i_load = 1
 delete_existing_param_file = 1
 modes = ['gust_mean',
         'gust_mean_mean2',
@@ -33,17 +32,12 @@ modes = ['gust_mean',
         'gust_mean_mean2_tkel1_dvl3v10']
 
 i_mode_ints = range(0,len(modes))
-#i_mode_ints = [8]
+i_mode_ints = [8]
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'
 min_gust = 0
 i_sample_weight = '1'
-max_mean_wind_error = 0.1
-max_mean_wind_error = 1.0
-max_mean_wind_error = 5.0
 max_mean_wind_error = 100.0
-
-model_time_shift = 1
 #####################################
 
 if delete_existing_param_file:
@@ -80,7 +74,6 @@ if not i_load:
         lm_inds = np.arange(lmi*24,(lmi+1)*24)
         model_hours_tmp = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
                                     ['zvp10'].resample('H').max().index
-        model_hours_shifted = [hr+timedelta(hours=model_time_shift) for hr in model_hours_tmp]
         for si,stat_key in enumerate(stat_keys):
             # 3D
             tmp = data[G.MODEL][G.STAT][stat_key][G.RAW][lm_run]['zvp10']
@@ -159,8 +152,8 @@ if not i_load:
                 gust_ico[hr_ind,si,:] = gust
 
             # 2D
-            obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][model_hours_shifted] 
-            obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_shifted] 
+            obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][model_hours_tmp] 
+            obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_tmp] 
 
 
     data = {}
@@ -220,8 +213,12 @@ for mode_int in i_mode_ints:
     print('############################## ' + str(mode) + ' ################################')
 
     # calc current time step gusts
+    #X = icon_feature_matrix(mode, gust_ico_max, height_max,
+    #                            dvl3v10_max, model_mean_max,
+    #                            tkel1_max)
+    # TODO NEW
     X = icon_feature_matrix(mode, gust_ico_max, height_max,
-                                dvl3v10_max, model_mean_max,
+                                dvl3v10_max, obs_mean,
                                 tkel1_max)
     y = obs_gust
 
@@ -242,17 +239,21 @@ for mode_int in i_mode_ints:
     gust_max = regr.predict(X)
 
     try:
-        plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_ico_max_unscaled)
+        #plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_ico_max_unscaled)
+        # TODO NEW
+        plot_error(obs_gust, obs_mean, obs_mean, gust_max, gust_ico_max_unscaled)
         plt.suptitle('ICON  '+mode)
 
         if i_plot == 1:
             plt.show()
         elif i_plot > 1:
             if i_label == '':
-                plot_name = CN.plot_path + 'tuning_icon_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
+                # TODO NEW
+                plot_name = CN.plot_path + 'fake_tuning_icon_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
                                             +str(mode)+'.png'
             else:
-                plot_name = CN.plot_path + 'tuning_icon_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
+                # TODO NEW
+                plot_name = CN.plot_path + 'fake_tuning_icon_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
                                             +str(i_label)+'_'+str(mode)+'.png'
             print(plot_name)
             plt.savefig(plot_name)

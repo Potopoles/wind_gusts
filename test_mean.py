@@ -37,6 +37,9 @@ for min_gust in min_gust_levels:
     print('load')
     data = pickle.load( open(CN.mod_path, 'rb') )
 
+    #print(data[G.OBS][G.STAT].keys())
+    #quit()
+
     # calculate gusts
     print('calc gust')
     data = calc_model_fields(data, i_model_fields)
@@ -71,25 +74,25 @@ for min_gust in min_gust_levels:
     #quit()
 
     ##################### MEAN PLOT
-    #model_mean = np.mean(model_mean, axis=1)
-    #obs_mean = np.nanmean(obs_mean, axis=1)
-    #fig, axes = plt.subplots(2,1, figsize=(10,5))
-    #ax = axes[1]
-    #line1, = ax.plot(dates, model_mean, color='red', label='model')
-    #line2, = ax.plot(dates, obs_mean, color='black', label='obs')
-    #ax.legend([line1, line2], ['model', 'obs'])
-    #ax.set_xlabel('date')
-    #ax.set_ylabel('wind [m/s]')
-    #ax.set_ylim((0,10))
-    #ax = axes[0]
-    #line1, = ax.plot(dates, model_mean - obs_mean, color='black', label='model error')
-    #ax.axhline(y=0)
-    #ax.legend([line1], ['model error'])
-    #ax.set_xlabel('date')
-    #ax.set_ylabel('wind error [m/s]')
-    #ax.set_ylim((-3,3))
-    #plt.show()
-    #quit()
+    model_mean = np.mean(model_mean, axis=1)
+    obs_mean = np.nanmean(obs_mean, axis=1)
+    fig, axes = plt.subplots(2,1, figsize=(10,5))
+    ax = axes[1]
+    line1, = ax.plot(dates, model_mean, color='red', label='model')
+    line2, = ax.plot(dates, obs_mean, color='black', label='obs')
+    ax.legend([line1, line2], ['model', 'obs'])
+    ax.set_xlabel('date')
+    ax.set_ylabel('wind [m/s]')
+    ax.set_ylim((0,10))
+    ax = axes[0]
+    line1, = ax.plot(dates, model_mean - obs_mean, color='black', label='model error')
+    ax.axhline(y=0)
+    ax.legend([line1], ['model error'])
+    ax.set_xlabel('date')
+    ax.set_ylabel('wind error [m/s]')
+    ax.set_ylim((-3,3))
+    plt.show()
+    quit()
     #####################
 
 
@@ -118,36 +121,36 @@ for min_gust in min_gust_levels:
 
 
     ##################### SPAGHETTI PLOT
-    fig, axes = plt.subplots(1,2, figsize=(18,5))
-    for i in range(30):
-        ax = axes[1]
-        line1, = ax.plot(dates, model_mean[:,i], color='red', label='model')
-        line2, = ax.plot(dates, -obs_mean[:,i], color='black', label='obs')
-        if i == 0:
-            ax.legend([line1, line2], ['model', 'obs'])
-        ax = axes[0]
-        line1, = ax.plot(dates, model_mean[:,i] - obs_mean[:,i], color='black', label='model error')
-        if i == 0:
-            ax.legend([line1], ['model error'])
+    #fig, axes = plt.subplots(1,2, figsize=(18,5))
+    #for i in range(30):
+    #    ax = axes[1]
+    #    line1, = ax.plot(dates, model_mean[:,i], color='red', label='model')
+    #    line2, = ax.plot(dates, -obs_mean[:,i], color='black', label='obs')
+    #    if i == 0:
+    #        ax.legend([line1, line2], ['model', 'obs'])
+    #    ax = axes[0]
+    #    line1, = ax.plot(dates, model_mean[:,i] - obs_mean[:,i], color='black', label='model error')
+    #    if i == 0:
+    #        ax.legend([line1], ['model error'])
 
-    model_mean_med = np.nanpercentile(model_mean, q=90, axis=1)
-    obs_mean_med = np.nanpercentile(obs_mean, q=90, axis=1)
-    diff_mean_med = np.nanmedian(model_mean - obs_mean, axis=1)
+    #model_mean_med = np.nanpercentile(model_mean, q=90, axis=1)
+    #obs_mean_med = np.nanpercentile(obs_mean, q=90, axis=1)
+    #diff_mean_med = np.nanmedian(model_mean - obs_mean, axis=1)
 
-    ax = axes[1]
-    ax.plot(dates, model_mean_med, color='orange', lineWidth=3)
-    ax.plot(dates, -obs_mean_med, color='orange', lineWidth=3)
-    ax.axhline(y=0)
-    ax.set_xlabel('date')
-    ax.set_ylabel('wind [m/s]')
-    ax.set_ylim((-30,30))
-    ax = axes[0]
-    ax.plot(dates, -diff_mean_med, color='orange', lineWidth=3)
-    ax.axhline(y=0)
-    ax.set_xlabel('date')
-    ax.set_ylabel('wind error [m/s]')
-    ax.set_ylim((-20,20))
-    plt.show()
+    #ax = axes[1]
+    #ax.plot(dates, model_mean_med, color='orange', lineWidth=3)
+    #ax.plot(dates, -obs_mean_med, color='orange', lineWidth=3)
+    #ax.axhline(y=0)
+    #ax.set_xlabel('date')
+    #ax.set_ylabel('wind [m/s]')
+    #ax.set_ylim((-30,30))
+    #ax = axes[0]
+    #ax.plot(dates, -diff_mean_med, color='orange', lineWidth=3)
+    #ax.axhline(y=0)
+    #ax.set_xlabel('date')
+    #ax.set_ylabel('wind error [m/s]')
+    #ax.set_ylim((-20,20))
+    #plt.show()
     #####################
 
     ##################### ERROR SCATTER

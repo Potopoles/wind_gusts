@@ -15,7 +15,7 @@ class Case_Namelist:
    
     # 01_prep_obs: path to file containing meta information about stations (mainly column 'Use' is interesting)
     stations_meta_path = '../obs_out/ps_fkl010b1_2262.csv'
-    stations_meta_path = '../obs_out/ps_fkl010b1_2262_SMN.csv'
+    #stations_meta_path = '../obs_out/ps_fkl010b1_2262_SMN.csv'
 
 
     OBS_RAW = 'obs_raw'
@@ -90,13 +90,12 @@ class Case_Namelist:
                   '20171210sfc.','20171211sfc.','20171212sfc.','20171213sfc.',
                   '20171214sfc.','20171215sfc.','20171216sfc.','20171217sfc.'],
                     OBS:'December_SMN', MOD_RAW:'December_SMN', MOD:'ref'},
+        # 16 Burglind ANAC1
+        {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.'],
+                    OBS:'20180103_Burglind_ANAC1', MOD_RAW:'20180103_Burglind_ANAC1', MOD:'ref'},
 
 
 
-        ## 7 JanuaryDays
-        #{OBS_RAW:['20180119sfc.','20180120sfc.','20180121sfc.','20180122sfc.','20180123sfc.',
-        #            '20180124sfc.','20180125sfc.','20180126sfc.','20180127sfc.','20180128sfc.'],
-        #            OBS:'20180119_JanuaryDays', MOD_RAW:'20180119_JanuaryDays', MOD:'ref'},
     ]
 
     def __init__(self, case_ind):
@@ -138,8 +137,10 @@ class Case_Namelist:
         self.phys_bra_path = self.data_folder + 'train_phys_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
                         self.cases[case_ind][self.MOD] + '.pkl'
 
-        #self.phys_braprof_path = self.data_folder + 'phys_braprof_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
-        #                self.cases[case_ind][self.MOD] + '.pkl'
+        #### ML
+
+        self.ML_braes_path = self.data_folder + 'ML_braes_OBS_' + self.cases[case_ind][self.OBS] + '_MOD_' + \
+                        self.cases[case_ind][self.MOD] + '.pkl'
 
         #### PARAMETERS
 

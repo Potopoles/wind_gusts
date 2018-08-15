@@ -16,10 +16,8 @@ CNapply = Case_Namelist(apply_case_index)
 i_plot = 2
 model_dt = 10
 i_label = ''
-#i_sample_weight = 'linear'
-#i_sample_weight = 'squared'
+
 i_sample_weight = '1'
-max_mean_wind_error = 1.0
 #####################################
 
 # create directories

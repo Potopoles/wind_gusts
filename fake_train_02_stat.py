@@ -17,14 +17,16 @@ CN = Case_Namelist(case_index)
 i_plot = 2
 model_dt = 10
 i_label = ''
-i_load = 0
+i_load = 1
 i_output_error = 1
 learning_rate_factor = 1E-3
 d_error_thresh = 1E-5
 i_sample_weight = '1'
 delete_existing_param_file = 1
 
-modes = ['mean_tke',
+modes = ['mean',
+         'mean_mean2',
+         'mean_tke',
          'mean_height',
          'mean_gustbra',
          'mean_gustbra_tke',
@@ -38,7 +40,7 @@ modes = ['mean_tke',
          'mean_mean2_gustbra_dvl3v10']
 
 i_mode_ints = range(0,len(modes))
-#i_mode_ints = [11]
+#i_mode_ints = [0]
 max_mean_wind_error = 0.1
 max_mean_wind_error = 1.0
 max_mean_wind_error = 5.0
@@ -243,6 +245,10 @@ for feat in feature_names:
     features_scale[feat] = scale
 
 
+# TODO NEW
+features['zvp10'] = np.tile(obs_mean, (360,1,) ).T
+
+
 for mode_int in i_mode_ints:
     mode = modes[mode_int]
     print('#################################################################################')
@@ -332,16 +338,20 @@ for mode_int in i_mode_ints:
     #print(np.mean(gust_max))
     
     try:
-        plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_unscaled)
+        #plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_unscaled)
+        # TODO NEW
+        plot_error(obs_gust, obs_mean, obs_mean, gust_max, gust_max_unscaled)
         plt.suptitle('STAT  '+mode)
 
         if i_plot == 1:
             plt.show()
         elif i_plot > 1:
             if i_label == '':
-                plot_name = CN.plot_path + 'tuning_stat_sw_'+i_sample_weight+'_'+str(mode)+'.png'
+                # TODO NEW
+                plot_name = CN.plot_path + 'fake_tuning_stat_sw_'+i_sample_weight+'_'+str(mode)+'.png'
             else:
-                plot_name = CN.plot_path + 'tuning_stat_sw_'+i_sample_weight+'_'+str(i_label)+'_'+str(mode)+'.png'
+                # TODO NEW
+                plot_name = CN.plot_path + 'fake_tuning_stat_sw_'+i_sample_weight+'_'+str(i_label)+'_'+str(mode)+'.png'
             print(plot_name)
             plt.savefig(plot_name)
             plt.close('all')

@@ -9,7 +9,7 @@ import os
 from netCDF4 import Dataset
 
 ############ USER INPUT #############
-case_index = 15
+case_index = 16
 CN = Case_Namelist(case_index)
 # time step [s] of model
 model_dt = 10
@@ -71,11 +71,11 @@ stat_j_inds = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[use_
 stat_dz = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[use_stat,11].astype(np.float)
 
 # nc file for sso_stdh
-#sso_stdh = Dataset(sso_stdh_file, 'r')['SSO_STDH'][:]
+sso_stdh = Dataset(sso_stdh_file, 'r')['SSO_STDH'][:]
 #slo_ang = Dataset(slo_ang_file, 'r')['SLO_ANG'][:]
 #skyview = Dataset(skyview_file, 'r')['SKYVIEW'][:]
 #slo_asp = Dataset(slo_asp_file, 'r')['SLO_ASP'][:]
-#z0 = Dataset(z0_file, 'r')['Z0'][:]
+z0 = Dataset(z0_file, 'r')['Z0'][:]
 hsurf = Dataset(hsurf_file, 'r')['HSURF'][:]
 
 # load main data file
@@ -99,9 +99,9 @@ for i,stat_key in enumerate(mod_stations):
         #series = pd.Series([stat_dz[i]], index=data[G.STAT_META][stat_key].index)
         #data[G.STAT_META][stat_key]['dz'] = series
 
-        #series = pd.Series(sso_stdh[stat_i_inds[i],stat_j_inds[i]],
-        #                index=data[G.STAT_META][stat_key].index)
-        #data[G.STAT_META][stat_key]['sso_stdh'] = series
+        series = pd.Series(sso_stdh[stat_i_inds[i],stat_j_inds[i]],
+                        index=data[G.STAT_META][stat_key].index)
+        data[G.STAT_META][stat_key]['sso_stdh'] = series
 
         #series = pd.Series(slo_ang[stat_i_inds[i],stat_j_inds[i]],
         #                index=data[G.STAT_META][stat_key].index)
@@ -115,9 +115,9 @@ for i,stat_key in enumerate(mod_stations):
         #                index=data[G.STAT_META][stat_key].index)
         #data[G.STAT_META][stat_key]['slo_asp'] = series
 
-        #series = pd.Series(z0[stat_i_inds[i],stat_j_inds[i]],
-        #                index=data[G.STAT_META][stat_key].index)
-        #data[G.STAT_META][stat_key]['z0'] = series
+        series = pd.Series(z0[stat_i_inds[i],stat_j_inds[i]],
+                        index=data[G.STAT_META][stat_key].index)
+        data[G.STAT_META][stat_key]['z0'] = series
 
         series = pd.Series(hsurf[stat_i_inds[i],stat_j_inds[i]],
                         index=data[G.STAT_META][stat_key].index)
