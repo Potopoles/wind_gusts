@@ -11,13 +11,13 @@ from functions_train import stat_calculate_gust, stat_combine_features
 from datetime import timedelta
 
 ############ USER INPUT #############
-case_index = 10
+case_index = 13
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_label = ''
-i_load = 0
+i_load = 1
 i_output_error = 1
 learning_rate_factor = 1E-3
 d_error_thresh = 1E-5

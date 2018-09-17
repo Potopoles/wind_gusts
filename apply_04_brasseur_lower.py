@@ -11,7 +11,7 @@ from functions_train import bralb_feature_matrix, bralb_feature_matrix_timestep
 ############ USER INPUT #############
 train_case_index = 10
 CNtrain = Case_Namelist(train_case_index)
-apply_case_index = 10
+apply_case_index = 13
 CNapply = Case_Namelist(apply_case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
@@ -42,6 +42,7 @@ obs_mean = data['obs_mean']
 
 # observation to 1D and filter values
 obsmask = np.isnan(obs_gust)
+obsmask[np.isnan(obs_mean)] = True
 model_mean_hr = np.mean(model_mean, axis=2)
 obs_gust = obs_gust[~obsmask] 
 obs_mean = obs_mean[~obsmask] 

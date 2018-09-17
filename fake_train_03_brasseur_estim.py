@@ -13,7 +13,6 @@ from datetime import timedelta
 
 ############ USER INPUT #############
 case_index = 10
-#case_index = 0
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2

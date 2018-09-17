@@ -12,14 +12,14 @@ from functions_train import icon_feature_matrix
 from datetime import timedelta
 
 ############ USER INPUT #############
-case_index = 10
+case_index = 13
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2
 model_dt = 10
 i_scaling = 1
 i_label = ''
-i_load = 0
+i_load = 1
 delete_existing_param_file = 1
 modes = ['gust_mean',
         'gust_mean_mean2',
@@ -187,7 +187,7 @@ else:
 
 
 obsmask = np.isnan(obs_gust)
-obsmask[np.isnan(obs_mean)] = True # TODO NEW
+obsmask[np.isnan(obs_mean)] = True
 model_mean_hr = np.mean(model_mean, axis=2)
 mean_abs_error = np.abs(model_mean_hr - obs_mean)
 mean_rel_error = mean_abs_error/obs_mean

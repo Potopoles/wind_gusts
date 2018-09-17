@@ -49,6 +49,7 @@ KVAL_BRASSEUR_ESTIM  = 'kval_brasseur_estim'
 KVAL_BRASSEUR_LOBOU  = 'kval_brasseur_lobou'
 KVAL_BRASSEUR_UPBOU  = 'kval_brasseur_upbou'
 MODEL_MEAN_WIND      = 'model_mean_wind'
+MEAN_WIND_INST      = 'mean_wind_inst'
 FIELDS_GUST = [GUST_MIX_COEF_LINEAR,
                GUST_MIX_COEF_NONLIN,
                GUST_BRASSEUR_ESTIM,

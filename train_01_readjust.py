@@ -9,15 +9,16 @@ from namelist_cases import Case_Namelist
 from datetime import timedelta
 
 ############ USER INPUT #############
-case_index = 10
+case_index = 17
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 2
-model_dt = 10
+i_plot = 1
+model_dt = 20
 i_label = ''
 i_load = 0
 i_output_error = 1
 default_learning_rate_factor = 1E-2
+nhrs_forecast = 120
 
 modes = ['ln',
          'nl']
@@ -51,7 +52,7 @@ if not i_load:
     stat_keys = data[G.STAT_NAMES]
 
     lm_runs = list(data[G.MODEL][G.STAT][stat_keys[0]][G.RAW].keys())
-    n_hours = len(lm_runs)*24
+    n_hours = len(lm_runs)*nhrs_forecast
     n_stats = len(stat_keys)
     ts_per_hour = int(3600/model_dt)
 
@@ -66,7 +67,7 @@ if not i_load:
 
     for lmi,lm_run in enumerate(lm_runs):
         print(lm_run)
-        lm_inds = np.arange(lmi*24,(lmi+1)*24)
+        lm_inds = np.arange(lmi*nhrs_forecast,(lmi+1)*nhrs_forecast)
         model_hours_tmp = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
                                     ['tcm'].resample('H').max().index
         model_hours_shifted = [hr+timedelta(hours=model_time_shift) for hr in model_hours_tmp]
@@ -102,6 +103,7 @@ if not i_load:
     data['obs_mean'] = obs_mean 
     data['tcm'] = tcm 
     data['zvp10'] = zvp10 
+    data['stations'] = stat_keys 
 
     pickle.dump(data, open(CN.train_readj_path, 'wb'))
 

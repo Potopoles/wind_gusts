@@ -42,6 +42,7 @@ obs_mean = data['obs_mean']
 
 # observation to 1D and filter values
 obsmask = np.isnan(obs_gust)
+obsmask[np.isnan(obs_mean)] = True
 model_mean_hr = np.mean(model_mean, axis=2)
 obs_gust = obs_gust[~obsmask] 
 obs_mean = obs_mean[~obsmask] 

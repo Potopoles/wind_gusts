@@ -10,7 +10,7 @@ from namelist_cases import Case_Namelist
 ############ USER INPUT #############
 train_case_index = 10
 CNtrain = Case_Namelist(train_case_index)
-apply_case_index = 10
+apply_case_index = 13
 CNapply = Case_Namelist(apply_case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 2

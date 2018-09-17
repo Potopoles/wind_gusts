@@ -7,7 +7,7 @@ import globals as G
 from namelist_cases import Case_Namelist
 
 ############ USER INPUT #############
-case_index = 16
+case_index = 20
 CN = Case_Namelist(case_index)
 MISSING_VALUE = -9999
 sample_rate = '1H'
@@ -71,7 +71,7 @@ for param in obs_params:
     all_days = []
     for dd in day_data:
         all_days.append(dd[param])
-    concat = pd.concat(all_days, axis=0)
+    concat = pd.concat(all_days, axis=0, sort=True)
     tmp[param] = concat
 
 

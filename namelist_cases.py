@@ -82,8 +82,8 @@ class Case_Namelist:
                   '20171210sfc.','20171211sfc.','20171212sfc.','20171213sfc.',
                   '20171214sfc.','20171215sfc.','20171216sfc.','20171217sfc.'],
                     OBS:'December_17', MOD_RAW:'December_17', MOD:'ref'},
-        # 14 test case 180620 12 for gust testing with Guy's file VBM10M_all
-        {OBS_RAW:['20180620sfc.','20180621sfc.'],
+        # 14 test case 18063000 for gust testing with Guy's file VBM10M_all
+        {OBS_RAW:['20180630sfc.','20180701sfc.'],
                 OBS:'test_gust', MOD_RAW:'test_gust', MOD:'ref'},
         # 15 December_SMN
         {OBS_RAW:['20171206sfc.','20171207sfc.','20171208sfc.','20171209sfc.',
@@ -93,6 +93,21 @@ class Case_Namelist:
         # 16 Burglind ANAC1
         {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.'],
                     OBS:'20180103_Burglind_ANAC1', MOD_RAW:'20180103_Burglind_ANAC1', MOD:'ref'},
+        # 17 20180701 Pompa
+        {OBS_RAW:['20180701sfc.','20180702sfc.','20180703sfc.','20180704sfc.','20180705sfc.'],
+                    OBS:'20180701_Pompa', MOD_RAW:'20180701_Pompa', MOD:'ref'},
+        # 18 20180701 Prerelease
+        {OBS_RAW:['20180701sfc.','20180702sfc.','20180703sfc.','20180704sfc.','20180705sfc.'],
+                    OBS:'20180701_Prerelease', MOD_RAW:'20180701_Prerelease', MOD:'ref'},
+        # 19 test case 18062012 prerelease for gust testing with Guy's file VBM10M_all
+        {OBS_RAW:['20180620sfc.','20180621sfc.'],
+                OBS:'test_gust_pre', MOD_RAW:'test_gust_pre', MOD:'ref'},
+        # 20 test case 18010300 prerelease for gust testing with Guy's file VBM10M_all
+        {OBS_RAW:['20180103sfc.'],
+                OBS:'test_gust_pre_burglind', MOD_RAW:'test_gust_pre_burglind', MOD:'ref'},
+        # 21 test case 18010300 pompa for gust testing with Guy's file VBM10M_all
+        {OBS_RAW:['20180103sfc.'],
+                OBS:'test_gust_burglind', MOD_RAW:'test_gust_burglind', MOD:'ref'},
 
 
 

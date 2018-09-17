@@ -9,7 +9,7 @@ import os
 from netCDF4 import Dataset
 
 ############ USER INPUT #############
-case_index = 16
+case_index = 20
 CN = Case_Namelist(case_index)
 # time step [s] of model
 model_dt = 10
@@ -17,13 +17,13 @@ model_dt = 10
 ind0 = 701
 #ind0_2 = 5701
 # header of fortran output files
-model_params = ['ntstep','k_bra_es','k_bra_lb','k_bra_ub', # time step and model levels of brassuer
-                'tcm','zvp10', # turbulent coefficient of momentum and abs wind at 10 m
-                'zv_bra_es','zv_bra_lb','zv_bra_ub', # brasseur gust velocities
-                'uvl1','uvl2','uvl3', # abs wind at lowest 3 model levels
-                'ul1', 'vl1', # u and v at lowest model level
-                'tkel1',# 'tke_bra_es', # tke at lowest level and mean tke between sfc and bra estimate
-                'z0', 'Tl1', # surface roughness and temperature at lowest model level
+model_params = ['ntstep','k_bra_es','k_bra_lb','k_bra_ub', # time step and model levels of brassuer         # 3
+                'tcm','zvp10', # turbulent coefficient of momentum and abs wind at 10 m                     # 5 
+                'zv_bra_es','zv_bra_lb','zv_bra_ub', # brasseur gust velocities                             # 8
+                'uvl1','uvl2','uvl3', # abs wind at lowest 3 model levels                                   # 11
+                'ul1', 'vl1', # u and v at lowest model level                                               # 13
+                'tkel1',# 'tke_bra_es', # tke at lowest level and mean tke between sfc and bra estimate     # 14
+                'z0', 'Tl1', # surface roughness and temperature at lowest model level                      # 16
                 'shflx', 'qvflx', # surface sensible heat and water vapor flux 
                 'Tskin', 'qvl1', # skin temperature and water vapor at lowest model level
                 'rho_bra_es','rho_bra_lb','rho_bra_ub', # brasseur density
@@ -47,7 +47,8 @@ print(mod_stations_file)
 mod_stations = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,0]
 file_inds = ind0 + np.arange(0,len(mod_stations))
 #file_inds_2 = ind0_2 + np.arange(0,len(mod_stations))
-stat_i_inds = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,9].astype(np.int)
+stat_i_inds = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,8].astype(np.int)
+
 
 if case_index == 0:
     use_stat = file_inds <= 731
@@ -62,12 +63,25 @@ else:
     # Filter out stations with i_ind = 0 (thos with height = -99999999)
     use_stat = stat_i_inds != 0
 
+# filter out missing files
+exist_file_inds = [int(file[5:])-ind0 for file in os.listdir(CN.raw_mod_path + lm_runs[0])]
+exist_file_inds = [ind for ind in exist_file_inds if ind >= 0]
+use_stat = [use_stat[i] if i in exist_file_inds else False for i in range(0,len(use_stat))]
+#file_inds = np.asarray([ind for ind in file_inds if ind in exist_file_inds])
+#use_mask = np.repeat(True, len(jlk))
+#print(exist_file_inds)
+
+
+
+#print(use_stat[file_inds-ind0])
+#print(use_stat)
+#quit()
 
 mod_stations = mod_stations[use_stat]
 file_inds = file_inds[use_stat]
 #file_inds_2 = file_inds_2[use_stat]
 stat_i_inds = stat_i_inds[use_stat]
-stat_j_inds = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[use_stat,8].astype(np.int)
+stat_j_inds = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[use_stat,9].astype(np.int)
 stat_dz = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[use_stat,11].astype(np.float)
 
 # nc file for sso_stdh
@@ -99,27 +113,27 @@ for i,stat_key in enumerate(mod_stations):
         #series = pd.Series([stat_dz[i]], index=data[G.STAT_META][stat_key].index)
         #data[G.STAT_META][stat_key]['dz'] = series
 
-        series = pd.Series(sso_stdh[stat_i_inds[i],stat_j_inds[i]],
+        series = pd.Series(sso_stdh[stat_j_inds[i],stat_i_inds[i]],
                         index=data[G.STAT_META][stat_key].index)
         data[G.STAT_META][stat_key]['sso_stdh'] = series
 
-        #series = pd.Series(slo_ang[stat_i_inds[i],stat_j_inds[i]],
+        #series = pd.Series(slo_ang[stat_j_inds[i],stat_i_inds[i]],
         #                index=data[G.STAT_META][stat_key].index)
         #data[G.STAT_META][stat_key]['slo_ang'] = series
 
-        #series = pd.Series(skyview[stat_i_inds[i],stat_j_inds[i]],
+        #series = pd.Series(skyview[stat_j_inds[i],stat_i_inds[i]],
         #                index=data[G.STAT_META][stat_key].index)
         #data[G.STAT_META][stat_key]['skyview'] = series
 
-        #series = pd.Series(slo_asp[stat_i_inds[i],stat_j_inds[i]],
+        #series = pd.Series(slo_asp[stat_j_inds[i],stat_i_inds[i]],
         #                index=data[G.STAT_META][stat_key].index)
         #data[G.STAT_META][stat_key]['slo_asp'] = series
 
-        series = pd.Series(z0[stat_i_inds[i],stat_j_inds[i]],
+        series = pd.Series(z0[stat_j_inds[i],stat_i_inds[i]],
                         index=data[G.STAT_META][stat_key].index)
         data[G.STAT_META][stat_key]['z0'] = series
 
-        series = pd.Series(hsurf[stat_i_inds[i],stat_j_inds[i]],
+        series = pd.Series(hsurf[stat_j_inds[i],stat_i_inds[i]],
                         index=data[G.STAT_META][stat_key].index)
         data[G.STAT_META][stat_key]['hsurf'] = series
 
@@ -141,7 +155,10 @@ for i,stat_key in enumerate(mod_stations):
             # tiem of first time step
             start_time = datetime.strptime(lm_run, '%Y%m%d%H')
 
-            values = np.genfromtxt(mod_file_path, delimiter=',', dtype=np.float, loose=1)[:-1]
+            #values = np.genfromtxt(mod_file_path, delimiter=',', dtype=np.float, loose=1)[:-1]
+            # Corrected this to exclude initial condition and have 24 hours (dt=10 --> 8640) model time step values
+            # starting from 00:00:10 and ending at 24:00:00
+            values = np.genfromtxt(mod_file_path, delimiter=',', dtype=np.float, loose=1)[1:]
             #values_2 = np.genfromtxt(mod_file_path_2, delimiter=',', dtype=np.float, loose=1)[:-1]
             #print(np.sum(values_2 == -1))
             #print(np.sum(np.isnan(values_2)))
@@ -149,7 +166,7 @@ for i,stat_key in enumerate(mod_stations):
             if np.sum(np.isnan(values)) > 0:
                 print(str(np.sum(np.isnan(values))) + ' invalid values!')
             n_entries = values.shape[0]
-            ts_secs = (np.arange(0,n_entries)*10).astype(np.float)
+            ts_secs = (np.arange(1,n_entries+1)*model_dt).astype(np.float)
             dts = [start_time + timedelta(seconds=ts_sec) for ts_sec in ts_secs]
             df = pd.DataFrame(values, index=dts, columns=model_params)
             #df = df.resample('D').max()

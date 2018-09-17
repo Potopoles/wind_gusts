@@ -18,6 +18,8 @@ def check_prerequisites(data, prerequisites, hist_tag):
     return(data)
 
 
+def custom_resampler(array_like):
+    return(array_like[-1])
 
 def calc_model_fields(data, i_model_fields):
     
@@ -136,6 +138,8 @@ def calc_model_fields(data, i_model_fields):
                         gust = curr_raw[gust_field_name].to_frame()
 
                     # resample to maximum hourly value
+                    # time index shifted backward 10 seconds make sure resampling has expected behavior
+                    gust = gust.shift(freq='-10s')
                     field = gust.resample('H', loffset=offset).max()
                     #field = gust.resample('H', how=lambda x: np.percentile(x, q=80))
 
@@ -152,6 +156,8 @@ def calc_model_fields(data, i_model_fields):
                         k_field_name = 'k_bra_ub'
 
                     gust = curr_raw[gust_field_name]
+                    # time index shifted backward 10 seconds make sure resampling has expected behavior
+                    gust = gust.shift(freq='-10s')
                     maxid = gust.resample('H', convention='end').agg({gust_field_name: np.argmax})
                     values = curr_raw[k_field_name][maxid].values
                     raise NotImplementedError()
@@ -160,7 +166,16 @@ def calc_model_fields(data, i_model_fields):
                 elif field_name == G.MODEL_MEAN_WIND:
                     
                     field = curr_raw['zvp10'].to_frame()
+                    # time index shifted backward 10 seconds make sure resampling has expected behavior
+                    field = field.shift(freq='-10s')
                     field = field.resample('H', loffset=offset).mean()
+
+                elif field_name == G.MEAN_WIND_INST:
+                    
+                    field = curr_raw['zvp10'].to_frame()
+                    # time index shifted backward 10 seconds make sure resampling has expected behavior
+                    field = field.shift(freq='-10s')
+                    field = field.resample('H', loffset=offset).apply(custom_resampler)
 
                 else:
                     raise ValueError('Unknown user input "' + field_name + '" in list i_gust_fields!')
@@ -299,6 +314,8 @@ def join_all_stations(data):
 def get_point_col(vals1, vals2, xmin=0, xmax=100, ymin=-100, ymax=100):
     dx = 0.5
     dy = 1
+    dx = dx*1
+    dy = dy*1
     xseq = np.arange(np.floor(xmin),np.ceil(xmax),dx)
     yseq = np.arange(np.floor(ymin),np.ceil(ymax),dy)
     H, xseq, yseq = np.histogram2d(vals1, vals2, bins=(xseq,yseq), normed=True)
@@ -410,8 +427,8 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
             # model gust err vs model mean err
             inds = (err_mean > mp_borders_me[i]) & (err_mean <= mp_borders_me[i+1])
             if np.sum(inds) > 10:
-                #mp_y_geme[i,qi] = np.percentile(err[inds],q=qs[qi])
-                mp_y_geme[i,qi] = np.percentile(err_init[inds],q=qs[qi])
+                mp_y_geme[i,qi] = np.percentile(err[inds],q=qs[qi])
+                #mp_y_geme[i,qi] = np.percentile(err_init[inds],q=qs[qi])
 
 
     xlab = 'Observed gust (OBS) [m/s]'
@@ -590,7 +607,7 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     xlab = 'Model mean wind error (MOD-OBS) [m/s]'
     ylab = 'Model gust error (MOD-OBS) [m/s]'
     ax = axes[1,4]
-    ax.scatter(err_mean, err, color=get_point_col(err_mean, err_init, xmin=-60), marker=".")
+    ax.scatter(err_mean, err, color=get_point_col(err_mean, err, xmin=-60), marker=".")
     for qi in range(0,len(qs)):
         ax.plot(mp_x_me, mp_y_geme[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
     ax.axhline(y=0,c='grey')

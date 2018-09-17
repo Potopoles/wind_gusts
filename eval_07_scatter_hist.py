@@ -87,6 +87,9 @@ for min_gust in min_gust_levels:
             xs[field_name] = x
             ys[field_name] = y
 
+        print(xs)
+        quit()
+
 
         #xmin = min_gust
         #xmax = 50
