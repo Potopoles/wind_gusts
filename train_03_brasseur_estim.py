@@ -12,14 +12,16 @@ from functions_train import braes_feature_matrix
 from datetime import timedelta
 
 ############ USER INPUT #############
-case_index = 10
+case_index = 0
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 2
+i_plot = 1
 model_dt = 10
+nhrs_forecast = 24
 i_scaling = 1
 i_label =  ''
-i_load = 1
+i_load = 0
+i_train = 0
 delete_existing_param_file = 1
 modes = ['gust',
         'gust_kheight',
@@ -34,17 +36,11 @@ modes = ['gust',
         'gust_mean_height_mean2_kheight']
 
 i_mode_ints = range(0,len(modes))
-i_mode_ints = [4]
-min_gust = 10
-#i_sample_weight = 'linear'
-#i_sample_weight = 'squared'
-i_sample_weight = '1'
-max_mean_wind_error = 0.1
-max_mean_wind_error = 1.0
-max_mean_wind_error = 5.0
+#i_mode_ints = [4]
+#sample_weight = 'linear'
+#sample_weight = 'squared'
+sample_weight = '1'
 max_mean_wind_error = 100.0
-
-model_time_shift = 1
 #####################################
 
 if delete_existing_param_file:
@@ -61,7 +57,7 @@ if not i_load:
     stat_keys = data[G.STAT_NAMES]
 
     lm_runs = list(data[G.MODEL][G.STAT][stat_keys[0]][G.RAW].keys())
-    n_hours = len(lm_runs)*24
+    n_hours = len(lm_runs)*nhrs_forecast
     n_stats = len(stat_keys)
     ts_per_hour = int(3600/model_dt)
 
@@ -76,35 +72,35 @@ if not i_load:
     obs_gust = np.full((n_hours, n_stats), np.nan)
     obs_mean = np.full((n_hours, n_stats), np.nan)
 
+    # hour indices within one lm_run
+    hour_inds = np.arange(0,nhrs_forecast).astype(np.int)
     for lmi,lm_run in enumerate(lm_runs):
-        print(lm_run)
-        lm_inds = np.arange(lmi*24,(lmi+1)*24)
-        model_hours_tmp = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
-                                    ['k_bra_es'].resample('H').max().index
-        #print(model_hours_tmp)
-        #print(lm_inds)
-        model_hours_shifted = [hr+timedelta(hours=model_time_shift) for hr in model_hours_tmp]
-        #print(model_hours_shifted)
+        print('\n' + lm_run)
+        lm_inds = np.arange(lmi*nhrs_forecast,(lmi+1)*nhrs_forecast)
+
         for si,stat_key in enumerate(stat_keys):
-            # 3D
-            tmp = data[G.MODEL][G.STAT][stat_key][G.RAW][lm_run]['k_bra_es']
-            for hi,hour in enumerate(model_hours_tmp):
-                loc_str = hour.strftime('%Y-%m-%d %H')
+            if si % (int(len(stat_keys)/10)+1) == 0:
+                print(str(int(100*si/len(stat_keys))), end='\t', flush=True)
+
+            for hi in hour_inds:
                 hr_ind = lm_inds[hi]
 
+                ts_inds = np.arange(hi*ts_per_hour,(hi+1)*ts_per_hour).astype(np.int)
+
                 model_mean[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                            [lm_run]['zvp10'].loc[loc_str].values
+                                            [lm_run]['zvp10'][ts_inds]
                 kval_est[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                            [lm_run]['k_bra_es'].loc[loc_str].values
+                                            [lm_run]['k_bra_es'][ts_inds]
                 gust_est[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                            [lm_run]['zv_bra_es'].loc[loc_str].values
+                                            [lm_run]['zv_bra_es'][ts_inds]
                 height[hr_ind,si,:] = data[G.STAT_META][stat_key]['hsurf'].values 
 
-            # 2D
-            #obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][model_hours_tmp] 
-            #obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_tmp] 
-            obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][model_hours_shifted] 
-            obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_shifted] 
+            # OBSERVATION DATA
+            full_hr_timestamps = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
+                                        ['tcm'].resample('H').max().index[1:]
+            obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][full_hr_timestamps] 
+            obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][full_hr_timestamps] 
+    print()
 
     #obs_mean = np.nanmean(obs_mean, axis=1)
     #model_mean = np.max(model_mean, axis=2)
@@ -141,90 +137,98 @@ else:
     obs_gust = data['obs_gust']
     obs_mean = data['obs_mean']
 
-# observation to 1D and filter values
-obsmask = np.isnan(obs_gust)
-obsmask[np.isnan(obs_mean)] = True # TODO NEW
-obsmask[obs_gust < min_gust] = True
-model_mean_hr = np.mean(model_mean, axis=2)
-mean_abs_error = np.abs(model_mean_hr - obs_mean)
-mean_rel_error = mean_abs_error/obs_mean
-obsmask[mean_rel_error > max_mean_wind_error] = True
-obs_gust = obs_gust[~obsmask] 
-obs_mean = obs_mean[~obsmask] 
-model_mean = model_mean[~obsmask]
-model_mean_hr = model_mean_hr[~obsmask]
-gust_est = gust_est[~obsmask]
-kheight_est = kheight_est[~obsmask]
-height = height[~obsmask]
-N = obs_gust.flatten().shape[0]
 
-# find maximum gust
-maxid = gust_est.argmax(axis=1)
-I = np.indices(maxid.shape)
-gust_est_max = gust_est[I,maxid].flatten()
-gust_est_max_unscaled = gust_est[I,maxid].flatten()
-model_mean_max = model_mean[I,maxid].flatten() 
-gust_est_max = gust_est[I,maxid].flatten()
-kheight_est_max = kheight_est[I,maxid].flatten()
-height_max = height[I,maxid].flatten()
 
-regr = LinearRegression(fit_intercept=False)
+if i_train:
 
-for mode_int in i_mode_ints:
-    mode = modes[mode_int]
-    print('#################################################################################')
-    print('############################## ' + str(mode) + ' ################################')
 
-    # calc current time step gusts
-    X = braes_feature_matrix(mode, gust_est_max, kheight_est_max,
-                                    height_max, model_mean_max)
-    y = obs_gust
+    # observation to 1D and filter values
+    obsmask = np.isnan(obs_gust)
+    obsmask[np.isnan(obs_mean)] = True # TODO NEW
+    model_mean_hr = np.mean(model_mean, axis=2)
+    mean_abs_error = np.abs(model_mean_hr - obs_mean)
+    mean_rel_error = mean_abs_error/obs_mean
+    obsmask[mean_rel_error > max_mean_wind_error] = True
+    obs_gust = obs_gust[~obsmask] 
+    obs_mean = obs_mean[~obsmask] 
+    model_mean = model_mean[~obsmask]
+    model_mean_hr = model_mean_hr[~obsmask]
+    gust_est = gust_est[~obsmask]
+    kheight_est = kheight_est[~obsmask]
+    height = height[~obsmask]
+    N = obs_gust.flatten().shape[0]
 
-    # scaling
-    if i_scaling:
-        scaler = StandardScaler(with_mean=False)
-        X = scaler.fit_transform(X)
+    # find maximum gust
+    maxid = gust_est.argmax(axis=1)
+    I = np.indices(maxid.shape)
+    gust_est_max = gust_est[I,maxid].flatten()
+    gust_est_max_unscaled = gust_est[I,maxid].flatten()
+    model_mean_max = model_mean[I,maxid].flatten() 
+    gust_est_max = gust_est[I,maxid].flatten()
+    kheight_est_max = kheight_est[I,maxid].flatten()
+    height_max = height[I,maxid].flatten()
 
-    if i_sample_weight == 'linear':
-        regr.fit(X,y, sample_weight=obs_gust)
-    elif i_sample_weight == 'squared':
-        regr.fit(X,y, sample_weight=obs_gust**2)
-    else:
-        regr.fit(X,y, sample_weight=np.repeat(1,len(obs_gust)))
- 
-    alphas = regr.coef_
-    print('alphas scaled  ' + str(alphas))
-    gust_max = regr.predict(X)
+    regr = LinearRegression(fit_intercept=False)
 
-    try:
-        plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_est_max_unscaled)
-        plt.suptitle('BRAEST  '+mode)
+    for mode_int in i_mode_ints:
+        mode = modes[mode_int]
+        print('#################################################################################')
+        print('############################## ' + str(mode) + ' ################################')
 
-        if i_plot == 1:
-            plt.show()
-        elif i_plot > 1:
-            if i_label == '':
-                plot_name = CN.plot_path + 'tuning_braes_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
-                                            +str(mode)+'.png'
-            else:
-                plot_name = CN.plot_path + 'tuning_braes_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
-                                            +str(i_label)+'_'+str(mode)+'.png'
-            print(plot_name)
-            plt.savefig(plot_name)
-            plt.close('all')
-    except:
-        print('Tkinter ERROR while plotting!')
+        # calc current time step gusts
+        X = braes_feature_matrix(mode, gust_est_max, kheight_est_max,
+                                        height_max, model_mean_max)
+        y = obs_gust
 
-    # RESCALE ALPHA VALUES
-    # not necessary to treat powers > 1 different because
-    # this is already contained in X matrix
-    alphas = alphas/scaler.scale_
-    print('alphas unscal  ' + str(alphas))
+        # scaling
+        if i_scaling:
+            scaler = StandardScaler(with_mean=False)
+            X = scaler.fit_transform(X)
 
-    # SAVE PARAMETERS 
-    if os.path.exists(CN.params_braes_path):
-        params = pickle.load( open(CN.params_braes_path, 'rb') )
-    else:
-        params = {}
-    params[mode] = alphas
-    pickle.dump(params, open(CN.params_braes_path, 'wb'))
+        if sample_weight == 'linear':
+            regr.fit(X,y, sample_weight=obs_gust)
+        elif sample_weight == 'squared':
+            regr.fit(X,y, sample_weight=obs_gust**2)
+        else:
+            regr.fit(X,y, sample_weight=np.repeat(1,len(obs_gust)))
+     
+        alphas = regr.coef_
+        print('alphas scaled  ' + str(alphas))
+        gust_max = regr.predict(X)
+
+        try:
+            plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_est_max_unscaled)
+            plt.suptitle('BRAEST  '+mode)
+
+            if i_plot == 1:
+                plt.show()
+            elif i_plot > 1:
+                if i_label == '':
+                    plot_name = CN.plot_path + 'tuning_braes_sw_'+sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
+                                                +str(mode)+'.png'
+                else:
+                    plot_name = CN.plot_path + 'tuning_braes_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
+                                                +str(i_label)+'_'+str(mode)+'.png'
+                print(plot_name)
+                plt.savefig(plot_name)
+                plt.close('all')
+        except:
+            print('Tkinter ERROR while plotting!')
+
+        # RESCALE ALPHA VALUES
+        # not necessary to treat powers > 1 different because
+        # this is already contained in X matrix
+        alphas = alphas/scaler.scale_
+        print('alphas unscal  ' + str(alphas))
+
+        # SAVE PARAMETERS 
+        if os.path.exists(CN.params_braes_path):
+            params = pickle.load( open(CN.params_braes_path, 'rb') )
+        else:
+            params = {}
+        params[mode] = alphas
+        pickle.dump(params, open(CN.params_braes_path, 'wb'))
+
+
+else:
+    print('Train is turned off. Finish.')

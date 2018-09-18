@@ -1,5 +1,19 @@
+############################
+# COMPUATION SETTINGS
+case_index = 0
+# do not plot (0) show plot (1) save plot (2)
+i_plot = 1
+model_dt = 10
+nhrs_forecast = 24
+i_load = 0
+i_train = 0
+delete_existing_param_file = 1
+max_mean_wind_error = 100.0
+sample_weight = '1'
+############################
 
 class Case_Namelist:
+
 
     # path to raw observation data (as obtained by syn_get_obs script)
     raw_obs_folder = '../obs_out/'

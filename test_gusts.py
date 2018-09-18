@@ -53,10 +53,10 @@ nc_path = '/scratch/heimc/wd/18010300_101_pom/lm_coarse/'+var_name+'.nc'
 lm_run_string = '2018010300'
 case_index = 21
 
-# Burglind prerelease (dp)
-nc_path = '/scratch/heimc/wd/18010300_101_pre_dp/lm_coarse/'+var_name+'.nc'
-lm_run_string = '2018010300'
-case_index = 20
+## Burglind prerelease (dp)
+#nc_path = '/scratch/heimc/wd/18010300_101_pre_dp/lm_coarse/'+var_name+'.nc'
+#lm_run_string = '2018010300'
+#case_index = 20
 
 
 CN = Case_Namelist(case_index)
