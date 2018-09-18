@@ -9,16 +9,16 @@ from namelist_cases import Case_Namelist
 from datetime import timedelta
 
 ############ USER INPUT #############
-case_index = 17
+case_index = 4
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 1
-model_dt = 20
+model_dt = 10
 i_label = ''
 i_load = 0
 i_output_error = 1
 default_learning_rate_factor = 1E-2
-nhrs_forecast = 120
+nhrs_forecast = 24
 
 modes = ['ln',
          'nl']

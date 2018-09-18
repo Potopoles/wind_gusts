@@ -11,18 +11,19 @@ from functions_train import stat_calculate_gust, stat_combine_features
 from datetime import timedelta
 
 ############ USER INPUT #############
-case_index = 13
+case_index = 0
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 2
+i_plot = 1
 model_dt = 10
 i_label = ''
-i_load = 1
+i_load = 0
 i_output_error = 1
 learning_rate_factor = 1E-3
 d_error_thresh = 1E-5
 i_sample_weight = '1'
 delete_existing_param_file = 1
+nhrs_forecast = 48
 
 modes = ['mean_tke',
          'mean_height',
@@ -48,7 +49,7 @@ sgd_prob = 0.10
 #                'icon_gust']
 feature_names = ['zvp10', 'tcm', 'tkel1', 'hsurf', 'zv_bra_es', 'zbra', 'dvl3v10', 'icon_gust']
 
-model_time_shift = 1
+#model_time_shift = 1
 #####################################
 
 # create directories
@@ -88,100 +89,123 @@ if not i_load:
     for i,line in enumerate(level_altitudes_file[:-1]):
         level_alts[int(line[0])] = (level_altitudes_file[i,1] + level_altitudes_file[i+1,1])/2
 
+    # hour indices within one lm_run
+    hour_inds = np.arange(0,nhrs_forecast).astype(np.int)
     for lmi,lm_run in enumerate(lm_runs):
         print(lm_run)
-        lm_inds = np.arange(lmi*24,(lmi+1)*24)
-        model_hours_tmp = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
-                                    ['tcm'].resample('H').max().index
-        model_hours_shifted = [hr+timedelta(hours=model_time_shift) for hr in model_hours_tmp]
+        lm_inds = np.arange(lmi*nhrs_forecast,(lmi+1)*nhrs_forecast)
+        print(lm_inds)
+
+        #model_hours_tmp = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
+        #                            ['tcm'].resample('H').max().index
+        #print(model_hours_tmp)
+        #model_hours_shifted = [hr+timedelta(hours=model_time_shift) for hr in model_hours_tmp]
+        #print(model_hours_shifted)
+        #quit()
+        #print(hour_inds)
+
         for si,stat_key in enumerate(stat_keys):
             #if si % 150 == 0:
             #    print(str(int(100*si/len(stat_keys))) + ' %')
             # 3D
-            tmp = data[G.MODEL][G.STAT][stat_key][G.RAW][lm_run]['tcm']
-            for hi,hour in enumerate(model_hours_tmp):
-                loc_str = hour.strftime('%Y-%m-%d %H')
-                hr_ind = lm_inds[hi]
+            #tmp = data[G.MODEL][G.STAT][stat_key][G.RAW][lm_run]['tcm']
+            #for hi,hour in enumerate(model_hours_tmp):
+            for hi in hour_inds:
+                #loc_str = hour.strftime('%Y-%m-%d %H')
+                lm_ind = lm_inds[hi]
+                #print(lm_ind)
+
+                ts_inds = np.arange(hi*ts_per_hour,(hi+1)*ts_per_hour).astype(np.int)
+                #print(ts_inds)
+                #if (hi == 0) and (si == 0):
+                #    print(data[G.MODEL][G.STAT][stat_key][G.RAW][lm_run]['ul1'][ts_inds])
+                #quit()
 
                 for feat in feature_names:
                     if feat in ['zvp10', 'tcm', 'tkel1', 'zv_bra_es']:
-                        features[feat][hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run][feat].loc[loc_str].values
-                    #elif feat in ['hsurf', 'sso_stdh', 'z0']:
-                    elif feat in ['hsurf']:
-                        features[feat][hr_ind,si,:] = data[G.STAT_META][stat_key][feat].values 
-                    elif feat == 'dvl3v10':
-                        features[feat][hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run]['uvl3'].loc[loc_str].values - \
-                                                      data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run]['zvp10'].loc[loc_str].values
-                    elif feat == 'zbra':
-                        features[feat][hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run]['k_bra_es'].loc[loc_str].values 
-                        for ind,level in enumerate(features[feat][hr_ind,si,:]):
-                            features[feat][hr_ind,si,:][ind] = level_alts[int(level)]
-                    elif feat == 'icon_gust':
-                        ugn = 7.71
-                        hpbl = 1000
-                        g = 9.80665
-                        Rd = 287.05
-                        etv = 0.6078
-                        cp = 1005.0
-                        kappa = Rd/cp
+                        #features[feat][hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                        #                            [lm_run][feat].loc[loc_str].values
+                        features[feat][lm_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                                                    [lm_run][feat][ts_inds]
+                #    #elif feat in ['hsurf', 'sso_stdh', 'z0']:
+                #    elif feat in ['hsurf']:
+                #        features[feat][hr_ind,si,:] = data[G.STAT_META][stat_key][feat].values 
+                #    elif feat == 'dvl3v10':
+                #        features[feat][hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                                    [lm_run]['uvl3'].loc[loc_str].values - \
+                #                                      data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                                    [lm_run]['zvp10'].loc[loc_str].values
+                #    elif feat == 'zbra':
+                #        features[feat][hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                                    [lm_run]['k_bra_es'].loc[loc_str].values 
+                #        for ind,level in enumerate(features[feat][hr_ind,si,:]):
+                #            features[feat][hr_ind,si,:][ind] = level_alts[int(level)]
+                #    elif feat == 'icon_gust':
+                #        ugn = 7.71
+                #        hpbl = 1000
+                #        g = 9.80665
+                #        Rd = 287.05
+                #        etv = 0.6078
+                #        cp = 1005.0
+                #        kappa = Rd/cp
 
-                        umlev = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run]['ul1'].loc[loc_str].values 
-                        vmlev = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run]['vl1'].loc[loc_str].values 
-                        ps = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run]['ps'].loc[loc_str].values 
-                        qvflx = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run]['qvflx'].loc[loc_str].values 
-                        shflx = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run]['shflx'].loc[loc_str].values 
-                        z0 = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run]['z0'].loc[loc_str].values 
-                        Tskin = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run]['Tskin'].loc[loc_str].values 
-                        Tmlev = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run]['Tl1'].loc[loc_str].values 
-                        qvmlev = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run]['qvl1'].loc[loc_str].values 
-                        phimlev = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run]['phil1'].loc[loc_str].values 
-                        zvp10 = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                                    [lm_run]['zvp10'].loc[loc_str].values 
+                #        umlev = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                                    [lm_run]['ul1'].loc[loc_str].values 
+                #        vmlev = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                                    [lm_run]['vl1'].loc[loc_str].values 
+                #        ps = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                                    [lm_run]['ps'].loc[loc_str].values 
+                #        qvflx = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                                    [lm_run]['qvflx'].loc[loc_str].values 
+                #        shflx = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                                    [lm_run]['shflx'].loc[loc_str].values 
+                #        z0 = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                                    [lm_run]['z0'].loc[loc_str].values 
+                #        Tskin = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                                    [lm_run]['Tskin'].loc[loc_str].values 
+                #        Tmlev = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                                    [lm_run]['Tl1'].loc[loc_str].values 
+                #        qvmlev = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                                    [lm_run]['qvl1'].loc[loc_str].values 
+                #        phimlev = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                                    [lm_run]['phil1'].loc[loc_str].values 
+                #        zvp10 = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                                    [lm_run]['zvp10'].loc[loc_str].values 
 
-                        # density
-                        rho = ps / ( Rd*Tmlev * ( 1 + etv*qvmlev ) )
+                #        # density
+                #        rho = ps / ( Rd*Tmlev * ( 1 + etv*qvmlev ) )
 
-                        # buoyancy
-                        buoy = g * ( - etv*qvflx - shflx/( Tskin*cp ) ) / rho
+                #        # buoyancy
+                #        buoy = g * ( - etv*qvflx - shflx/( Tskin*cp ) ) / rho
 
-                        # surface stress
-                        zcdn = ( kappa / np.log( 1 + phimlev/(g*z0) ) )**2
-                        dua = np.sqrt( np.maximum( 0.1**2, umlev**2 + vmlev**2 ) )
-                        ustr = rho*umlev*dua*zcdn
-                        vstr = rho*vmlev*dua*zcdn
+                #        # surface stress
+                #        zcdn = ( kappa / np.log( 1 + phimlev/(g*z0) ) )**2
+                #        dua = np.sqrt( np.maximum( 0.1**2, umlev**2 + vmlev**2 ) )
+                #        ustr = rho*umlev*dua*zcdn
+                #        vstr = rho*vmlev*dua*zcdn
 
-                        # friction velocity
-                        ustar2 = np.sqrt( ustr**2 + vstr**2 ) / rho 
-                        wstar2 = ( buoy[buoy > 0]*hpbl )**(2/3)
-                        ustar2[buoy > 0] = ustar2[buoy > 0] + 2E-3*wstar2
-                        ustar = np.maximum( np.sqrt(ustar2), 0.0001 )
+                #        # friction velocity
+                #        ustar2 = np.sqrt( ustr**2 + vstr**2 ) / rho 
+                #        wstar2 = ( buoy[buoy > 0]*hpbl )**(2/3)
+                #        ustar2[buoy > 0] = ustar2[buoy > 0] + 2E-3*wstar2
+                #        ustar = np.maximum( np.sqrt(ustar2), 0.0001 )
 
-                        # wind gust
-                        idl = -hpbl*kappa*buoy/ustar**3
-                        gust = zvp10
-                        greater0 = idl >= 0
-                        gust[greater0] = gust[greater0] + ustar[greater0]*ugn
-                        smaller0 = idl < 0
-                        gust[smaller0] = gust[smaller0] + ustar[smaller0]*ugn * (1 - 0.5/12*idl[smaller0])**(1/3)
-                        features[feat][hr_ind,si,:] = gust
+                #        # wind gust
+                #        idl = -hpbl*kappa*buoy/ustar**3
+                #        gust = zvp10
+                #        greater0 = idl >= 0
+                #        gust[greater0] = gust[greater0] + ustar[greater0]*ugn
+                #        smaller0 = idl < 0
+                #        gust[smaller0] = gust[smaller0] + ustar[smaller0]*ugn * (1 - 0.5/12*idl[smaller0])**(1/3)
+                #        features[feat][hr_ind,si,:] = gust
 
-            # 2D
-            obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][model_hours_shifted] 
-            obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_shifted] 
+        print(features['zvp10'])
+
+    quit()
+
+            ## 2D
+            #obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][model_hours_shifted] 
+            #obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_shifted] 
 
 
     # Process fields

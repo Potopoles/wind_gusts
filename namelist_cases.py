@@ -108,6 +108,14 @@ class Case_Namelist:
         # 21 test case 18010300 pompa for gust testing with Guy's file VBM10M_all
         {OBS_RAW:['20180103sfc.'],
                 OBS:'test_gust_burglind', MOD_RAW:'test_gust_burglind', MOD:'ref'},
+        # 22 June 18 and December 17
+        {OBS_RAW:['20180620sfc.','20180621sfc.','20180622sfc.','20180623sfc.',
+                  '20180624sfc.','20180625sfc.','20180626sfc.','20180627sfc.',
+                  '20180628sfc.','20180629sfc.','20180630sfc.','20180701sfc.',
+                  '20171206sfc.','20171207sfc.','20171208sfc.','20171209sfc.',
+                  '20171210sfc.','20171211sfc.','20171212sfc.','20171213sfc.',
+                  '20171214sfc.','20171215sfc.','20171216sfc.','20171217sfc.'],
+                    OBS:'Eval_June_Dec', MOD_RAW:'Eval_June_Dec', MOD:'ref'},
 
 
 
