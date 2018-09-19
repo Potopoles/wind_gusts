@@ -25,6 +25,8 @@ i_output_error = 1
 learning_rate_factor = 1E-3
 d_error_thresh = 1E-5
 delete_existing_param_file = nl.delete_existing_param_file
+#max_mean_wind_error = nl.max_mean_wind_error
+#sample_weight = nl.sample_weight
 
 modes = ['mean_tke',
          'mean_height',
@@ -40,9 +42,7 @@ modes = ['mean_tke',
          'mean_mean2_gustbra_dvl3v10']
 
 i_mode_ints = range(0,len(modes))
-#i_mode_ints = [11]
-max_mean_wind_error = nl.max_mean_wind_error
-sample_weight = nl.sample_weight
+#i_mode_ints = [0]
 sgd_prob = 0.10
 #feature_names = ['zvp10', 'tcm', 'tkel1', 'hsurf', 'sso_stdh', 'zv_bra_es', 'k_bra_es', 'dvl3v10', 'z0', \
 #                'icon_gust']
@@ -229,12 +229,12 @@ if i_train:
     obsmask = np.isnan(obs_gust)
     obsmask[np.isnan(obs_mean)] = True
 
-    # bad mean wind accuracy mask
-    mean_abs_error = np.abs(model_mean - obs_mean)
-    mean_rel_error = mean_abs_error/obs_mean
-    errormask = mean_rel_error > max_mean_wind_error
-    # combine both
-    obsmask[errormask] = True
+    ## bad mean wind accuracy mask
+    #mean_abs_error = np.abs(model_mean - obs_mean)
+    #mean_rel_error = mean_abs_error/obs_mean
+    #errormask = mean_rel_error > max_mean_wind_error
+    ## combine both
+    #obsmask[errormask] = True
 
     obs_gust = obs_gust[~obsmask] 
     obs_mean = obs_mean[~obsmask]
@@ -307,12 +307,13 @@ if i_train:
                 if c % 10 == 0:
                     print(str(c) + '\t' + str(error_now) + '\t' + str(np.abs(np.mean(d_errors))))
 
-            if sample_weight == 'linear':
-                weights = sgd_obs_gust
-            elif sample_weight == 'squared':
-                weights = sgd_obs_gust**2
-            else:
-                weights = np.repeat(1,len(sgd_obs_gust))
+            #if sample_weight == 'linear':
+            #    weights = sgd_obs_gust
+            #elif sample_weight == 'squared':
+            #    weights = sgd_obs_gust**2
+            #else:
+            #    weights = np.repeat(1,len(sgd_obs_gust))
+            weights = np.repeat(1,len(sgd_obs_gust))
 
             for i in range(0,X.shape[1]):
                 dalpha = -2/np.sum(weights) * np.sum( X[:,i] * deviation * weights )
@@ -335,22 +336,23 @@ if i_train:
         I = np.indices(maxid.shape)
         gust_max = gust[I,maxid].squeeze()
 
-        try:
-            plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_unscaled)
-            plt.suptitle('STAT  '+mode)
+        if i_plot > 0:
+            try:
+                plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_unscaled)
+                plt.suptitle('STAT  '+mode)
 
-            if i_plot == 1:
-                plt.show()
-            elif i_plot > 1:
-                if i_label == '':
-                    plot_name = CN.plot_path + 'tuning_stat_sw_'+sample_weight+'_'+str(mode)+'.png'
-                else:
-                    plot_name = CN.plot_path + 'tuning_stat_sw_'+sample_weight+'_'+str(i_label)+'_'+str(mode)+'.png'
-                print(plot_name)
-                plt.savefig(plot_name)
-                plt.close('all')
-        except:
-            print('Tkinter ERROR while plotting!')
+                if i_plot == 1:
+                    plt.show()
+                elif i_plot > 1:
+                    if i_label == '':
+                        plot_name = CN.plot_path + 'tuning_stat_'+str(mode)+'.png'
+                    else:
+                        plot_name = CN.plot_path + 'tuning_stat_'+str(i_label)+'_'+str(mode)+'.png'
+                    print(plot_name)
+                    plt.savefig(plot_name)
+                    plt.close('all')
+            except:
+                print('Tkinter ERROR while plotting!')
 
 
         # RESCALE ALPHA VALUES

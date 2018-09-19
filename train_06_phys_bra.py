@@ -6,26 +6,32 @@ import pickle
 from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
+import namelist_cases as nl
 from datetime import timedelta
 
 ############ USER INPUT #############
-case_index = 0
+case_index = nl.case_index
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 1
-model_dt = 10
-nhrs_forecast = 24
+i_plot = nl.i_plot
+model_dt = nl.model_dt
+nhrs_forecast = nl.nhrs_forecast
 i_label = ''
-i_load = 0
-i_train = 0
-delete_existing_param_file = 1
+i_load = nl.i_load
+i_train = nl.i_train
+delete_existing_param_file = nl.delete_existing_param_file
+#max_mean_wind_error = nl.max_mean_wind_error
+#sample_weight = nl.sample_weight
+
+#modes = ['es',
+#        'lb',
+#        'es_rho',
+#        'lb_rho']
 modes = ['es',
-        'lb',
-        'es_rho',
-        'lb_rho']
+        'lb']
+
 i_mode_ints = range(0,len(modes))
 #i_mode_ints = [2]
-max_mean_wind_error = 100.0
 #####################################
 
 # create directories
@@ -57,9 +63,9 @@ if not i_load:
     gust_est = np.full((n_hours, n_stats, ts_per_hour), np.nan)
     kval_lb = np.full((n_hours, n_stats, ts_per_hour), np.nan)
     gust_lb = np.full((n_hours, n_stats, ts_per_hour), np.nan)
-    rho_est = np.full((n_hours, n_stats, ts_per_hour), np.nan)
-    rho_lb = np.full((n_hours, n_stats, ts_per_hour), np.nan)
-    rho_surf = np.full((n_hours, n_stats, ts_per_hour), np.nan)
+    #rho_est = np.full((n_hours, n_stats, ts_per_hour), np.nan)
+    #rho_lb = np.full((n_hours, n_stats, ts_per_hour), np.nan)
+    #rho_surf = np.full((n_hours, n_stats, ts_per_hour), np.nan)
     print('3D shape ' + str(kval_est.shape))
     # 2D
     obs_gust = np.full((n_hours, n_stats), np.nan)
@@ -90,12 +96,12 @@ if not i_load:
                                             [lm_run]['zv_bra_es'][ts_inds]
                 gust_lb[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
                                             [lm_run]['zv_bra_lb'][ts_inds]
-                rho_est[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                            [lm_run]['rho_bra_es'][ts_inds]
-                rho_lb[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                            [lm_run]['rho_bra_lb'][ts_inds]
-                rho_surf[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                            [lm_run]['rhol1'][ts_inds]
+                #rho_est[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                            [lm_run]['rho_bra_es'][ts_inds]
+                #rho_lb[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                            [lm_run]['rho_bra_lb'][ts_inds]
+                #rho_surf[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
+                #                            [lm_run]['rhol1'][ts_inds]
 
             # OBSERVATION DATA
             full_hr_timestamps = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
@@ -115,30 +121,7 @@ if not i_load:
         kheight_est[kval_est == kind] = kalts[i]
         kheight_lb[kval_lb == kind] = kalts[i]
 
-        
-    # obs nan mask
-    obsmask = np.isnan(obs_gust)
-    obsmask[np.isnan(obs_mean)] = True
-
-    # bad mean wind accuracy mask
     model_mean_hr = np.mean(model_mean, axis=2)
-    mean_abs_error = np.abs(model_mean_hr - obs_mean)
-    mean_rel_error = mean_abs_error/obs_mean
-    errormask = mean_rel_error > max_mean_wind_error
-    # combine both
-    obsmask[errormask] = True
-
-    obs_gust = obs_gust[~obsmask] 
-    obs_mean = obs_mean[~obsmask]
-    model_mean_hr = model_mean_hr[~obsmask]
-    model_mean = model_mean[~obsmask]
-    kheight_est = kheight_est[~obsmask]
-    gust_est = gust_est[~obsmask]
-    kheight_lb = kheight_lb[~obsmask]
-    gust_lb = gust_lb[~obsmask]
-    rho_est = rho_est[~obsmask]
-    rho_lb = rho_lb[~obsmask]
-    rho_surf = rho_surf[~obsmask]
 
     data = {}
     data['model_mean_hr'] = model_mean_hr
@@ -147,9 +130,9 @@ if not i_load:
     data['gust_lb'] = gust_lb
     data['kheight_est'] = kheight_est
     data['kheight_lb'] = kheight_lb
-    data['rho_est'] = rho_est
-    data['rho_lb'] = rho_lb
-    data['rho_surf'] = rho_surf
+    #data['rho_est'] = rho_est
+    #data['rho_lb'] = rho_lb
+    #data['rho_surf'] = rho_surf
     data['obs_gust'] = obs_gust
     data['obs_mean'] = obs_mean 
 
@@ -164,9 +147,9 @@ else:
     gust_lb = data['gust_lb']
     kheight_est = data['kheight_est']
     kheight_lb = data['kheight_lb']
-    rho_est = data['rho_est']
-    rho_lb = data['rho_lb']
-    rho_surf = data['rho_surf']
+    #rho_est = data['rho_est']
+    #rho_lb = data['rho_lb']
+    #rho_surf = data['rho_surf']
     obs_gust = data['obs_gust']
     obs_mean = data['obs_mean']
 
@@ -174,6 +157,29 @@ else:
 
 
 if i_train:
+
+    # obs nan mask
+    obsmask = np.isnan(obs_gust)
+    obsmask[np.isnan(obs_mean)] = True
+
+    ## bad mean wind accuracy mask
+    #mean_abs_error = np.abs(model_mean_hr - obs_mean)
+    #mean_rel_error = mean_abs_error/obs_mean
+    #errormask = mean_rel_error > max_mean_wind_error
+    ## combine both
+    #obsmask[errormask] = True
+
+    obs_gust = obs_gust[~obsmask] 
+    obs_mean = obs_mean[~obsmask]
+    model_mean_hr = model_mean_hr[~obsmask]
+    model_mean = model_mean[~obsmask]
+    kheight_est = kheight_est[~obsmask]
+    gust_est = gust_est[~obsmask]
+    kheight_lb = kheight_lb[~obsmask]
+    gust_lb = gust_lb[~obsmask]
+    #rho_est = rho_est[~obsmask]
+    #rho_lb = rho_lb[~obsmask]
+    #rho_surf = rho_surf[~obsmask]
 
     for mode_int in i_mode_ints:
         mode = modes[mode_int]
@@ -204,9 +210,9 @@ if i_train:
             sgd_model_mean = model_mean[sgd_inds,:]
             sgd_gust_est = gust_est[sgd_inds,:]
             sgd_kheight_est = kheight_est[sgd_inds,:]
-            sgd_rho_est = rho_est[sgd_inds,:]
-            sgd_rho_lb = rho_lb[sgd_inds,:]
-            sgd_rho_surf = rho_surf[sgd_inds,:]
+            #sgd_rho_est = rho_est[sgd_inds,:]
+            #sgd_rho_lb = rho_lb[sgd_inds,:]
+            #sgd_rho_surf = rho_surf[sgd_inds,:]
             sgd_gust_lb = gust_lb[sgd_inds,:]
             sgd_kheight_lb = kheight_lb[sgd_inds,:]
 
@@ -215,12 +221,12 @@ if i_train:
                 sgd_gust = sgd_gust_est - alphas[0]*sgd_kheight_est*(sgd_gust_est -  sgd_model_mean)
             if mode == 'lb':
                 sgd_gust = sgd_gust_lb - alphas[0]*sgd_kheight_lb*(sgd_gust_lb -  sgd_model_mean)
-            elif mode == 'es_rho':
-                sgd_gust = sgd_gust_est*sgd_rho_est/sgd_rho_surf - alphas[0]*sgd_kheight_est*\
-                            (sgd_gust_est*sgd_rho_est/sgd_rho_surf -  sgd_model_mean)
-            elif mode == 'lb_rho':
-                sgd_gust = sgd_gust_lb*sgd_rho_lb/sgd_rho_surf - alphas[0]*sgd_kheight_lb*\
-                            (sgd_gust_lb*sgd_rho_lb/sgd_rho_surf -  sgd_model_mean)
+            #elif mode == 'es_rho':
+            #    sgd_gust = sgd_gust_est*sgd_rho_est/sgd_rho_surf - alphas[0]*sgd_kheight_est*\
+            #                (sgd_gust_est*sgd_rho_est/sgd_rho_surf -  sgd_model_mean)
+            #elif mode == 'lb_rho':
+            #    sgd_gust = sgd_gust_lb*sgd_rho_lb/sgd_rho_surf - alphas[0]*sgd_kheight_lb*\
+            #                (sgd_gust_lb*sgd_rho_lb/sgd_rho_surf -  sgd_model_mean)
 
             sgd_gust[sgd_gust < 0] = 0
 
@@ -232,9 +238,9 @@ if i_train:
             sgd_model_mean = model_mean[sgd_inds,:][I,maxid].squeeze()
             sgd_gust_est = gust_est[sgd_inds,:][I,maxid].squeeze()
             sgd_kheight_est = kheight_est[sgd_inds,:][I,maxid].squeeze()
-            sgd_rho_est = rho_est[sgd_inds,:][I,maxid].squeeze()
-            sgd_rho_lb = rho_lb[sgd_inds,:][I,maxid].squeeze()
-            sgd_rho_surf = rho_surf[sgd_inds,:][I,maxid].squeeze()
+            #sgd_rho_est = rho_est[sgd_inds,:][I,maxid].squeeze()
+            #sgd_rho_lb = rho_lb[sgd_inds,:][I,maxid].squeeze()
+            #sgd_rho_surf = rho_surf[sgd_inds,:][I,maxid].squeeze()
             sgd_kheight_lb = kheight_lb[sgd_inds,:][I,maxid].squeeze()
             sgd_gust_lb = gust_lb[sgd_inds,:][I,maxid].squeeze()
 
@@ -253,12 +259,12 @@ if i_train:
                 dalpha = -2/N * np.sum( -sgd_kheight_est*(sgd_gust_est -  sgd_model_mean) * deviation )
             if mode == 'lb':
                 dalpha = -2/N * np.sum( -sgd_kheight_lb*(sgd_gust_lb -  sgd_model_mean) * deviation )
-            elif mode == 'es_rho':
-                dalpha = -2/N * np.sum( -sgd_kheight_est*\
-                                        (sgd_gust_est*sgd_rho_est/sgd_rho_surf -  sgd_model_mean) * deviation )
-            elif mode == 'lb_rho':
-                dalpha = -2/N * np.sum( -sgd_kheight_lb*\
-                                        (sgd_gust_lb*sgd_rho_lb/sgd_rho_surf -  sgd_model_mean) * deviation )
+            #elif mode == 'es_rho':
+            #    dalpha = -2/N * np.sum( -sgd_kheight_est*\
+            #                            (sgd_gust_est*sgd_rho_est/sgd_rho_surf -  sgd_model_mean) * deviation )
+            #elif mode == 'lb_rho':
+            #    dalpha = -2/N * np.sum( -sgd_kheight_lb*\
+            #                            (sgd_gust_lb*sgd_rho_lb/sgd_rho_surf -  sgd_model_mean) * deviation )
 
             alphas[0] = alphas[0] - learning_rate * dalpha
 
@@ -275,12 +281,12 @@ if i_train:
             gust = gust_est - alphas[0]*kheight_est*(gust_est - model_mean)
         if mode == 'lb':
             gust = gust_lb - alphas[0]*kheight_lb*(gust_lb - model_mean)
-        elif mode == 'es_rho':
-            gust = gust_est*rho_est/rho_surf - alphas[0]*kheight_est*\
-                                        (gust_est*rho_est/rho_surf -  model_mean)
-        elif mode == 'lb_rho':
-            gust = gust_lb*rho_lb/rho_surf - alphas[0]*kheight_lb*\
-                                        (gust_lb*rho_lb/rho_surf -  model_mean)
+        #elif mode == 'es_rho':
+        #    gust = gust_est*rho_est/rho_surf - alphas[0]*kheight_est*\
+        #                                (gust_est*rho_est/rho_surf -  model_mean)
+        #elif mode == 'lb_rho':
+        #    gust = gust_lb*rho_lb/rho_surf - alphas[0]*kheight_lb*\
+        #                                (gust_lb*rho_lb/rho_surf -  model_mean)
             
         gust[gust < 0] = 0
 
@@ -289,8 +295,8 @@ if i_train:
         I = np.indices(maxid.shape)
         gust_max = gust[I,maxid].squeeze()
 
-        # original gust
-        if mode in ['lb', 'lb_rho']:
+        #if mode in ['lb', 'lb_rho']:
+        if mode in ['lb']:
             maxid = gust_lb.argmax(axis=1)
             I = np.indices(maxid.shape)
             gust_max_orig = gust_lb[I,maxid].squeeze()
@@ -303,22 +309,23 @@ if i_train:
             suptitle = 'PHY BRAES  '
             plot_name_title = 'tuning_phys_braes_'
 
-        try:
-            plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_max_orig)
-            plt.suptitle(suptitle + mode)
+        if i_plot > 0:
+            try:
+                plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_max_orig)
+                plt.suptitle(suptitle + mode)
 
-            if i_plot == 1:
-                plt.show()
-            elif i_plot > 1:
-                if i_label == '':
-                    plot_name = CN.plot_path + plot_name_title +str(mode)+'.png'
-                else:
-                    plot_name = CN.plot_path + plot_name_title+str(i_label)+'_'+str(mode)+'.png'
-                print(plot_name)
-                plt.savefig(plot_name)
-                plt.close('all')
-        except:
-            print('Tkinter ERROR while plotting!')
+                if i_plot == 1:
+                    plt.show()
+                elif i_plot > 1:
+                    if i_label == '':
+                        plot_name = CN.plot_path + plot_name_title +str(mode)+'.png'
+                    else:
+                        plot_name = CN.plot_path + plot_name_title+str(i_label)+'_'+str(mode)+'.png'
+                    print(plot_name)
+                    plt.savefig(plot_name)
+                    plt.close('all')
+            except:
+                print('Tkinter ERROR while plotting!')
 
         # SAVE PARAMETERS 
         if os.path.exists(CN.params_phys_bra_path):

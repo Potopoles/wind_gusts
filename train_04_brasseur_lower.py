@@ -6,23 +6,27 @@ import pickle
 from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
+import namelist_cases as nl
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from functions_train import bralb_feature_matrix
 from datetime import timedelta
 
 ############ USER INPUT #############
-case_index = 0
+case_index = nl.case_index
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 1
-model_dt = 10
-nhrs_forecast = 24
+i_plot = nl.i_plot
+model_dt = nl.model_dt
+nhrs_forecast = nl.nhrs_forecast
 i_scaling = 1
 i_label =  ''
-i_load = 0
-i_train = 0
-delete_existing_param_file = 1
+i_load = nl.i_load
+i_train = nl.i_train
+delete_existing_param_file = nl.delete_existing_param_file
+#max_mean_wind_error = nl.max_mean_wind_error
+#sample_weight = nl.sample_weight
+
 modes = ['gust',
          'gust_gust2',
          'gust_kheight',
@@ -35,11 +39,7 @@ modes = ['gust',
          'gust_mean_height_mean2']
 
 i_mode_ints = range(0,len(modes))
-#i_mode_ints = [3,9]
-#sample_weight = 'linear'
-#sample_weight = 'squared'
-sample_weight = '1'
-max_mean_wind_error = 100.0
+#i_mode_ints = [5]
 #####################################
 
 if delete_existing_param_file:
@@ -133,10 +133,14 @@ if i_train:
     # observation to 1D and filter values
     obsmask = np.isnan(obs_gust)
     obsmask[np.isnan(obs_mean)] = True
+
     model_mean_hr = np.mean(model_mean, axis=2)
-    mean_abs_error = np.abs(model_mean_hr - obs_mean)
-    mean_rel_error = mean_abs_error/obs_mean
-    obsmask[mean_rel_error > max_mean_wind_error] = True
+
+    ## bad mean wind accuracy mask
+    #mean_abs_error = np.abs(model_mean_hr - obs_mean)
+    #mean_rel_error = mean_abs_error/obs_mean
+    #obsmask[mean_rel_error > max_mean_wind_error] = True
+    
     obs_gust = obs_gust[~obsmask] 
     obs_mean = obs_mean[~obsmask] 
     model_mean = model_mean[~obsmask]
@@ -173,35 +177,35 @@ if i_train:
             scaler = StandardScaler(with_mean=False)
             X = scaler.fit_transform(X)
 
-        if sample_weight == 'linear':
-            regr.fit(X,y, sample_weight=obs_gust)
-        elif sample_weight == 'squared':
-            regr.fit(X,y, sample_weight=obs_gust**2)
-        else:
-            regr.fit(X,y, sample_weight=np.repeat(1,len(obs_gust)))
+        #if sample_weight == 'linear':
+        #    regr.fit(X,y, sample_weight=obs_gust)
+        #elif sample_weight == 'squared':
+        #    regr.fit(X,y, sample_weight=obs_gust**2)
+        #else:
+        #    regr.fit(X,y, sample_weight=np.repeat(1,len(obs_gust)))
+        regr.fit(X,y, sample_weight=np.repeat(1,len(obs_gust)))
      
         alphas = regr.coef_
         print('alphas scaled  ' + str(alphas))
         gust_max = regr.predict(X)
 
-        try:
-            plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_lb_max_unscaled)
-            plt.suptitle('BRALB  '+mode)
+        if i_plot > 0:
+            try:
+                plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_lb_max_unscaled)
+                plt.suptitle('BRALB  '+mode)
 
-            if i_plot == 1:
-                plt.show()
-            elif i_plot > 1:
-                if i_label == '':
-                    plot_name = CN.plot_path + 'tuning_bralb_sw_'+sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
-                                                +str(mode)+'.png'
-                else:
-                    plot_name = CN.plot_path + 'tuning_bralb_sw_'+sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
-                                                +str(i_label)+'_'+str(mode)+'.png'
-                print(plot_name)
-                plt.savefig(plot_name)
-                plt.close('all')
-        except:
-            print('Tkinter ERROR while plotting!')
+                if i_plot == 1:
+                    plt.show()
+                elif i_plot > 1:
+                    if i_label == '':
+                        plot_name = CN.plot_path + 'tuning_bralb_'+str(mode)+'.png'
+                    else:
+                        plot_name = CN.plot_path + 'tuning_bralb_'+str(i_label)+'_'+str(mode)+'.png'
+                    print(plot_name)
+                    plt.savefig(plot_name)
+                    plt.close('all')
+            except:
+                print('Tkinter ERROR while plotting!')
 
         # RESCALE ALPHA VALUES
         # not necessary to treat powers > 1 different because

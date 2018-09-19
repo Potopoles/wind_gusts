@@ -6,18 +6,17 @@ import pickle
 from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
+import namelist_cases as nl
 
 ############ USER INPUT #############
-train_case_index = 10
+train_case_index = nl.train_case_index
+apply_case_index = nl.apply_case_index
 CNtrain = Case_Namelist(train_case_index)
-apply_case_index = 13
 CNapply = Case_Namelist(apply_case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 2
-model_dt = 10
+i_plot = nl.apply_i_plot
+model_dt = nl.apply_model_dt
 i_label = ''
-
-i_sample_weight = '1'
 #####################################
 
 # create directories
@@ -37,11 +36,33 @@ gust_est = data['gust_est']
 gust_lb = data['gust_lb']
 kheight_est = data['kheight_est']
 kheight_lb = data['kheight_lb']
-rho_est = data['rho_est']
-rho_lb = data['rho_lb']
-rho_surf = data['rho_surf']
+#rho_est = data['rho_est']
+#rho_lb = data['rho_lb']
+#rho_surf = data['rho_surf']
 obs_gust = data['obs_gust']
 obs_mean = data['obs_mean']
+
+# obs nan mask
+obsmask = np.isnan(obs_gust)
+obsmask[np.isnan(obs_mean)] = True
+
+#mean_abs_error = np.abs(model_mean_hr - obs_mean)
+#mean_rel_error = mean_abs_error/obs_mean
+#errormask = mean_rel_error > max_mean_wind_error
+## combine both
+#obsmask[errormask] = True
+
+obs_gust = obs_gust[~obsmask] 
+obs_mean = obs_mean[~obsmask]
+model_mean_hr = model_mean_hr[~obsmask]
+model_mean = model_mean[~obsmask]
+kheight_est = kheight_est[~obsmask]
+gust_est = gust_est[~obsmask]
+kheight_lb = kheight_lb[~obsmask]
+gust_lb = gust_lb[~obsmask]
+#rho_est = rho_est[~obsmask]
+#rho_lb = rho_lb[~obsmask]
+#rho_surf = rho_surf[~obsmask]
 
 
 for mode in params.keys():
@@ -55,12 +76,14 @@ for mode in params.keys():
         gust = gust_est - alphas[0]*kheight_est*(gust_est -  model_mean)
     if mode == 'lb':
         gust = gust_lb - alphas[0]*kheight_lb*(gust_lb -  model_mean)
-    elif mode == 'es_rho':
-        gust = gust_est*rho_est/rho_surf - alphas[0]*kheight_est*\
-                    (gust_est*rho_est/rho_surf -  model_mean)
-    elif mode == 'lb_rho':
-        gust = gust_lb*rho_lb/rho_surf - alphas[0]*kheight_lb*\
-                    (gust_lb*rho_lb/rho_surf -  model_mean)
+    #elif mode == 'es_rho':
+    #    gust = gust_est*rho_est/rho_surf - alphas[0]*kheight_est*\
+    #                (gust_est*rho_est/rho_surf -  model_mean)
+    #elif mode == 'lb_rho':
+    #    gust = gust_lb*rho_lb/rho_surf - alphas[0]*kheight_lb*\
+    #                (gust_lb*rho_lb/rho_surf -  model_mean)
+
+    gust[gust < 0] = 0
 
     # find maximum gust
     maxid = gust.argmax(axis=1)
@@ -68,8 +91,8 @@ for mode in params.keys():
     gust_max = gust[I,maxid].squeeze()
 
 
-    # original gust
-    if mode in ['lb', 'lb_rho']:
+    if mode in ['lb']:
+    #if mode in ['lb', 'lb_rho']:
         maxid = gust_lb.argmax(axis=1)
         I = np.indices(maxid.shape)
         gust_max_orig = gust_lb[I,maxid].squeeze()

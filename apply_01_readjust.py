@@ -7,18 +7,17 @@ import pickle
 from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
+import namelist_cases as nl
 
 ############ USER INPUT #############
-train_case_index = 10
+train_case_index = nl.train_case_index
+apply_case_index = nl.apply_case_index
 CNtrain = Case_Namelist(train_case_index)
-apply_case_index = 13
 CNapply = Case_Namelist(apply_case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 2
-model_dt = 10
+i_plot = nl.apply_i_plot
+model_dt = nl.apply_model_dt
 i_label = ''
-
-i_sample_weight = '1'
 #####################################
 
 # create directories
@@ -38,7 +37,6 @@ obs_gust = data['obs_gust']
 obs_mean = data['obs_mean']
 tcm = data['tcm']
 zvp10 = data['zvp10']
-
 
 # obs nan mask
 obsmask = np.isnan(obs_gust)
@@ -78,9 +76,9 @@ for mode in params.keys():
         plt.show()
     elif i_plot > 1:
         if i_label == '':
-            plot_name = CNapply.plot_path + 'applied_readj_sw_'+i_sample_weight+'_'+str(mode)+'.png'
+            plot_name = CNapply.plot_path + 'applied_readj_'+str(mode)+'.png'
         else:
-            plot_name = CNappyl.plot_path + 'applied_readj_sw_'+i_sample_weight+'_'+str(i_label)+'_'+str(mode)+'.png'
+            plot_name = CNappyl.plot_path + 'applied_readj_'+str(i_label)+'_'+str(mode)+'.png'
         print(plot_name)
         plt.savefig(plot_name)
         plt.close('all')

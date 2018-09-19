@@ -6,7 +6,35 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from datetime import timedelta
 from scipy.spatial import KDTree
+from netCDF4 import Dataset
 import time
+
+def load_var_at_station_from_nc(nc_path, var_name, sel_stat):
+    # GET STATION i AND j AND fort_stat INDEX
+    station_file = "/users/heimc/stations/all_stations.lst"
+    station_list = np.genfromtxt(station_file, skip_header=1, dtype=np.str)
+    headers = station_list[0,:]
+    station_list = station_list[1:,:]
+    #print(headers)
+    sel_stat_ind = station_list[:,0] == sel_stat
+    print(station_list[sel_stat_ind,:])
+    # final indices
+    i_ind = station_list[sel_stat_ind,8].astype(np.int) - 1
+    j_ind = station_list[sel_stat_ind,9].astype(np.int) - 1
+    print('select values at grind points: i ' + str(i_ind) + ' j ' + str(j_ind))
+
+    ## LOAD NC FILE DATA
+    #print('##############')
+
+    ncf = Dataset(nc_path, 'r')
+    ndim = np.ndim(ncf[var_name][:])
+    if ndim == 3:
+        var_nc = ncf[var_name][:,j_ind,i_ind].flatten()
+    elif ndim == 4:
+        kind = 79
+        var_nc = ncf[var_name][:,kind,j_ind,i_ind].flatten()
+
+    return(var_nc)
 
 
 def check_prerequisites(data, prerequisites, hist_tag):
@@ -65,6 +93,7 @@ def calc_model_fields(data, i_model_fields):
                         zsqcm = np.sqrt(zcm)
                         zvp10 = curr_raw['zvp10']
                         gust = zvp10 + 3.0 * 2.4 * zsqcm * zvp10
+                        #gust = zvp10 + 3.615 * zsqcm * zvp10 # Pompa tuning
                         gust = gust.to_frame()
             
                     elif field_name == G.GUST_MIX_COEF_NONLIN:
@@ -447,7 +476,7 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     ax.set_title('original')
     ax.set_xlabel(xlab)
     ax.set_ylabel(ylab)
-    ax.text(xmax-0.3*(xmax-xmin), ymax-0.10*(ymax-ymin), 'rmse '+str(np.round(rmse_init,2)), color='red')
+    ax.text(xmax-0.3*(xmax-xmin), ymax-0.10*(ymax-ymin), 'rmse '+str(np.round(rmse_init,3)), color='red')
     ax.grid()
     # gust error vs obs gust 
     ax = axes[1,0]
@@ -463,7 +492,7 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     ax.set_title('new')
     ax.set_xlabel(xlab)
     ax.set_ylabel(ylab)
-    ax.text(xmax-0.3*(xmax-xmin), ymax-0.10*(ymax-ymin), 'rmse '+str(np.round(rmse,2)), color='red')
+    ax.text(xmax-0.3*(xmax-xmin), ymax-0.10*(ymax-ymin), 'rmse '+str(np.round(rmse,3)), color='red')
     ax.grid()
 
 
@@ -580,7 +609,7 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     ax.axhline(y=0,c='grey')
     ax.set_xlim(xmin,xmax/2)
     ax.set_ylim(ymin,ymax)
-    ax.text(xmax/2-0.3*(xmax/2-xmin), ymax-0.10*(ymax-ymin), 'rmse '+str(np.round(rmse_mean,2)), color='red')
+    ax.text(xmax/2-0.3*(xmax/2-xmin), ymax-0.10*(ymax-ymin), 'rmse '+str(np.round(rmse_mean,3)), color='red')
     ax.set_title('mean wind error')
     ax.set_xlabel(xlab)
     ax.set_ylabel(ylab)
@@ -618,7 +647,7 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
     ax.set_ylabel(ylab)
     ax.grid()
 
-    print('rmse '+str(np.round(rmse,2)))
+    print('rmse '+str(np.round(rmse,6)))
 
     #plt.tight_layout()
     plt.subplots_adjust(left=0.04,bottom=0.08,right=0.99,top=0.9,wspace=0.23,hspace=0.3)

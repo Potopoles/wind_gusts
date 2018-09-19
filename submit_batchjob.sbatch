@@ -1,12 +1,12 @@
 #!/bin/bash -l
 #
-#SBATCH --job-name="train_01"
-#SBATCH --time=23:00:00
+#SBATCH --job-name="apply_06"
+#SBATCH --time=00:30:00
 #SBATCH --ntasks=1
 #SBATCH --account='s83'
-#SBATCH --partition=dev
-#SBATCH --output=bOut/sbatch1.out
-#SBATCH --error=bOut/sbatch1.err
+#SBATCH --partition=postproc
+#SBATCH --output=bOut/sbatch16.out
+#SBATCH --error=bOut/sbatch16.err
 
 
 echo -e "$SLURM_JOB_NAME started on $(date):\n $command $1 $2\n"

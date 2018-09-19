@@ -5,7 +5,8 @@ from datetime import datetime
 import pickle
 from sklearn.linear_model import LinearRegression
 from functions import calc_model_fields, join_model_and_obs, \
-                        join_model_runs, join_all_stations
+                        join_model_runs, join_all_stations, \
+                        load_var_at_station_from_nc
 import globals as G
 from filter import EntryFilter
 from namelist_cases import Case_Namelist
@@ -59,6 +60,12 @@ case_index = 21
 #case_index = 20
 
 
+# TEST OF FINAL OUTPUT
+nc_path = '/scratch/heimc/wd/18010300_101/lm_coarse/'+var_name+'.nc'
+lm_run_string = '2018010300'
+case_index = 14
+
+
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = 0
@@ -110,33 +117,34 @@ else:
     raise NotImplementedError()
 
 
+var_nc = load_var_at_station_from_nc(nc_path, var_name, sel_stat)
 
-# GET STATION i AND j AND fort_stat INDEX
-station_file = "/users/heimc/stations/all_stations.lst"
-station_list = np.genfromtxt(station_file, skip_header=1, dtype=np.str)
-headers = station_list[0,:]
-station_list = station_list[1:,:]
-#print(headers)
-sel_stat_ind = station_list[:,0] == sel_stat
-print(station_list[sel_stat_ind,:])
-# final indices
-i_ind = station_list[sel_stat_ind,8].astype(np.int) - 1
-j_ind = station_list[sel_stat_ind,9].astype(np.int) - 1
-print(i_ind)
-print(j_ind)
-
-
-# LOAD NC FILE DATA
-print('##############')
-
-ncf = Dataset(nc_path, 'r')
-if ndim[var_name] == 2:
-    all_var_nc = ncf[var_name]
-    var_nc = ncf[var_name][:,j_ind,i_ind].flatten()
-elif ndim[var_name] == 3:
-    kind = 79
-    all_var_nc = ncf[var_name][:,kind,:,:]
-    var_nc = ncf[var_name][:,kind,j_ind,i_ind].flatten()
+## GET STATION i AND j AND fort_stat INDEX
+#station_file = "/users/heimc/stations/all_stations.lst"
+#station_list = np.genfromtxt(station_file, skip_header=1, dtype=np.str)
+#headers = station_list[0,:]
+#station_list = station_list[1:,:]
+##print(headers)
+#sel_stat_ind = station_list[:,0] == sel_stat
+#print(station_list[sel_stat_ind,:])
+## final indices
+#i_ind = station_list[sel_stat_ind,8].astype(np.int) - 1
+#j_ind = station_list[sel_stat_ind,9].astype(np.int) - 1
+#print(i_ind)
+#print(j_ind)
+#
+#
+## LOAD NC FILE DATA
+#print('##############')
+#
+#ncf = Dataset(nc_path, 'r')
+#if ndim[var_name] == 2:
+#    all_var_nc = ncf[var_name]
+#    var_nc = ncf[var_name][:,j_ind,i_ind].flatten()
+#elif ndim[var_name] == 3:
+#    kind = 79
+#    all_var_nc = ncf[var_name][:,kind,:,:]
+#    var_nc = ncf[var_name][:,kind,j_ind,i_ind].flatten()
 
 
 # nice output for comparison

@@ -1,16 +1,32 @@
 ############################
-# COMPUATION SETTINGS
-case_index = 0
+# TRAIN SCRIPT SETTINGS
+# 10 all
+# 12 June_18
+# 13 December_17
+# 22 June 18 and December 17
+case_index      = 14
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 1
-model_dt = 10
-nhrs_forecast = 24
-i_load = 0
-i_train = 0
+i_plot          = 0
+model_dt        = 10
+nhrs_forecast   = 6
+i_load          = 0
+i_train         = 0
 delete_existing_param_file = 1
-max_mean_wind_error = 100.0
-sample_weight = '1'
+#max_mean_wind_error = 10000.0
+#sample_weight = 'linear'
+#sample_weight = 'squared'
+#sample_weight = '1'
 ############################
+# APPLY SCRIPT SETTINGS
+train_case_index    = 10
+apply_case_index    = 14
+apply_i_plot        = 1
+apply_model_dt      = 10
+
+
+############################
+
+
 
 class Case_Namelist:
 
@@ -96,8 +112,8 @@ class Case_Namelist:
                   '20171210sfc.','20171211sfc.','20171212sfc.','20171213sfc.',
                   '20171214sfc.','20171215sfc.','20171216sfc.','20171217sfc.'],
                     OBS:'December_17', MOD_RAW:'December_17', MOD:'ref'},
-        # 14 test case 18063000 for gust testing with Guy's file VBM10M_all
-        {OBS_RAW:['20180630sfc.','20180701sfc.'],
+        # 14 test case for gust model output
+        {OBS_RAW:['20180103sfc.'],
                 OBS:'test_gust', MOD_RAW:'test_gust', MOD:'ref'},
         # 15 December_SMN
         {OBS_RAW:['20171206sfc.','20171207sfc.','20171208sfc.','20171209sfc.',

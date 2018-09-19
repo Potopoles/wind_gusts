@@ -6,19 +6,18 @@ import pickle
 from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
+import namelist_cases as nl
 from functions_train import braes_feature_matrix, braes_feature_matrix_timestep
 
 ############ USER INPUT #############
-train_case_index = 10
+train_case_index = nl.train_case_index
+apply_case_index = nl.apply_case_index
 CNtrain = Case_Namelist(train_case_index)
-apply_case_index = 10
 CNapply = Case_Namelist(apply_case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 2
-model_dt = 10
+i_plot = nl.apply_i_plot
+model_dt = nl.apply_model_dt
 i_label = ''
-
-i_sample_weight = '1'
 apply_on_hourly_gusts = 0
 #####################################
 
@@ -51,6 +50,9 @@ model_mean_hr = model_mean_hr[~obsmask]
 gust_est = gust_est[~obsmask]
 kheight_est = kheight_est[~obsmask]
 height = height[~obsmask]
+
+N = obs_gust.flatten().shape[0]
+print(N)
 
 # find maximum gust
 if apply_on_hourly_gusts:
@@ -90,9 +92,9 @@ for mode in params.keys():
         plt.show()
     elif i_plot > 1:
         if i_label == '':
-            plot_name = CNapply.plot_path + 'applied_braes_sw_'+i_sample_weight+'_'+str(mode)+'.png'
+            plot_name = CNapply.plot_path + 'applied_braes_'+str(mode)+'.png'
         else:
-            plot_name = CNappyl.plot_path + 'applied_braes_sw_'+i_sample_weight+'_'+str(i_label)+'_'+str(mode)+'.png'
+            plot_name = CNappyl.plot_path + 'applied_braes_'+str(i_label)+'_'+str(mode)+'.png'
         print(plot_name)
         plt.savefig(plot_name)
         plt.close('all')

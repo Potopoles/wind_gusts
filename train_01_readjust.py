@@ -6,28 +6,30 @@ import pickle
 from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
+import namelist_cases as nl
 from datetime import timedelta
 
 ############ USER INPUT #############
-case_index = 21
+case_index = nl.case_index
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 1
-model_dt = 10
-nhrs_forecast = 24
+i_plot = nl.i_plot
+model_dt = nl.model_dt
+nhrs_forecast = nl.nhrs_forecast
 i_label = ''
-i_load = 0
-i_train = 0
+i_load = nl.i_load
+i_train = nl.i_train
 i_output_error = 1
 default_learning_rate_factor = 1E-2
-nhrs_forecast = 24
+delete_existing_param_file = nl.delete_existing_param_file
+#max_mean_wind_error = nl.max_mean_wind_error
+#sample_weight = nl.sample_weight
 
 modes = ['ln',
          'nl']
+
 i_mode_ints = range(0,len(modes))
 #i_mode_ints = [1]
-max_mean_wind_error = 100.0
-delete_existing_param_file = 1
 sgd_prob = 0.1
 #####################################
 
@@ -135,12 +137,12 @@ if i_train:
     # obs nan mask
     obsmask = np.isnan(obs_gust)
     obsmask[np.isnan(obs_mean)] = True
-    # bad mean wind accuracy mask
-    mean_abs_error = np.abs(model_mean - obs_mean)
-    mean_rel_error = mean_abs_error/obs_mean
-    errormask = mean_rel_error > max_mean_wind_error
-    # combine both
-    obsmask[errormask] = True
+    ## bad mean wind accuracy mask
+    #mean_abs_error = np.abs(model_mean - obs_mean)
+    #mean_rel_error = mean_abs_error/obs_mean
+    #errormask = mean_rel_error > max_mean_wind_error
+    ## combine both
+    #obsmask[errormask] = True
 
     obs_gust = obs_gust[~obsmask] 
     obs_mean = obs_mean[~obsmask]
@@ -252,27 +254,27 @@ if i_train:
 
 
         # PLOT
-        try:
-            plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_orig)
-            plt.suptitle('READJUST  '+mode)
+        if i_plot > 0:
+            try:
+                plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_orig)
+                plt.suptitle('READJUST  '+mode)
 
-            if i_plot == 1:
-                plt.show()
-            elif i_plot > 1:
-                if i_label == '':
-                    plot_name = CN.plot_path + 'tuning_readj_'+str(mode)+'.png'
-                else:
-                    plot_name = CN.plot_path + 'tuning_readj_'+str(i_label)+'_'+str(mode)+'.png'
-                print(plot_name)
-                plt.savefig(plot_name)
-                plt.close('all')
-        except:
-            print('Tkinter ERROR while plotting!')
+                if i_plot == 1:
+                    plt.show()
+                elif i_plot > 1:
+                    if i_label == '':
+                        plot_name = CN.plot_path + 'tuning_readj_'+str(mode)+'.png'
+                    else:
+                        plot_name = CN.plot_path + 'tuning_readj_'+str(i_label)+'_'+str(mode)+'.png'
+                    print(plot_name)
+                    plt.savefig(plot_name)
+                    plt.close('all')
+            except:
+                print('Tkinter ERROR while plotting!')
 
 
         # RESCALE ALPHA VALUES
         # not scaled
-
 
         # SAVE PARAMETERS 
         if os.path.exists(CN.params_readj_path):

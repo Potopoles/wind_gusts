@@ -9,7 +9,7 @@ import os
 from netCDF4 import Dataset
 
 ############ USER INPUT #############
-case_index = 21
+case_index = 14
 CN = Case_Namelist(case_index)
 # time step [s] of model
 model_dt = 10
@@ -26,8 +26,8 @@ model_params = ['ntstep','k_bra_es','k_bra_lb','k_bra_ub', # time step and model
                 'z0', 'Tl1', # surface roughness and temperature at lowest model level                      # 16
                 'shflx', 'qvflx', # surface sensible heat and water vapor flux 
                 'Tskin', 'qvl1', # skin temperature and water vapor at lowest model level
-                'rho_bra_es','rho_bra_lb','rho_bra_ub', # brasseur density
-                'rhol1', # rho at lowest model level
+                #'rho_bra_es','rho_bra_lb','rho_bra_ub', # brasseur density
+                #'rhol1', # rho at lowest model level
                 'phil1', # geopotential at lowest model level 
                 'ps']
 hist_tag = '02_prep_model'
@@ -168,6 +168,10 @@ for i,stat_key in enumerate(mod_stations):
             n_entries = values.shape[0]
             ts_secs = (np.arange(1,n_entries+1)*model_dt).astype(np.float)
             dts = [start_time + timedelta(seconds=ts_sec) for ts_sec in ts_secs]
+            #print(values.shape)
+            #print(len(model_params))
+            #print(model_params)
+            #quit()
             df = pd.DataFrame(values, index=dts, columns=model_params)
             #df = df.resample('D').max()
             raw_data[lm_run] = df

@@ -6,19 +6,18 @@ import pickle
 from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
+import namelist_cases as nl
 from functions_train import icon_feature_matrix, icon_feature_matrix_timestep
 
 ############ USER INPUT #############
-train_case_index = 10
+train_case_index = nl.train_case_index
+apply_case_index = nl.apply_case_index
 CNtrain = Case_Namelist(train_case_index)
-apply_case_index = 13
 CNapply = Case_Namelist(apply_case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 2
-i_scaling = 1
+i_plot = nl.apply_i_plot
+model_dt = nl.apply_model_dt
 i_label = ''
-
-i_sample_weight = '1'
 apply_on_hourly_gusts = 0
 #####################################
 
@@ -96,11 +95,9 @@ for mode in params.keys():
         plt.show()
     elif i_plot > 1:
         if i_label == '':
-            plot_name = CNapply.plot_path + 'applied_icon_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
-                                        +str(mode)+'.png'
+            plot_name = CNapply.plot_path + 'applied_icon_'+str(mode)+'.png'
         else:
-            plot_name = CNapply.plot_path + 'applied_icon_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
-                                        +str(i_label)+'_'+str(mode)+'.png'
+            plot_name = CNapply.plot_path + 'applied_icon_'+str(i_label)+'_'+str(mode)+'.png'
         print(plot_name)
         plt.savefig(plot_name)
         plt.close('all')
