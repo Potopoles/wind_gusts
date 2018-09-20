@@ -70,17 +70,18 @@ for mode in params.keys():
     I = np.indices(maxid.shape)
     gust_max = gust[I,maxid].squeeze()
 
-    plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_original)
-    plt.suptitle('apply STAT  '+mode)
+    if i_plot > 0:
+        plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_original)
+        plt.suptitle('apply STAT  '+mode)
 
-    if i_plot == 1:
-        plt.show()
-    elif i_plot > 1:
-        if i_label == '':
-            plot_name = CNapply.plot_path + 'applied_stat_'+str(mode)+'.png'
-        else:
-            plot_name = CNappyl.plot_path + 'applied_stat_'+str(i_label)+'_'+str(mode)+'.png'
-        print(plot_name)
-        plt.savefig(plot_name)
-        plt.close('all')
+        if i_plot == 1:
+            plt.show()
+        elif i_plot > 1:
+            if i_label == '':
+                plot_name = CNapply.plot_path + 'applied_stat_'+str(mode)+'.png'
+            else:
+                plot_name = CNappyl.plot_path + 'applied_stat_'+str(i_label)+'_'+str(mode)+'.png'
+            print(plot_name)
+            plt.savefig(plot_name)
+            plt.close('all')
 

@@ -1,7 +1,7 @@
 import os
 import copy
 import numpy as np
-#import pandas as pd
+import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
 from functions import plot_error
@@ -38,6 +38,49 @@ obs_mean = data['obs_mean']
 tcm = data['tcm']
 zvp10 = data['zvp10']
 
+
+######################################################
+################ FINAL TEST
+#from functions import load_var_at_station_from_nc
+#test_what = 'linear'
+##test_what = 'nonlinear'
+#test_what = 'linear_orig'
+#if test_what == 'linear':
+#    nc_path = '/scratch/heimc/tuned_gusts_pompa/itype_diag_gust_1/VMAX_10M.nc'
+#elif test_what == 'nonlinear':
+#    nc_path = '/scratch/heimc/tuned_gusts_pompa/itype_diag_gust_4/VMAX_10M.nc'
+#elif test_what == 'linear_orig':
+#    nc_path = '/scratch/heimc/tuned_gusts_pompa/itype_diag_gust_1_orig/VMAX_10M.nc'
+#var_name = 'VMAX_10M'
+#sel_stat = 'ABO'
+#sel_stat = 'KLO'
+#gust_nc = load_var_at_station_from_nc(nc_path, var_name, sel_stat)
+#df = pd.DataFrame(gust_nc, columns=['nc'])
+#data = pickle.load( open(CNapply.mod_path, 'rb') )
+#stat_keys = data[G.STAT_NAMES]
+#stat_ind = np.argwhere(np.asarray(stat_keys) == sel_stat)[0][0]
+#if test_what == 'linear':
+#    mode = 'ln'
+#    alphas = params[mode]['alphas']
+#    gust = zvp10 + alphas['1']*zvp10*tcm
+#elif test_what == 'nonlinear':
+#    mode = 'nl'
+#    alphas = params[mode]['alphas']
+#    gust = zvp10 + (alphas['1'] + alphas['2']*zvp10)*zvp10*tcm
+#elif test_what == 'linear_orig':
+#    gust = zvp10 + 7.2*zvp10*tcm
+#gust_pyth = np.max(gust[:,stat_ind,:], axis=1)
+#df['python'] = gust_pyth
+#diff = gust_pyth - gust_nc
+#df['diff'] = diff
+#df['relDiff'] = diff/gust_pyth
+#print(df)
+#print('max error ' + str(np.max(df['diff'])))
+#quit()
+######################################################
+
+
+
 # obs nan mask
 obsmask = np.isnan(obs_gust)
 obsmask[np.isnan(obs_mean)] = True
@@ -69,17 +112,18 @@ for mode in params.keys():
         gust_orig = zvp10 + 7.2*tcm*zvp10 + 0.09*tcm*zvp10**2
     gust_max_orig = np.amax(gust_orig,axis=1)
 
-    plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_orig)
-    plt.suptitle('apply READJUST  '+mode)
+    if i_plot > 0:
+        plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_orig)
+        plt.suptitle('apply READJUST  '+mode)
 
-    if i_plot == 1:
-        plt.show()
-    elif i_plot > 1:
-        if i_label == '':
-            plot_name = CNapply.plot_path + 'applied_readj_'+str(mode)+'.png'
-        else:
-            plot_name = CNappyl.plot_path + 'applied_readj_'+str(i_label)+'_'+str(mode)+'.png'
-        print(plot_name)
-        plt.savefig(plot_name)
-        plt.close('all')
+        if i_plot == 1:
+            plt.show()
+        elif i_plot > 1:
+            if i_label == '':
+                plot_name = CNapply.plot_path + 'applied_readj_'+str(mode)+'.png'
+            else:
+                plot_name = CNappyl.plot_path + 'applied_readj_'+str(i_label)+'_'+str(mode)+'.png'
+            print(plot_name)
+            plt.savefig(plot_name)
+            plt.close('all')
 

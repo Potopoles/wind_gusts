@@ -20,7 +20,7 @@ delete_existing_param_file = 1
 # APPLY SCRIPT SETTINGS
 train_case_index    = 10
 apply_case_index    = 14
-apply_i_plot        = 1
+apply_i_plot        = 0
 apply_model_dt      = 10
 
 

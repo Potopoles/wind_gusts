@@ -82,18 +82,19 @@ for mode in params.keys():
         gust = np.sum(X*alphas, axis=2)
         gust_max = np.max(gust,axis=1)
 
-    plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_lb_max_unscaled)
-    plt.suptitle('apply BRALB  '+mode)
+    if i_plot > 0:
+        plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_lb_max_unscaled)
+        plt.suptitle('apply BRALB  '+mode)
 
-    if i_plot == 1:
-        plt.show()
-    elif i_plot > 1:
-        if i_label == '':
-            plot_name = CNapply.plot_path + 'applied_bralb_'+str(mode)+'.png'
-        else:
-            plot_name = CNappyl.plot_path + 'applied_bralb_'+str(i_label)+'_'+str(mode)+'.png'
-        print(plot_name)
-        plt.savefig(plot_name)
-        plt.close('all')
+        if i_plot == 1:
+            plt.show()
+        elif i_plot > 1:
+            if i_label == '':
+                plot_name = CNapply.plot_path + 'applied_bralb_'+str(mode)+'.png'
+            else:
+                plot_name = CNappyl.plot_path + 'applied_bralb_'+str(i_label)+'_'+str(mode)+'.png'
+            print(plot_name)
+            plt.savefig(plot_name)
+            plt.close('all')
 
 

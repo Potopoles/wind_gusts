@@ -17,7 +17,7 @@ def load_var_at_station_from_nc(nc_path, var_name, sel_stat):
     station_list = station_list[1:,:]
     #print(headers)
     sel_stat_ind = station_list[:,0] == sel_stat
-    print(station_list[sel_stat_ind,:])
+    #print(station_list[sel_stat_ind,:])
     # final indices
     i_ind = station_list[sel_stat_ind,8].astype(np.int) - 1
     j_ind = station_list[sel_stat_ind,9].astype(np.int) - 1

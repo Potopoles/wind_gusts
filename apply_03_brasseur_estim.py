@@ -2,6 +2,7 @@ import os
 import copy
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 import pickle
 from functions import plot_error
 import globals as G
@@ -39,6 +40,41 @@ height = data['height']
 obs_gust = data['obs_gust']
 obs_mean = data['obs_mean']
 
+
+######################################################
+################ FINAL TEST
+#from functions import load_var_at_station_from_nc
+#test_what = 'gust_mean'
+#test_what = 'braest'
+#if test_what == 'gust_mean':
+#    nc_path = '/scratch/heimc/tuned_gusts_pompa/itype_diag_gust_5/VMAX_10M.nc'
+#elif test_what == 'braest':
+#    nc_path = '/scratch/heimc/tuned_gusts_pompa/itype_diag_gust_3/VMAX_10M.nc'
+#var_name = 'VMAX_10M'
+#sel_stat = 'ABO'
+#sel_stat = 'KLO'
+#gust_nc = load_var_at_station_from_nc(nc_path, var_name, sel_stat)
+#df = pd.DataFrame(gust_nc, columns=['nc'])
+#data = pickle.load( open(CNapply.mod_path, 'rb') )
+#stat_keys = data[G.STAT_NAMES]
+#stat_ind = np.argwhere(np.asarray(stat_keys) == sel_stat)[0][0]
+#if test_what == 'gust_mean':
+#    mode = 'gust_mean'
+#    alphas = params[mode]
+#    gust = alphas[0] + alphas[1]*gust_est + alphas[2]*model_mean
+#elif test_what == 'braest':
+#    gust = gust_est
+#gust_pyth = np.max(gust[:,stat_ind,:], axis=1)
+#df['python'] = gust_pyth
+#diff = gust_pyth - gust_nc
+#df['diff'] = diff
+#df['relDiff'] = diff/gust_pyth
+#print(df)
+#print('max error ' + str(np.max(df['diff'])))
+#quit()
+######################################################
+
+
 # observation to 1D and filter values
 obsmask = np.isnan(obs_gust)
 obsmask[np.isnan(obs_mean)] = True
@@ -53,6 +89,9 @@ height = height[~obsmask]
 
 N = obs_gust.flatten().shape[0]
 print(N)
+
+
+
 
 # find maximum gust
 if apply_on_hourly_gusts:
@@ -85,18 +124,20 @@ for mode in params.keys():
         gust = np.sum(X*alphas, axis=2)
         gust_max = np.max(gust,axis=1)
 
-    plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_est_max_unscaled)
-    plt.suptitle('apply BRAEST  '+mode)
 
-    if i_plot == 1:
-        plt.show()
-    elif i_plot > 1:
-        if i_label == '':
-            plot_name = CNapply.plot_path + 'applied_braes_'+str(mode)+'.png'
-        else:
-            plot_name = CNappyl.plot_path + 'applied_braes_'+str(i_label)+'_'+str(mode)+'.png'
-        print(plot_name)
-        plt.savefig(plot_name)
-        plt.close('all')
+    if i_plot > 0:
+        plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_est_max_unscaled)
+        plt.suptitle('apply BRAEST  '+mode)
+
+        if i_plot == 1:
+            plt.show()
+        elif i_plot > 1:
+            if i_label == '':
+                plot_name = CNapply.plot_path + 'applied_braes_'+str(mode)+'.png'
+            else:
+                plot_name = CNappyl.plot_path + 'applied_braes_'+str(i_label)+'_'+str(mode)+'.png'
+            print(plot_name)
+            plt.savefig(plot_name)
+            plt.close('all')
 
 

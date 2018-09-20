@@ -88,17 +88,18 @@ for mode in params.keys():
         gust_max = np.max(gust,axis=1)
 
 
-    plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_ico_max_unscaled)
-    plt.suptitle('ICON  '+mode)
+    if i_plot > 0:
+        plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_ico_max_unscaled)
+        plt.suptitle('ICON  '+mode)
 
-    if i_plot == 1:
-        plt.show()
-    elif i_plot > 1:
-        if i_label == '':
-            plot_name = CNapply.plot_path + 'applied_icon_'+str(mode)+'.png'
-        else:
-            plot_name = CNapply.plot_path + 'applied_icon_'+str(i_label)+'_'+str(mode)+'.png'
-        print(plot_name)
-        plt.savefig(plot_name)
-        plt.close('all')
+        if i_plot == 1:
+            plt.show()
+        elif i_plot > 1:
+            if i_label == '':
+                plot_name = CNapply.plot_path + 'applied_icon_'+str(mode)+'.png'
+            else:
+                plot_name = CNapply.plot_path + 'applied_icon_'+str(i_label)+'_'+str(mode)+'.png'
+            print(plot_name)
+            plt.savefig(plot_name)
+            plt.close('all')
 
