@@ -4,13 +4,13 @@
 # 12 June_18
 # 13 December_17
 # 22 June 18 and December 17
-case_index      = 14
+case_index      = 13
 # do not plot (0) show plot (1) save plot (2)
-i_plot          = 0
+i_plot          = 2
 model_dt        = 10
 nhrs_forecast   = 6
-i_load          = 0
-i_train         = 0
+i_load          = 1
+i_train         = 1
 delete_existing_param_file = 1
 #max_mean_wind_error = 10000.0
 #sample_weight = 'linear'
@@ -19,8 +19,8 @@ delete_existing_param_file = 1
 ############################
 # APPLY SCRIPT SETTINGS
 train_case_index    = 10
-apply_case_index    = 14
-apply_i_plot        = 0
+apply_case_index    = 13
+apply_i_plot        = 2
 apply_model_dt      = 10
 
 

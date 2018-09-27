@@ -34,7 +34,7 @@ modes = ['gust',
         'gust_mean_height_mean2_kheight']
 
 i_mode_ints = range(0,len(modes))
-i_mode_ints = [8]
+i_mode_ints = [4]
 min_gust = 0
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'

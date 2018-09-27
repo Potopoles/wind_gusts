@@ -16,21 +16,20 @@ from netCDF4 import Dataset
 ############ USER INPUT #############
 
 sel_stat = 'ABO'
-#sel_stat = 'ATT'
+sel_stat = 'ATT'
 #sel_stat = 'AGBAD'
 #sel_stat = 'DLAUG'
 #sel_stat = 'FRANY'
-#sel_stat = 'MAS'
+sel_stat = 'MAS'
 #sel_stat = 'OSRIN'
 #sel_stat = 'SLFILI'
 #sel_stat = 'TGKAL'
-#sel_stat = 'AGAAR'
 
 var_name = 'Z0'
-var_name = 'T'
-var_name = 'FF_10M'
+#var_name = 'T'
+#var_name = 'FF_10M'
 var_name = 'VMAX_10M'
-#var_name = 'TCM'
+n_hours = 24
 ndim = {
         'Z0':2,
         'T':3,
@@ -54,16 +53,16 @@ nc_path = '/scratch/heimc/wd/18010300_101_pom/lm_coarse/'+var_name+'.nc'
 lm_run_string = '2018010300'
 case_index = 21
 
-## Burglind prerelease (dp)
-#nc_path = '/scratch/heimc/wd/18010300_101_pre_dp/lm_coarse/'+var_name+'.nc'
-#lm_run_string = '2018010300'
-#case_index = 20
-
-
-# TEST OF FINAL OUTPUT
-nc_path = '/scratch/heimc/wd/18010300_101/lm_coarse/'+var_name+'.nc'
+# Burglind prerelease
+nc_path = '/scratch/heimc/wd/18010300_101_pre/lm_coarse/'+var_name+'.nc'
 lm_run_string = '2018010300'
-case_index = 14
+case_index = 20
+
+
+## TEST OF FINAL OUTPUT
+#nc_path = '/scratch/heimc/wd/18010300_101/lm_coarse/'+var_name+'.nc'
+#lm_run_string = '2018010300'
+#case_index = 14
 
 
 CN = Case_Namelist(case_index)
@@ -88,7 +87,7 @@ data = pickle.load( open(CN.mod_path, 'rb') )
 
 
 # LOAD STATION DATA
-row_inds = (np.arange(1,25)*360).astype(np.int)-1
+row_inds = (np.arange(1,n_hours+1)*360).astype(np.int)-1
 if var_name == 'Z0':
     var_stat = data[G.MODEL][G.STAT][sel_stat]['raw'][lm_run_string]['z0']
     var_stat = var_stat[row_inds]
@@ -171,106 +170,4 @@ else:
     print(np.max(abs_err))
     print('##### max rel error ####')
     print(np.max(abs_err/var_nc))
-
-quit()
-
-
-# join stations
-data = join_all_stations(data)
-
-###################### PLOT
-if i_plot > 0:
-    df = data[G.BOTH][G.ALL_STAT]
-
-    # regression
-    reg = LinearRegression(fit_intercept=True)
-
-    # plot preparation
-    fig = plt.figure(figsize=(14,9))
-    nrow = 2
-    ncol = 3
-    ymax = -np.Inf
-    ymin = np.Inf
-
-    # loop over axes and gust calc method
-    axes = []
-    for mi,field_name in enumerate(i_model_fields):
-        print(field_name)
-
-        ax = fig.add_subplot(nrow, ncol, mi+1)
-        axes.append(ax)
-
-        # prepare feature matrix
-        if field_name == G.MODEL_MEAN_WIND:
-            X = df[G.OBS_MEAN_WIND].values.reshape(-1,1)
-            y = (df[field_name] - df[G.OBS_MEAN_WIND]).values
-            xlab = 'Observed mean wind (OBS) [m/s]'
-            ylab = 'Model mean wind error (MOD-OBS) [m/s]'
-        else:
-            X = df[G.OBS_GUST_SPEED].values.reshape(-1,1)
-            y = (df[field_name] - df[G.OBS_GUST_SPEED]).values
-            xlab = 'Observed gust (OBS) [m/s]'
-            ylab = 'Model gust error (MOD-OBS) [m/s]'
-
-        # delete NAN
-        mask = np.isnan(X[:,0])
-        mask[np.isnan(y)] = True
-        X = X[~mask,:]
-        y = y[~mask]
-
-
-        # determine max/min y
-        ymax = max(np.max(y),ymax)
-        ymin = min(np.min(y),ymin)
-        ymax = 70
-        ymin = -50
-
-        # calculate median
-        dmp = 1
-        mp_borders = np.arange(np.floor(ymin),np.ceil(ymax),dmp)
-        mp_x = mp_borders[:-1] + np.diff(mp_borders)/2
-        mp_y = np.full(len(mp_x),np.nan)
-        for i in range(0,len(mp_x)):
-            #inds = np.squeeze(np.argwhere((X[:,0] > mp_borders[i]) & (X[:,0] <= mp_borders[i+1])))
-            inds = (X[:,0] > mp_borders[i]) & (X[:,0] <= mp_borders[i+1])
-            if np.sum(inds) > 20:
-                mp_y[i] = np.median(y[inds])
-            
-
-        # fit regression and draw line
-        reg.fit(X,y)
-        line = reg.predict(X)
-
-        # plotting
-        ax.scatter(X[:,0], y, color='black', marker=".")
-        ax.plot(X, line, color='red')
-        ax.plot(mp_x, mp_y, color='orange')
-        ax.set_xlabel(xlab)
-        if mi % ncol == 0 or field_name == G.MODEL_MEAN_WIND:
-            ax.set_ylabel(ylab)
-        ax.axhline(0, color='k', linewidth=0.8)
-        ax.set_title(field_name)
-    # set axes limits in each ax
-    for i,ax in enumerate(axes):
-        ax.set_ylim((ymin,ymax))
-        ax.set_xlim(left=min_gust)
-        if i == 0:
-            ax.text(np.max(X)-0.13*(np.max(X)-np.min(X)), ymax-0.10*(ymax-ymin), len(y))
-
-    # finish plot
-    title = CN.case_name + ' minGust ' + str(min_gust) +' m/s'
-    plt.suptitle(title)
-    plt.subplots_adjust(left=0.05,bottom=0.08,right=0.95,top=0.9,wspace=0.2,hspace=0.3)
-
-    if i_plot == 1:
-        plt.show()
-    elif i_plot > 1:
-        if label == '':
-            plot_name = CN.plot_path + 'scatter_minGust_'+str(min_gust).zfill(2)+'.png'
-        else:
-            plot_name = CN.plot_path + 'scatter_'+label+'_minGust_'+str(min_gust).zfill(2)+'.png'
-        print(plot_name)
-        plt.savefig(plot_name)
-        plt.close('all')
-
 
