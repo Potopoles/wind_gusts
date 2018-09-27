@@ -9,7 +9,7 @@ import os
 from netCDF4 import Dataset
 
 ############ USER INPUT #############
-case_index = 20
+case_index = 4
 CN = Case_Namelist(case_index)
 # time step [s] of model
 model_dt = 10
@@ -17,19 +17,34 @@ model_dt = 10
 ind0 = 701
 #ind0_2 = 5701
 # header of fortran output files
-model_params = ['ntstep','k_bra_es','k_bra_lb','k_bra_ub', # time step and model levels of brassuer         # 3
-                'tcm','zvp10', # turbulent coefficient of momentum and abs wind at 10 m                     # 5 
-                'zv_bra_es','zv_bra_lb','zv_bra_ub', # brasseur gust velocities                             # 8
-                'uvl1','uvl2','uvl3', # abs wind at lowest 3 model levels                                   # 11
-                'ul1', 'vl1', # u and v at lowest model level                                               # 13
-                'tkel1',# 'tke_bra_es', # tke at lowest level and mean tke between sfc and bra estimate     # 14
-                'z0', 'Tl1', # surface roughness and temperature at lowest model level                      # 16
-                'shflx', 'qvflx', # surface sensible heat and water vapor flux 
-                'Tskin', 'qvl1', # skin temperature and water vapor at lowest model level
-                #'rho_bra_es','rho_bra_lb','rho_bra_ub', # brasseur density
-                #'rhol1', # rho at lowest model level
-                'phil1', # geopotential at lowest model level 
-                'ps']
+# for pompa (exp_id = 101) density fields are still in output
+if CN.exp_id == 101:
+    model_params = ['ntstep','k_bra_es','k_bra_lb','k_bra_ub', # time step and model levels of brassuer         # 3
+                    'tcm','zvp10', # turbulent coefficient of momentum and abs wind at 10 m                     # 5 
+                    'zv_bra_es','zv_bra_lb','zv_bra_ub', # brasseur gust velocities                             # 8
+                    'uvl1','uvl2','uvl3', # abs wind at lowest 3 model levels                                   # 11
+                    'ul1', 'vl1', # u and v at lowest model level                                               # 13
+                    'tkel1',# 'tke_bra_es', # tke at lowest level and mean tke between sfc and bra estimate     # 14
+                    'z0', 'Tl1', # surface roughness and temperature at lowest model level                      # 16
+                    'shflx', 'qvflx', # surface sensible heat and water vapor flux 
+                    'Tskin', 'qvl1', # skin temperature and water vapor at lowest model level
+                    'rho_bra_es','rho_bra_lb','rho_bra_ub', # brasseur density
+                    'rhol1', # rho at lowest model level
+                    'phil1', # geopotential at lowest model level 
+                    'ps']
+# for other experiments (exp_id != 101) density fields are not in output anymore
+else:
+    model_params = ['ntstep','k_bra_es','k_bra_lb','k_bra_ub', # time step and model levels of brassuer         # 3
+                    'tcm','zvp10', # turbulent coefficient of momentum and abs wind at 10 m                     # 5 
+                    'zv_bra_es','zv_bra_lb','zv_bra_ub', # brasseur gust velocities                             # 8
+                    'uvl1','uvl2','uvl3', # abs wind at lowest 3 model levels                                   # 11
+                    'ul1', 'vl1', # u and v at lowest model level                                               # 13
+                    'tkel1',# 'tke_bra_es', # tke at lowest level and mean tke between sfc and bra estimate     # 14
+                    'z0', 'Tl1', # surface roughness and temperature at lowest model level                      # 16
+                    'shflx', 'qvflx', # surface sensible heat and water vapor flux 
+                    'Tskin', 'qvl1', # skin temperature and water vapor at lowest model level
+                    'phil1', # geopotential at lowest model level 
+                    'ps']
 hist_tag = '02_prep_model'
 sso_stdh_file = '../extern_par/SSO_STDH.nc'
 slo_ang_file = '../extern_par/SLO_ANG.nc'
