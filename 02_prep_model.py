@@ -5,11 +5,12 @@ from datetime import datetime, timedelta
 import pickle
 import globals as G
 from namelist_cases import Case_Namelist
+import namelist_cases as nl
 import os
 from netCDF4 import Dataset
 
 ############ USER INPUT #############
-case_index = 4
+case_index = nl.case_index
 CN = Case_Namelist(case_index)
 # time step [s] of model
 model_dt = 10

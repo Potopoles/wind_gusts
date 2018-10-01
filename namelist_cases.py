@@ -4,7 +4,7 @@
 # 11 June_18
 # 12 December_17
 # 13 June 18 and December 17
-case_index      = 4
+case_index      = 17
 # do not plot (0) show plot (1) save plot (2)
 i_plot          = 2
 model_dt        = 10
@@ -22,16 +22,11 @@ train_case_index    = 10
 apply_case_index    = 13
 apply_i_plot        = 2
 apply_model_dt      = 10
-
-
 ############################
-
-
-
 class Case_Namelist:
 
-    #exp_id = 101
-    exp_id = 105
+    exp_id = 101
+    #exp_id = 105
 
 
     # path to raw observation data (as obtained by syn_get_obs script)
@@ -139,20 +134,7 @@ class Case_Namelist:
         {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.'],
                     OBS:'20180103_Burglind_ANAC1', MOD_RAW:'20180103_Burglind_ANAC1'},
 
-        ## 17 20180701 Pompa
-        #{OBS_RAW:['20180701sfc.','20180702sfc.','20180703sfc.','20180704sfc.','20180705sfc.'],
-        #            OBS:'20180701_Pompa', MOD_RAW:'20180701_Pompa'},
-        ## 18 20180701 Prerelease
-        #{OBS_RAW:['20180701sfc.','20180702sfc.','20180703sfc.','20180704sfc.','20180705sfc.'],
-        #            OBS:'20180701_Prerelease', MOD_RAW:'20180701_Prerelease'},
-        ## 19 test case 18062012 prerelease for gust testing with Guy's file VBM10M_all
-        #{OBS_RAW:['20180620sfc.','20180621sfc.'],
-        #        OBS:'test_gust_pre', MOD_RAW:'test_gust_pre'},
-
-        # 17 test case 18010300 prerelease for gust testing with Guy's file VBM10M_all
-        {OBS_RAW:['20180103sfc.'],
-                OBS:'test_gust_pre_burglind', MOD_RAW:'test_gust_pre_burglind'},
-        # 18 test case 18010300 pompa for gust testing with Guy's file VBM10M_all
+        # 17 test case 18010300 for gust testing with Guy's file VBM10M_all
         {OBS_RAW:['20180103sfc.'],
                 OBS:'test_gust_burglind', MOD_RAW:'test_gust_burglind'},
 

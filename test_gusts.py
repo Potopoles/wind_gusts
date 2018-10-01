@@ -20,13 +20,13 @@ sel_stat = 'ATT'
 #sel_stat = 'AGBAD'
 #sel_stat = 'DLAUG'
 #sel_stat = 'FRANY'
-sel_stat = 'MAS'
+#sel_stat = 'MAS'
 #sel_stat = 'OSRIN'
 #sel_stat = 'SLFILI'
 #sel_stat = 'TGKAL'
 
 var_name = 'Z0'
-#var_name = 'T'
+var_name = 'T'
 #var_name = 'FF_10M'
 var_name = 'VMAX_10M'
 n_hours = 24
@@ -38,25 +38,15 @@ ndim = {
         'TCM':2
         }
 
-## June pompa
-#nc_path = '/scratch/heimc/wd/18063000_101/lm_coarse/'+var_name+'.nc'
-#lm_run_string = '2018063000'
-#case_index = 14
-#
-## June prerelease
-#nc_path = '/scratch/heimc/wd/18062012_101/lm_coarse/'+var_name+'.nc'
-#lm_run_string = '2018062012'
-#case_index = 19
-
 # Burglind pompa
-nc_path = '/scratch/heimc/wd/18010300_101_pom/lm_coarse/'+var_name+'.nc'
+nc_path = '/scratch/heimc/wd/18010300_101/lm_coarse/'+var_name+'.nc'
 lm_run_string = '2018010300'
-case_index = 21
+case_index = 17
 
-# Burglind prerelease
-nc_path = '/scratch/heimc/wd/18010300_101_pre/lm_coarse/'+var_name+'.nc'
-lm_run_string = '2018010300'
-case_index = 20
+## Burglind prerelease
+#nc_path = '/scratch/heimc/wd/18010300_105/lm_coarse/'+var_name+'.nc'
+#lm_run_string = '2018010300'
+#case_index = 17
 
 
 ## TEST OF FINAL OUTPUT
