@@ -4,9 +4,9 @@
 # 11 June_18
 # 12 December_17
 # 13 June 18 and December 17
-case_index      = 17
+case_index      = 4
 # do not plot (0) show plot (1) save plot (2)
-i_plot          = 2
+i_plot          = 1
 model_dt        = 10
 nhrs_forecast   = 24
 i_load          = 1
@@ -19,7 +19,7 @@ delete_existing_param_file = 1
 ############################
 # APPLY SCRIPT SETTINGS
 train_case_index    = 10
-apply_case_index    = 13
+apply_case_index    = 10
 apply_i_plot        = 2
 apply_model_dt      = 10
 ############################
@@ -183,6 +183,9 @@ class Case_Namelist:
 
         self.ML_braes_path = self.data_folder + 'ML_braes_OBS_' + self.cases[case_ind][self.OBS] + '_EXPID_' + \
                         str(self.exp_id) + '.pkl'
+
+        #self.ML_stat_path = self.data_folder + 'ML_stat_OBS_' + self.cases[case_ind][self.OBS] + '_EXPID_' + \
+        #                str(self.exp_id) + '.pkl'
 
         #### PARAMETERS
 

@@ -6,6 +6,7 @@ import pickle
 from functions import plot_error
 import globals as G
 from namelist_cases import Case_Namelist
+import namelist_cases as nl
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Lasso
 from sklearn.preprocessing import StandardScaler
@@ -14,22 +15,19 @@ from functions_train import braes_feature_matrix
 from datetime import timedelta
 
 ############ USER INPUT #############
-case_index = 10
+case_index = nl.case_index
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
-i_plot = 1
-model_dt = 10
+i_plot = nl.i_plot
+model_dt = nl.model_dt
+nhrs_forecast = nl.nhrs_forecast
 i_scaling = 1
 i_label =  ''
-i_load = 0
-delete_existing_param_file = 1
+i_load = nl.i_load
+i_train = nl.i_train
+delete_existing_param_file = nl.delete_existing_param_file
 
 min_gust = 0
-
-max_mean_wind_error = 0.1
-max_mean_wind_error = 1.0
-max_mean_wind_error = 5.0
-max_mean_wind_error = 100.0
 
 model_time_shift = 1
 
@@ -50,7 +48,7 @@ if not i_load:
     stat_keys = data[G.STAT_NAMES]
 
     lm_runs = list(data[G.MODEL][G.STAT][stat_keys[0]][G.RAW].keys())
-    n_hours = len(lm_runs)*24
+    n_hours = len(lm_runs)*nhrs_forecast
     n_stats = len(stat_keys)
     ts_per_hour = int(3600/model_dt)
 
@@ -66,35 +64,36 @@ if not i_load:
     obs_gust = np.full((n_hours, n_stats), np.nan)
     obs_mean = np.full((n_hours, n_stats), np.nan)
 
+    # hour indices within one lm_run
+    hour_inds = np.arange(0,nhrs_forecast).astype(np.int)
     for lmi,lm_run in enumerate(lm_runs):
-        print(lm_run)
-        lm_inds = np.arange(lmi*24,(lmi+1)*24)
-        model_hours_tmp = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
-                                    ['k_bra_es'].resample('H').max().index
-        #print(model_hours_tmp)
-        #print(lm_inds)
-        model_hours_shifted = [hr+timedelta(hours=model_time_shift) for hr in model_hours_tmp]
-        #print(model_hours_shifted)
+        print('\n' + lm_run)
+        lm_inds = np.arange(lmi*nhrs_forecast,(lmi+1)*nhrs_forecast)
+
         for si,stat_key in enumerate(stat_keys):
-            # 3D
-            tmp = data[G.MODEL][G.STAT][stat_key][G.RAW][lm_run]['k_bra_es']
-            for hi,hour in enumerate(model_hours_tmp):
-                loc_str = hour.strftime('%Y-%m-%d %H')
+            if si % (int(len(stat_keys)/10)+1) == 0:
+                print(str(int(100*si/len(stat_keys))), end='\t', flush=True)
+
+            for hi in hour_inds:
                 hr_ind = lm_inds[hi]
 
+                ts_inds = np.arange(hi*ts_per_hour,(hi+1)*ts_per_hour).astype(np.int)
+
                 model_mean[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                            [lm_run]['zvp10'].loc[loc_str].values
+                                            [lm_run]['zvp10'][ts_inds]
                 kval_est[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                            [lm_run]['k_bra_es'].loc[loc_str].values
+                                            [lm_run]['k_bra_es'][ts_inds]
                 gust_est[hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
-                                            [lm_run]['zv_bra_es'].loc[loc_str].values
+                                            [lm_run]['zv_bra_es'][ts_inds]
                 height[hr_ind,si,:] = data[G.STAT_META][stat_key]['hsurf'].values 
                 sso[hr_ind,si,:] = data[G.STAT_META][stat_key]['sso_stdh'].values 
                 z0[hr_ind,si,:] = data[G.STAT_META][stat_key]['z0'].values 
 
-            # 2D
-            obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][model_hours_shifted] 
-            obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][model_hours_shifted] 
+            # OBSERVATION DATA
+            full_hr_timestamps = data[G.MODEL][G.STAT][stat_keys[0]][G.RAW][lm_run]\
+                                        ['tcm'].resample('H').max().index[1:]
+            obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][full_hr_timestamps] 
+            obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][full_hr_timestamps] 
 
     # Process fields
     kheight_est = copy.deepcopy(kval_est)
@@ -131,12 +130,8 @@ else:
 # observation to 1D and filter values
 obsmask = np.isnan(obs_gust)
 obsmask[obs_gust < min_gust] = True
-if i_fake_train:
-    obsmask[np.isnan(obs_mean)] = True # TODO NEW
+obsmask[np.isnan(obs_mean)] = True
 model_mean_hr = np.mean(model_mean, axis=2)
-mean_abs_error = np.abs(model_mean_hr - obs_mean)
-mean_rel_error = mean_abs_error/obs_mean
-obsmask[mean_rel_error > max_mean_wind_error] = True
 obs_gust = obs_gust[~obsmask] 
 obs_mean = obs_mean[~obsmask] 
 model_mean = model_mean[~obsmask]
@@ -172,7 +167,7 @@ X[:,3] = height_max
 X[:,4] = sso_max
 X[:,5] = z0_max
 
-poly = PolynomialFeatures(degree=4)
+poly = PolynomialFeatures(degree=5)
 X = poly.fit_transform(X)
 
 if i_scaling:
@@ -180,10 +175,10 @@ if i_scaling:
     X = scaler.fit_transform(X)
 
 regr = LinearRegression(fit_intercept=False)
-regr = Lasso(alpha=0.25, fit_intercept=False)
+#regr = Lasso(alpha=0.25, fit_intercept=False)
 
 y = obs_gust
-regr.fit(X,y)
+regr.fit(X,y, sample_weight=obs_gust**2)
 
 alphas = regr.coef_
 print('alphas scaled  ' + str(alphas[np.abs(alphas) > 0.0001]))

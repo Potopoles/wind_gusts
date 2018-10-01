@@ -9,6 +9,8 @@ from namelist_cases import Case_Namelist
 import namelist_cases as nl
 from datetime import timedelta
 
+from sklearn.linear_model import LinearRegression
+
 ############ USER INPUT #############
 case_index = nl.case_index
 CN = Case_Namelist(case_index)
@@ -171,67 +173,31 @@ if i_train:
             d_error_thresh = 1E-5
 
 
-        alpha1 = 7
+        maxid = (zvp10+7.2*tcm*zvp10).argmax(axis=1)
+        I = np.indices(maxid.shape)
+        tcm_max = tcm[I,maxid]
+        zvp10_max = zvp10[I,maxid]
+
+
+        X = np.zeros( (tcm_max.shape[1],1) )
+        #X[:,1] = zvp10_max[0,:]
+        X[:,0] = zvp10_max[0,:] * tcm_max[0,:]
+        y = obs_gust - zvp10_max[0,:]
+
+        weights = obs_gust**6
+
+        regr = LinearRegression(fit_intercept=False)
+        regr.fit(X,y, sample_weight=weights)
+
+        alpha1 = regr.coef_
+        #alpha2 = regr.coef_[1]
+        #alpha1 = 10
         alpha2 = 0
-        error_old = np.Inf
-        d_errors = np.full(int(1/sgd_prob*5), 100.)
-        learning_rate = 1E-5
-
-        c = 0
-        while np.abs(np.mean(d_errors)) > d_error_thresh:
+        print(alpha1)
+        print(alpha2)
+        #quit()
 
 
-            # SGD selection
-            sgd_inds = np.random.choice([True, False], (zvp10.shape[0]), p=[sgd_prob,1-sgd_prob])
-            sgd_zvp10 = zvp10[sgd_inds,:]
-            sgd_tcm = tcm[sgd_inds,:]
-            sgd_obs_gust = obs_gust[sgd_inds]
-            N = len(sgd_obs_gust)
-
-            # calc current time step gusts
-            if mode == 'ln':
-                sgd_gust = sgd_zvp10 + alpha1*sgd_tcm*sgd_zvp10
-            elif mode == 'nl':
-                sgd_gust = sgd_zvp10 + alpha1*sgd_tcm*sgd_zvp10 + alpha2*sgd_tcm*sgd_zvp10**2
-            else:
-                raise ValueError('wrong mode')
-
-            # find maximum gust
-            maxid = sgd_gust.argmax(axis=1)
-            I = np.indices(maxid.shape)
-            sgd_tcm_max = sgd_tcm[I,maxid]
-            sgd_zvp10_max = sgd_zvp10[I,maxid]
-            sgd_gust_max = sgd_gust[I,maxid]
-
-            # error
-            deviation = sgd_obs_gust - sgd_gust_max
-            error_now = np.sqrt(np.sum(deviation**2)/N)
-            d_error = error_old - error_now
-            d_errors = np.roll(d_errors, shift=1)
-            d_errors[0] = d_error
-            error_old = error_now
-            if i_output_error:
-                if c % 10 == 0:
-                    print(str(c) + '\t' + str(error_now) + '\t' + str(np.abs(np.mean(d_errors))))
-                    print('alpha 1 ' + str(alpha1) + ' alpha 2 ' + str(alpha2))
-
-            # gradient of parameters
-            if mode == 'ln':
-                dalpha1 = -2/N * np.sum( sgd_tcm_max*sgd_zvp10_max * deviation )
-                dalpha2 = 0
-            elif mode == 'nl':
-                dalpha1 = -2/N * np.sum( sgd_tcm_max*sgd_zvp10_max    * deviation )
-                dalpha2 = -2/N * np.sum( sgd_tcm_max*sgd_zvp10_max**2 * deviation )
-            else:
-                raise ValueError('wrong mode')
-
-            alpha1 = alpha1 - learning_rate * dalpha1
-            alpha2 = alpha2 - learning_rate * dalpha2
-
-            # adjust learning rate
-            learning_rate = error_now*learning_rate_factor
-
-            c += 1
 
         print('############')
         print('alpha1 ' + str(alpha1))
