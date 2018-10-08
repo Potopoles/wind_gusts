@@ -4,9 +4,9 @@
 # 11 June_18
 # 12 December_17
 # 13 June 18 and December 17
-case_index      = 4
+case_index      = 10
 # do not plot (0) show plot (1) save plot (2)
-i_plot          = 1
+i_plot          = 2
 model_dt        = 10
 nhrs_forecast   = 24
 i_load          = 1
@@ -19,7 +19,7 @@ delete_existing_param_file = 1
 ############################
 # APPLY SCRIPT SETTINGS
 train_case_index    = 10
-apply_case_index    = 10
+apply_case_index    = 13
 apply_i_plot        = 2
 apply_model_dt      = 10
 ############################
@@ -42,8 +42,8 @@ class Case_Namelist:
 
    
     # 01_prep_obs: path to file containing meta information about stations (mainly column 'Use' is interesting)
-    stations_meta_path = '../obs_out/ps_fkl010b1_2262.csv'
-    #stations_meta_path = '../obs_out/ps_fkl010b1_2262_SMN.csv'
+    #stations_meta_path = '../obs_out/ps_fkl010b1_2262.csv'
+    stations_meta_path = '../obs_out/ps_fkl010b1_2262_SMN.csv'
 
 
     OBS_RAW = 'obs_raw'
@@ -138,6 +138,18 @@ class Case_Namelist:
         {OBS_RAW:['20180103sfc.'],
                 OBS:'test_gust_burglind', MOD_RAW:'test_gust_burglind'},
 
+        # 18 all_SMN
+        {OBS_RAW:['20170304sfc.','20170305sfc.','20170306sfc.','20170307sfc.','20170308sfc.',
+                  '20170719sfc.',
+                  '20170723sfc.','20170724sfc.','20170725sfc.','20170726sfc.',
+                  '20180102sfc.','20180103sfc.','20180104sfc.',
+                  '20180115sfc.','20180116sfc.','20180117sfc.','20180118sfc.','20180119sfc.',
+                  '20180228sfc.','20180301sfc.','20180302sfc.',
+                  '20180428sfc.','20180429sfc.','20180430sfc.','20180501sfc.',
+                  '20180502sfc.','20180503sfc.','20180504sfc.','20180505sfc.',
+                  '20180529sfc.','20180530sfc.','20180531sfc.','20180601sfc.'],
+                    OBS:'All_SMN', MOD_RAW:'All_SMN'},
+
     ]
 
     def __init__(self, case_ind):
@@ -179,13 +191,18 @@ class Case_Namelist:
         self.phys_bra_path = self.data_folder + 'train_phys_OBS_' + self.cases[case_ind][self.OBS] + '_EXPID_' + \
                         str(self.exp_id) + '.pkl'
 
+        self.train_braub_path = self.data_folder + 'train_braub_OBS_' + self.cases[case_ind][self.OBS] + '_EXPID_' + \
+                        str(self.exp_id) + '.pkl'
+
+        # new readjustment approach
+        self.train_readjNEW_path = self.data_folder + 'train_readjNEW_OBS_' + self.cases[case_ind][self.OBS] + '_EXPID_' + \
+                        str(self.exp_id) + '.pkl'
+
         #### ML
 
         self.ML_braes_path = self.data_folder + 'ML_braes_OBS_' + self.cases[case_ind][self.OBS] + '_EXPID_' + \
                         str(self.exp_id) + '.pkl'
 
-        #self.ML_stat_path = self.data_folder + 'ML_stat_OBS_' + self.cases[case_ind][self.OBS] + '_EXPID_' + \
-        #                str(self.exp_id) + '.pkl'
 
         #### PARAMETERS
 
@@ -205,6 +222,9 @@ class Case_Namelist:
                         str(self.exp_id) + '.pkl'
 
         self.params_phys_bra_path = self.param_folder + 'phys_OBS_' + self.cases[case_ind][self.OBS] + '_EXPID_' + \
+                        str(self.exp_id) + '.pkl'
+
+        self.params_braub_path = self.param_folder + 'braub_OBS_' + self.cases[case_ind][self.OBS] + '_EXPID_' + \
                         str(self.exp_id) + '.pkl'
 
 

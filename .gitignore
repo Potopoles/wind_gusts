@@ -1,0 +1,4 @@
+Session.vim
+*.out
+*.err
+*.pyc

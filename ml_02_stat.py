@@ -37,7 +37,9 @@ mode = 'ML'
 
 #feature_names = ['zvp10', 'tcm', 'tkel1', 'hsurf', 'sso_stdh', 'zv_bra_es', 'k_bra_es', 'dvl3v10', 'z0', \
 #                'icon_gust']
-feature_names = ['zvp10', 'tcm', 'tkel1', 'hsurf', 'zv_bra_es', 'zbra', 'dvl3v10', 'icon_gust']
+feature_names = ['zvp10', 'tcm', 'tkel1', 'hsurf', 'zv_bra_es', 'zbra', 'dvl3v10', \
+                'uvl3', 'uvl2', 'uvl1', 'ul1', 'vl1', 'z0', 'Tl1', 'shflx', 'qvflx', 'Tskin', 'qvl1', \
+                'rhol1', 'phil1', 'ps']
 #####################################
 
 # create directories
@@ -93,7 +95,8 @@ if not i_load:
                 ts_inds = np.arange(hi*ts_per_hour,(hi+1)*ts_per_hour).astype(np.int)
 
                 for feat in feature_names:
-                    if feat in ['zvp10', 'tcm', 'tkel1', 'zv_bra_es']:
+                    if feat in ['zvp10', 'tcm', 'tkel1', 'zv_bra_es', 'uvl3', 'uvl2', 'uvl1', 'ul1', 'vl1', \
+                                'tkel1', 'Tl1', 'shflx', 'qvflx', 'Tskin', 'qvl1', 'rhol1', 'phil1', 'ps']:
                         features[feat][hr_ind,si,:] = data[G.MODEL][G.STAT][stat_key][G.RAW]\
                                                     [lm_run][feat][ts_inds]
                     elif feat in ['hsurf', 'sso_stdh', 'z0']:
@@ -219,25 +222,40 @@ I = np.indices(maxid.shape)
 for feature in feature_names:
     features[feature] = features[feature][I,maxid].flatten()
 
+# TODO DEBUG
+#features['zvp10'] = obs_mean
 
 print(features.keys())
 
+
 if i_train:
 
-    nfeat = 2
+    nfeat = 21
     X = np.zeros((obs_gust.shape[0], nfeat))
     X[:,0] = features['zvp10']
-    #X[:,0] = 1
     X[:,1] = features['tcm'] 
-    #X[:,2] = features['tkel1'] 
-    #X[:,3] = features['hsurf'] 
-    #X[:,4] = features['zv_bra_es'] 
-    #X[:,5] = features['zbra'] 
-    #X[:,6] = features['dvl3v10'] 
-    #X[:,7] = features['icon_gust'] 
+    X[:,2] = features['tkel1'] 
+    X[:,3] = features['hsurf'] 
+    X[:,4] = features['zv_bra_es'] 
+    X[:,5] = features['zbra'] 
+    X[:,6] = features['dvl3v10'] 
+    X[:,7] = features['uvl1'] 
+    X[:,8] = features['uvl2'] 
+    X[:,9] = features['uvl3'] 
+    X[:,10] = features['ul1'] 
+    X[:,11] = features['vl1'] 
+    X[:,12] = features['z0'] 
+    X[:,13] = features['Tl1'] 
+    X[:,14] = features['shflx'] 
+    X[:,15] = features['qvflx'] 
+    X[:,16] = features['Tskin'] 
+    X[:,17] = features['qvl1'] 
+    X[:,18] = features['rhol1'] 
+    X[:,19] = features['phil1'] 
+    X[:,20] = features['ps'] 
 
 
-    poly = PolynomialFeatures(degree=1, interaction_only=True)
+    poly = PolynomialFeatures(degree=2, interaction_only=False)
     X = poly.fit_transform(X)
     print(X)
 
@@ -249,7 +267,7 @@ if i_train:
     #regr = Lasso(alpha=0.25, fit_intercept=False)
 
     y = obs_gust
-    regr.fit(X,y, sample_weight=obs_gust**2)
+    regr.fit(X,y, sample_weight=obs_gust**0)
 
     alphas = regr.coef_
     print('alphas scaled  ' + str(alphas[np.abs(alphas) > 0.0001]))

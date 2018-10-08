@@ -39,7 +39,7 @@ min_gust = 0
 #i_sample_weight = 'linear'
 #i_sample_weight = 'squared'
 i_sample_weight = '1'
-max_mean_wind_error = 100.0
+#max_mean_wind_error = 100.0
 model_time_shift = 1
 #####################################
 
@@ -142,9 +142,9 @@ obsmask = np.isnan(obs_gust)
 obsmask[np.isnan(obs_mean)] = True # TODO NEW
 obsmask[obs_gust < min_gust] = True
 model_mean_hr = np.mean(model_mean, axis=2)
-mean_abs_error = np.abs(model_mean_hr - obs_mean)
-mean_rel_error = mean_abs_error/obs_mean
-obsmask[mean_rel_error > max_mean_wind_error] = True
+#mean_abs_error = np.abs(model_mean_hr - obs_mean)
+#mean_rel_error = mean_abs_error/obs_mean
+#obsmask[mean_rel_error > max_mean_wind_error] = True
 obs_gust = obs_gust[~obsmask] 
 obs_mean = obs_mean[~obsmask] 
 model_mean = model_mean[~obsmask]
@@ -195,28 +195,28 @@ for mode_int in i_mode_ints:
     print('alphas scaled  ' + str(alphas))
     gust_max = regr.predict(X)
 
-    try:
-        #plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_est_max_unscaled)
-        # TODO NEW
-        plot_error(obs_gust, obs_mean, obs_mean, gust_max, gust_est_max_unscaled)
-        plt.suptitle('BRAEST  '+mode)
+    #try:
+    #plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_est_max_unscaled)
+    # TODO NEW
+    plot_error(obs_gust, obs_mean, obs_mean, gust_max, gust_est_max_unscaled)
+    plt.suptitle('BRAEST  '+mode)
 
-        if i_plot == 1:
-            plt.show()
-        elif i_plot > 1:
-            if i_label == '':
-                # TODO NEW
-                plot_name = CN.plot_path + 'fake_tuning_braes_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
-                                            +str(mode)+'.png'
-            else:
-                # TODO NEW
-                plot_name = CN.plot_path + 'fake_tuning_braes_sw_'+i_sample_weight+'_mwa_'+str(max_mean_wind_error)+'_'\
-                                            +str(i_label)+'_'+str(mode)+'.png'
-            print(plot_name)
-            plt.savefig(plot_name)
-            plt.close('all')
-    except:
-        print('Tkinter ERROR while plotting!')
+    if i_plot == 1:
+        plt.show()
+    elif i_plot > 1:
+        if i_label == '':
+            # TODO NEW
+            plot_name = CN.plot_path + 'fake_tuning_braes_sw_'+i_sample_weight+'_'\
+                                        +str(mode)+'.png'
+        else:
+            # TODO NEW
+            plot_name = CN.plot_path + 'fake_tuning_braes_sw_'+i_sample_weight+'_'\
+                                        +str(i_label)+'_'+str(mode)+'.png'
+        print(plot_name)
+        plt.savefig(plot_name)
+        plt.close('all')
+    #except:
+    #    print('Tkinter ERROR while plotting!')
 
     # RESCALE ALPHA VALUES
     # not necessary to treat powers > 1 different because
