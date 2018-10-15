@@ -30,7 +30,17 @@ modes = ['ln',
 
 i_mode_ints = range(0,len(modes))
 i_mode_ints = [0]
-sgd_prob = 0.1
+sgd_prob = 1.0
+
+# binning
+gust_bins = [(0,10),(10,20),(20,30),(30,40),(40,50)]
+bin_weights = [0,0,0,0,1]
+#gust_bins = [(0,20),(20,40),(40,60)]
+#bin_weights = [1,2,10]
+gust_bins = [(0,10),(10,20),(20,30),(30,40),(40,50),(50,60)]
+bin_weights = [1,0,0,0,0,0]
+n_bins = len(gust_bins)
+n_iter = 1
 #####################################
 
 # create directories
@@ -89,7 +99,6 @@ if not i_load:
                                         ['tcm'].resample('H').max().index[1:]
             obs_gust[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_GUST_SPEED][full_hr_timestamps] 
             obs_mean[lm_inds,si] = data[G.OBS][G.STAT][stat_key][G.OBS_MEAN_WIND][full_hr_timestamps] 
-    print()
 
 
     # Process fields
@@ -122,6 +131,8 @@ else:
     zvp10 = data['zvp10']
 
 
+
+
 #########################
 ## TEST CASE TO COMPARE WITH test_gusts.py script
 #si = 0 # 0: ABO
@@ -130,14 +141,6 @@ else:
 #print(np.round(gust,6))
 #quit()
 #########################
-
-
-def box_cox(data, l1, l2):
-    if l1 != 0:
-        data = (data + l2)**l1 - 1
-    else:
-        data = np.log(data + l2)
-    return(data)
 
 
 
@@ -159,55 +162,8 @@ if i_train:
     tcm = tcm[~obsmask]
     zvp10 = zvp10[~obsmask]
 
+    
 
-    ## arcsin
-    #obs_gust = obs_gust/np.max(obs_gust)
-    #obs_gust = np.sqrt(obs_gust)
-    #obs_gust = np.arcsin(obs_gust)
-
-    # log
-    #obs_gust[obs_gust == 0] = 0.1
-    #obs_gust = np.log(obs_gust)
-
-    ## box-cox lambda1=0, lambda2=1
-    #l1 = 0.25
-    #l2 = 1
-    #obs_gust = box_cox(obs_gust, l1, l2)
-
-    # sklearn box-cox
-    #from sklearn.preprocessing import power_transform
-    #obs_gust[obs_gust < 0.1] = 0.1
-    #obs_gust = obs_gust.reshape(-1,1)
-    #obs_gust = power_transform(obs_gust, method='box-cox') 
-    #obs_gust = power_transform(obs_gust, method='yeo-johnson') 
-
-    #from scipy import stats
-
-    #zvp10tcm = zvp10*tcm
-    #shift = 0.1
-    #tmp,lamb = stats.boxcox(zvp10tcm.flatten()+shift)
-    #zvp10tcm = box_cox(zvp10tcm, lamb, shift)
-
-    #shift = 0.1
-    #tmp,lamb = stats.boxcox(zvp10.flatten()+shift)
-    #zvp10 = box_cox(zvp10, lamb, shift)
-
-    #shift = 0.1
-    #tmp,lambda_gust = stats.boxcox(obs_gust+shift)
-    #obs_gust = box_cox(obs_gust, lambda_gust, shift)
-    #plt.hist(obs_gust, bins=30)
-    #plt.show()
-    #quit()
-
-    #shift = 0.1
-    #tmp,lamb = stats.boxcox(zvp10.flatten()+shift)
-    #zvp10 = box_cox(zvp10, lamb, shift)
-
-    #plt.hist(zvp10.flatten(), bins=30)
-    #plt.show()
-    #quit()
-
-    #quit()
 
 
     for mode_int in i_mode_ints:
@@ -234,24 +190,26 @@ if i_train:
         alpha2 = 0
         error_old = np.Inf
         d_errors = np.full(int(1/sgd_prob*5), 100.)
-        learning_rate = 1E-5
+        #learning_rate = 1E-5
+        learning_rate = 1E-1
 
         c = 0
-        while np.abs(np.mean(d_errors)) > d_error_thresh:
+        #while np.abs(np.mean(d_errors)) > d_error_thresh:
+        while c < n_iter:
+            print('############')
 
+
+            rms_bins = []
 
             # SGD selection
             sgd_inds = np.random.choice([True, False], (zvp10.shape[0]), p=[sgd_prob,1-sgd_prob])
-            sgd_zvp10tcm = zvp10[sgd_inds,:]*tcm[sgd_inds,:]
             sgd_zvp10 = zvp10[sgd_inds,:]
-            #sgd_tcm = tcm[sgd_inds,:]
+            sgd_tcm = tcm[sgd_inds,:]
             sgd_obs_gust = obs_gust[sgd_inds]
-            N = len(sgd_obs_gust)
 
             # calc current time step gusts
             if mode == 'ln':
-                #sgd_gust = sgd_zvp10 + alpha1*sgd_tcm*sgd_zvp10
-                sgd_gust = sgd_zvp10 + alpha1*sgd_zvp10tcm
+                sgd_gust = sgd_zvp10 + alpha1*sgd_tcm*sgd_zvp10
             elif mode == 'nl':
                 sgd_gust = sgd_zvp10 + alpha1*sgd_tcm*sgd_zvp10 + alpha2*sgd_tcm*sgd_zvp10**2
             else:
@@ -260,62 +218,66 @@ if i_train:
             # find maximum gust
             maxid = sgd_gust.argmax(axis=1)
             I = np.indices(maxid.shape)
-            #sgd_tcm_max = sgd_tcm[I,maxid]
-            #sgd_zvp10_max = sgd_zvp10[I,maxid]
-            sgd_zvp10tcm_max = sgd_zvp10tcm[I,maxid]
+            sgd_tcm_max = sgd_tcm[I,maxid]
+            sgd_zvp10_max = sgd_zvp10[I,maxid]
             sgd_gust_max = sgd_gust[I,maxid]
+            
 
+            dalpha1 = 0
+            for bI in range(0,n_bins):
+                #print('bin number: \t' + str(bI))
+                bin_inds = np.argwhere((sgd_obs_gust >= gust_bins[bI][0]) & (sgd_obs_gust < gust_bins[bI][1])).squeeze()
+                bin_gust_max = sgd_gust_max.squeeze()[bin_inds]
+                bin_obs_gust = sgd_obs_gust.squeeze()[bin_inds]
+                bin_tcm_max = sgd_tcm_max.squeeze()[bin_inds]
+                bin_zvp10_max = sgd_zvp10_max.squeeze()[bin_inds]
+                N = len(bin_obs_gust)
+                #print('n samples: \t' + str(N))
 
-            #shift = 0.1
-            #sgd_gust_max = box_cox(sgd_gust_max, lambda_gust, shift)
+                # error
+                deviation = bin_obs_gust - bin_gust_max
+                error_now = np.sqrt(np.sum(deviation**2)/N)
+                rms_bins.append(error_now)
+                d_error = error_old - error_now
+                d_errors = np.roll(d_errors, shift=1)
+                d_errors[0] = d_error
+                error_old = error_now
+                #if i_output_error:
+                #    if c % 10 == 0:
+                #        print(str(c) + '\t' + str(error_now) + '\t' + str(np.abs(np.mean(d_errors))))
+                #        print('alpha 1 ' + str(alpha1) + ' alpha 2 ' + str(alpha2))
 
+                # gradient of parameters
+                dalpha1 += bin_weights[bI] * (-2/N * np.sum( bin_tcm_max*bin_zvp10_max * deviation ))
+                # poor attempt of absolute loss
+                #dalpha1 += bin_weights[bI] * (-1/N * np.sum( bin_tcm_max*bin_zvp10_max ))
+                #print(dalpha1)
 
-            # error
-            deviation = sgd_obs_gust - sgd_gust_max
-            error_now = np.sqrt(np.sum(deviation**2)/N)
-            d_error = error_old - error_now
-            d_errors = np.roll(d_errors, shift=1)
-            d_errors[0] = d_error
-            error_old = error_now
-            if i_output_error:
-                if c % 10 == 0:
-                    print(str(c) + '\t' + str(error_now) + '\t' + str(np.abs(np.mean(d_errors))))
-                    print('alpha 1 ' + str(alpha1) + ' alpha 2 ' + str(alpha2))
-
-            # gradient of parameters
-            if mode == 'ln':
-                #dalpha1 = -2/N * np.sum( sgd_tcm_max*sgd_zvp10_max * deviation )
-                dalpha1 = -2/N * np.sum( sgd_zvp10tcm_max * deviation )
-                dalpha2 = 0
-            elif mode == 'nl':
-                dalpha1 = -2/N * np.sum( sgd_tcm_max*sgd_zvp10_max    * deviation )
-                dalpha2 = -2/N * np.sum( sgd_tcm_max*sgd_zvp10_max**2 * deviation )
-            else:
-                raise ValueError('wrong mode')
+                #dalpha1 = dalpha1/n_bins
+                dalpha1 = dalpha1/np.sum(bin_weights)
 
             alpha1 = alpha1 - learning_rate * dalpha1
-            alpha2 = alpha2 - learning_rate * dalpha2
+            print('alpha1 ' + str(alpha1))
 
             # adjust learning rate
-            learning_rate = error_now*learning_rate_factor
+            #learning_rate = error_now*learning_rate_factor
 
             c += 1
+            #print('############')
 
         print('############')
         print('alpha1 ' + str(alpha1))
-        print('alpha2 ' + str(alpha2))
         print('############')
 
+        print(rms_bins)
+
+    
+        alpha1 = 5
 
 
         # Calculate final gust
-        if mode == 'ln':
-            gust = zvp10 + alpha1*tcm*zvp10
-            #gust = zvp10 + alpha1*zvp10tcm
-        elif mode == 'nl':
-            gust = zvp10 + alpha1*tcm*zvp10 + alpha2*tcm*zvp10**2
-        else:
-            raise ValueError('wrong mode')
+        gust = zvp10 + alpha1*tcm*zvp10
+
         # find maximum gust
         maxid = gust.argmax(axis=1)
         I = np.indices(maxid.shape)
@@ -336,9 +298,9 @@ if i_train:
                 plt.show()
             elif i_plot > 1:
                 if i_plot_type == 0:
-                    plot_name = CN.plot_path + 'tuning_readj_'+str(mode)+'.png'
+                    plot_name = CN.plot_path + 'bintrain_readj_'+str(mode)+'.png'
                 elif i_plot_type == 1:
-                    plot_name = CN.plot_path + 'plot1_tuning_readj_'+str(mode)+'.png'
+                    plot_name = CN.plot_path + 'plot1_bintrain_readj_'+str(mode)+'.png'
                 print(plot_name)
                 plt.savefig(plot_name)
                 plt.close('all')

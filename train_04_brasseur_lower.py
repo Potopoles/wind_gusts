@@ -3,7 +3,7 @@ import os
 import copy
 import matplotlib.pyplot as plt
 import pickle
-from functions import plot_error
+from functions import plot_error, plot_mod_vs_obs
 import globals as G
 from namelist_cases import Case_Namelist
 import namelist_cases as nl
@@ -17,10 +17,10 @@ case_index = nl.case_index
 CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = nl.i_plot
+i_plot_type = nl.i_plot_type
 model_dt = nl.model_dt
 nhrs_forecast = nl.nhrs_forecast
 i_scaling = 1
-i_label =  ''
 i_load = nl.i_load
 i_train = nl.i_train
 delete_existing_param_file = nl.delete_existing_param_file
@@ -190,22 +190,24 @@ if i_train:
         gust_max = regr.predict(X)
 
         if i_plot > 0:
-            try:
+            if i_plot_type == 0:
                 plot_error(obs_gust, model_mean_hr, obs_mean, gust_max, gust_lb_max_unscaled)
-                plt.suptitle('BRALB  '+mode)
+            elif i_plot_type == 1:
+                plot_mod_vs_obs(obs_gust, gust_max, gust_lb_max_unscaled)
+            else:
+                raise NotImplementedError()
+            plt.suptitle('BRALB  '+mode)
 
-                if i_plot == 1:
-                    plt.show()
-                elif i_plot > 1:
-                    if i_label == '':
-                        plot_name = CN.plot_path + 'tuning_bralb_'+str(mode)+'.png'
-                    else:
-                        plot_name = CN.plot_path + 'tuning_bralb_'+str(i_label)+'_'+str(mode)+'.png'
-                    print(plot_name)
-                    plt.savefig(plot_name)
-                    plt.close('all')
-            except:
-                print('Tkinter ERROR while plotting!')
+            if i_plot == 1:
+                plt.show()
+            elif i_plot > 1:
+                if i_plot_type == 0:
+                    plot_name = CN.plot_path + 'tuning_bralb_'+str(mode)+'.png'
+                elif i_plot_type == 1:
+                    plot_name = CN.plot_path + 'plot1_tuning_bralb_'+str(mode)+'.png'
+                print(plot_name)
+                plt.savefig(plot_name)
+                plt.close('all')
 
         # RESCALE ALPHA VALUES
         # not necessary to treat powers > 1 different because

@@ -341,7 +341,9 @@ def join_all_stations(data):
 
 # THIS IS NICE!
 def get_point_col(vals1, vals2, xmin=0, xmax=100, ymin=-100, ymax=100):
-    dx = 0.5
+    #dx = 0.5
+    #dy = 1
+    dx = 1
     dy = 1
     dx = dx*1
     dy = dy*1
@@ -358,6 +360,100 @@ def get_point_col(vals1, vals2, xmin=0, xmax=100, ymin=-100, ymax=100):
     col = cmap(result)
     return(col)
 
+
+
+def rotate(xy, angle):
+    rot_mat = np.column_stack( [[ np.cos(angle), np.sin(angle)],
+                                [-np.sin(angle), np.cos(angle)]] )
+    xy_rot = rot_mat @ xy
+    return(xy_rot)
+
+
+def draw_error_percentile_lines(x, y, ax):
+
+    # PREPARE PERCENTILE LINES
+    ###############
+    q0 = 10
+    q1 = 50
+    q2 = 90
+    qs = [q0,q1,q2]
+    qscol = ['red','orange','red']
+    qslst = ['--','-','--']
+    qslwd = [1.5,2,1.5]
+    dmp = 2. # = dx
+    ###############
+
+    xy = np.row_stack( [x, y] )
+    xy_rot = rotate(xy, -np.pi/4)
+
+    speed = xy_rot[0,:]
+    error = xy_rot[1,:]
+
+    #ax.scatter(speed, error, color='grey', marker=".")
+
+    mp_borders = np.arange(np.floor(0),np.ceil(np.max(speed)),dmp)
+    mp_x = mp_borders[:-1] + np.diff(mp_borders)/2
+    mgog = np.full((len(mp_x),3),np.nan)
+    for qi in range(0,len(qs)):
+        for i in range(0,len(mp_x)):
+            # model gust vs obs gust
+            inds = (speed > mp_borders[i]) & (speed <= mp_borders[i+1])
+            if np.sum(inds) > 10:
+                mgog[i,qi] = np.percentile(error[inds],q=qs[qi])
+
+    for qi in range(0,len(qs)):
+        #ax.plot(mp_x, mgog[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
+
+        # backtransform percentile lines
+        line_rot = np.row_stack( [mp_x, mgog[:,qi]] )
+        line = rotate(line_rot, np.pi/4)
+        ax.plot(line[0,:], line[1,:], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
+
+def draw_error_grid(xmax, ymax, ax):
+    ax.plot([0,xmax], [0,ymax], color='k', linewidth=0.5)
+    dy = 10/np.sqrt(2)*2
+    for i in range(-5,6):
+        if i is not 0:
+            ax.plot([0,xmax], [i*dy,ymax+i*dy], color='grey', linewidth=0.5)
+
+
+def plot_mod_vs_obs(obs, gust, gust_init):
+
+    xmin = 0
+    xmax = 60
+    ymin = 0
+    #ymin = -60
+    ymax = 60
+
+    fig,axes = plt.subplots(1,2, figsize=(12,5.3))
+
+    # obs gust vs model gust initial
+    xlab = 'MOD gust [m/s]'
+    ylab = 'OBS gust [m/s]'
+    ax = axes[0]
+    ax.scatter(gust_init, obs, color=get_point_col(gust_init, obs), marker=".")
+    draw_error_grid(xmax, ymax, ax)
+    draw_error_percentile_lines(gust_init, obs, ax)
+    ax.axhline(y=0,c='grey')
+    ax.set_xlim(xmin,xmax)
+    ax.set_ylim(ymin,ymax)
+    ax.set_title('original MOD gust vs OBS gust')
+    ax.set_xlabel(xlab)
+    ax.set_ylabel(ylab)
+
+    # obs gust vs model gust
+    xlab = 'MOD gust [m/s]'
+    ylab = 'OBS gust [m/s]'
+    ax = axes[1]
+    ax.scatter(gust, obs, color=get_point_col(gust, obs), marker=".")
+    draw_error_grid(xmax, ymax, ax)
+    draw_error_percentile_lines(gust, obs, ax)
+    ax.axhline(y=0,c='grey')
+    ax.set_xlim(0,xmax)
+    ax.set_ylim(0,xmax)
+    ax.set_title('MOD gust vs OBS gust')
+    ax.set_xlabel(xlab)
+    ax.set_ylabel(ylab)
 
 
 def plot_error(obs, model_mean, obs_mean, gust, gust_init):
