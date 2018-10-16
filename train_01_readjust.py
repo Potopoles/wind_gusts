@@ -30,7 +30,7 @@ modes = ['ln',
 
 i_mode_ints = range(0,len(modes))
 i_mode_ints = [0]
-sgd_prob = 0.1
+sgd_prob = 1.0
 #####################################
 
 # create directories
@@ -46,7 +46,8 @@ if delete_existing_param_file:
 
 if not i_load:
     # load data
-    data = pickle.load( open(CN.mod_path, 'rb') )
+    #data = pickle.load( open(CN.mod_path, 'rb') )
+    data = pickle.load( open(CN.new_mod_path, 'rb') )
 
     stat_keys = data[G.STAT_NAMES]
 

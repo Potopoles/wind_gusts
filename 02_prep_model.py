@@ -67,7 +67,7 @@ stat_i_inds = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,8]
 
 
 if case_index == 0:
-    use_stat = file_inds <= 731
+    use_stat = file_inds <= 801
     # Filter out stations with i_ind = 0 (thos with height = -99999999)
     use_stat[stat_i_inds == 0] = False
 elif case_index == 9:

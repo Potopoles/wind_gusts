@@ -1,16 +1,16 @@
 ############################
-# TRAIN SCRIPT SETTINGS
+# TRAIN AND PREPARE SCRIPT SETTINGS
 # 10 all
 # 11 June_18
 # 12 December_17
 # 13 June 18 and December 17
-case_index      = 4
+case_index      = 0
 # do not plot (0) show plot (1) save plot (2)
-i_plot          = 2
-i_plot_type     = 1
+i_plot          = 1
+i_plot_type     = 0
 model_dt        = 10
 nhrs_forecast   = 24
-i_load          = 1
+i_load          = 0
 i_train         = 1
 delete_existing_param_file = 1
 #max_mean_wind_error = 10000.0
@@ -165,6 +165,9 @@ class Case_Namelist:
 
         self.mod_path = self.data_folder + 'OBS_' + self.cases[case_ind][self.OBS] + '_EXPID_' + \
                         str(self.exp_id) + '.pkl'
+
+        self.new_mod_path = self.data_folder + 'OBS_' + self.cases[case_ind][self.OBS] + '_EXPID_' + \
+                        str(self.exp_id) + '_new.pkl'
 
         self.plot_path = self.plot_base_dir + 'OBS_' + self.cases[case_ind][self.OBS] + '_EXPID_' + \
                         str(self.exp_id) + '/'
