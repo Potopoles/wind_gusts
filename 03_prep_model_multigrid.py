@@ -7,7 +7,9 @@ from namelist_cases import Case_Namelist
 import namelist_cases as nl
 import pickle, os, sys
 from netCDF4 import Dataset
-from tuning_functions import prepare_model_params
+from tuning_functions import (prepare_model_params,
+                            draw_error_percentile_lines,
+                            draw_error_grid)
 import multiprocessing as mp
 
 ############ USER INPUT #############
@@ -18,7 +20,9 @@ model_dt = nl.model_dt
 nhrs_forecast = nl.nhrs_forecast
 # starting index of fortran files
 ind0 = 701
-debug_max_stat_ind = 711
+debug_max_stat_ind = 701
+i_draw_grid_wind_plot = 1
+
 
 njobs = 1
 if len(sys.argv) > 1:
@@ -127,6 +131,8 @@ for field_name in use_model_fields:
     model_fields[field_name]  = np.full( ( n_hours_all_lm,
                                            len(mod_stations), 
                                            int(3600/model_dt) ), np.nan )
+best_model_mean   = np.full( ( n_hours_all_lm, len(mod_stations) ), np.nan )
+centre_model_mean = np.full( ( n_hours_all_lm, len(mod_stations) ), np.nan )
 
 
 ###########################################################################
@@ -186,6 +192,8 @@ if njobs == 1:
             for field_name in use_model_fields:
                 model_fields[field_name][:,sI,:] = \
                                 model_fields_stat[field_name]
+            best_model_mean[:,sI]   = result[3]
+            centre_model_mean[:,sI] = result[4]
         else:
             print('############# do not use ' + stat_key)
 
@@ -222,6 +230,8 @@ elif njobs > 1:
             for field_name in use_model_fields:
                 model_fields[field_name][:,sI,:] = \
                                 model_fields_stat[field_name]
+            best_model_mean[:,sI]   = result[c][3]
+            centre_model_mean[:,sI] = result[c][4]
 
             c += 1
 
@@ -229,7 +239,6 @@ elif njobs > 1:
 ###########################################################################
 ############### PART 3: SAVE DATA
 ###########################################################################
-
 print('##################')
 
 # save names of used stations
@@ -240,6 +249,42 @@ data[G.HIST].append(hist_tag)
 data['obs_mean'] = obs_mean
 data['obs_gust'] = obs_gust
 data['model_fields'] = model_fields
+data['best_model_mean'] = best_model_mean
+data['centre_model_mean'] = centre_model_mean
 
 # save output file
 pickle.dump(data, open(CN.mod_path, 'wb'))
+
+
+
+###########################################################################
+############### PART 4: DRAW PLOT
+###########################################################################
+if i_draw_grid_wind_plot:
+    # create directories
+    if not os.path.exists(CN.plot_path):
+        os.mkdir(CN.plot_path)
+
+    limit = 35
+
+    # process data
+    best_model_mean = best_model_mean.flatten()
+    best_model_mean = best_model_mean[np.isnan(best_model_mean) == False]
+    centre_model_mean = centre_model_mean.flatten()
+    centre_model_mean = centre_model_mean[np.isnan(centre_model_mean) == False]
+    print(best_model_mean.shape)
+    print(centre_model_mean.shape)
+    # draw plot
+    plt.scatter(centre_model_mean, best_model_mean, marker=".", color='k')
+    ax = plt.gca()
+    ax.set_xlim((0,limit))
+    ax.set_ylim((0,limit))
+    ax.set_xlabel('centre grid point')
+    ax.set_ylabel('best fitting grid point')
+    ax.grid()
+    draw_error_grid(limit, limit, ax)
+    ax.set_aspect('equal')
+    draw_error_percentile_lines(centre_model_mean, best_model_mean, ax)
+    #plt.show()
+    plot_name = CN.plot_path + 'grid_point_wind.png'
+    plt.savefig(plot_name)

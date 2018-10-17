@@ -42,6 +42,9 @@ def prepare_model_params(use_model_fields, lm_runs, CN,
     tstep_col_ind = np.argwhere(np.asarray(model_params) == 'tstep')[0]
     zvp10_col_ind = np.argwhere(np.asarray(model_params) == 'zvp10')[0]
 
+    i_shift_col_ind = np.argwhere(np.asarray(model_params) == 'i_shift')[0]
+    j_shift_col_ind = np.argwhere(np.asarray(model_params) == 'j_shift')[0]
+
     # prepare station observation fields
     n_hours_all_lm = len(lm_runs)*nhrs_forecast
     obs_mean_stat  = np.full( ( n_hours_all_lm ), np.nan )
@@ -105,11 +108,10 @@ def prepare_model_params(use_model_fields, lm_runs, CN,
 
         nts_per_hr = int(3600/model_dt)
 
-        ## TESTING
-        ## contains for each hour the index of the best fitting model
-        ## grid point
-        #best_fit_gp_inds = np.full(nhrs_forecast, np.nan)
-        #best_mean_winds = np.full(nhrs_forecast, np.nan)
+        ## TESTING containes mean wind values for 
+        # best fitting grid point and centre grid point
+        best_mean_winds = np.full(nhrs_forecast, np.nan)
+        centre_mean_winds = np.full(nhrs_forecast, np.nan)
 
         # loop over hours in lm_run
         # hour label corresponds to time before label
@@ -120,6 +122,7 @@ def prepare_model_params(use_model_fields, lm_runs, CN,
             # contains model mean wind values for each grid point and
             # time step of given hour
             model_mean_gp = np.zeros( (n_grid_points, nts_per_hr) )
+            model_mean_centre = np.zeros( nts_per_hr )
 
             # loop over time steps of current hour
             # attention: this happens in model counter style starting @ 1)
@@ -129,6 +132,10 @@ def prepare_model_params(use_model_fields, lm_runs, CN,
                 row_inds = range((ts_ind-1)*n_grid_points, \
                                 ts_ind*n_grid_points)
                 model_mean_gp[:,tsI] = values[row_inds,zvp10_col_ind]
+                model_mean_centre[tsI] = values[row_inds,zvp10_col_ind]\
+                      [(values[row_inds,i_shift_col_ind] == 0) & \
+                       (values[row_inds,j_shift_col_ind] == 0)]
+
             model_mean_wind = np.mean(model_mean_gp, axis=1)
 
             # get observation date
@@ -141,9 +148,10 @@ def prepare_model_params(use_model_fields, lm_runs, CN,
             # select best fitting model grid point
             grid_point_ind = np.argmin(np.abs(
                                 model_mean_wind - obs_mean_hr))
-            ## TESTING
-            #best_fit_gp_inds[hI] = grid_point_ind
-            #best_mean_winds[hI] = model_mean_wind[grid_point_ind]
+
+            # store mean wind values for separate output (testing)
+            best_mean_winds[hI] = model_mean_wind[grid_point_ind]
+            centre_mean_winds[hI] = np.mean(model_mean_centre)
 
             # select best fitting rows with time steps of best fitting
             # grid point
@@ -162,7 +170,9 @@ def prepare_model_params(use_model_fields, lm_runs, CN,
 
     result = (  obs_mean_stat,
                 obs_gust_stat,
-                model_fields_stat
+                model_fields_stat,
+                best_mean_winds,
+                centre_mean_winds
              )
     return(result)
 
