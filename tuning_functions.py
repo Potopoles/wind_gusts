@@ -1,317 +1,203 @@
 import numpy as np
-import pandas as pd
+#import pandas as pd
 import globals as G
-from sklearn import metrics
+#from sklearn import metrics
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from datetime import timedelta
 from scipy.spatial import KDTree
-from netCDF4 import Dataset
-import time
-
-def load_var_at_station_from_nc(nc_path, var_name, sel_stat):
-    # GET STATION i AND j AND fort_stat INDEX
-    station_file = "/users/heimc/stations/all_stations.lst"
-    station_list = np.genfromtxt(station_file, skip_header=1, dtype=np.str)
-    headers = station_list[0,:]
-    station_list = station_list[1:,:]
-    #print(headers)
-    sel_stat_ind = station_list[:,0] == sel_stat
-    #print(station_list[sel_stat_ind,:])
-    # final indices
-    i_ind = station_list[sel_stat_ind,8].astype(np.int) - 1
-    j_ind = station_list[sel_stat_ind,9].astype(np.int) - 1
-    print('select values at grind points: i ' + str(i_ind) + ' j ' + str(j_ind))
-
-    ## LOAD NC FILE DATA
-    #print('##############')
-
-    ncf = Dataset(nc_path, 'r')
-    ndim = np.ndim(ncf[var_name][:])
-    if ndim == 3:
-        var_nc = ncf[var_name][:,j_ind,i_ind].flatten()
-    elif ndim == 4:
-        kind = 79
-        var_nc = ncf[var_name][:,kind,j_ind,i_ind].flatten()
-
-    return(var_nc)
+#from netCDF4 import Dataset
+#import time
+from datetime import datetime, timedelta
 
 
-def check_prerequisites(data, prerequisites, hist_tag):
-    for prereq in prerequisites:
-        if prereq not in data[G.HIST]:
-            raise ValueError('Functions ' + prereq + \
-            ' needs to be applied to data to run ' + hist_tag)
-    data[G.HIST].append(hist_tag)
-    return(data)
+#def apply_full_scaling(var):
+#    mean_var = np.mean(var)
+#    var = var - mean_var
+#    sd_var = np.std(var)
+#    var = var/sd_var
+#    return(var, mean_var, sd_var)
 
 
-def custom_resampler(array_like):
-    return(array_like[-1])
-
-def calc_model_fields(data, i_model_fields):
-    
-    offset = timedelta(hours=1)
-
-    """
-    Calculate model fields (also gusts according to all methods)
-    and aggregates model values to hourly steps.
-
-    INPUT
-    data:           dictionary containing data
-    i_model_fields: list containing string of model fields to calculate:
-                    for options see globals.py section 'Model Fields':
-
-    OUTPUT
-    data:           added FIELDS entry to data (data[G.MODEL][...][G.FIELDS]) according to i_model_fields
-    """
-    hist_tag = 'calc_model_fields'
-    prerequisites = ['01_prep_obs', '02_prep_model']
-    data = check_prerequisites(data, prerequisites, hist_tag)
-
-    # loop through all stations
-    for stat in data[G.STAT_NAMES]:
-
-        # add fields dictionary entry
-        data[G.MODEL][G.STAT][stat][G.FIELDS] = {}
-
-        for lm_run in list(data[G.MODEL][G.STAT][stat][G.RAW].keys()):
-            
-            curr_raw = data[G.MODEL][G.STAT][stat][G.RAW][lm_run]
-    
-            all_fields = []
-            for field_name in i_model_fields:
-
-                if field_name in G.FIELDS_GUST:
-                    # Calculate gusts for various methods
-
-                    if field_name == G.GUST_MIX_COEF_LINEAR:
-            
-                        tcm = curr_raw['tcm']
-                        zcm = tcm
-                        zcm[zcm < 5E-4] = 5E-4
-                        zsqcm = np.sqrt(zcm)
-                        zvp10 = curr_raw['zvp10']
-                        gust = zvp10 + 3.0 * 2.4 * zsqcm * zvp10
-                        #gust = zvp10 + 3.615 * zsqcm * zvp10 # Pompa tuning
-                        gust = gust.to_frame()
-            
-                    elif field_name == G.GUST_MIX_COEF_NONLIN:
-            
-                        tcm = curr_raw['tcm']
-                        zcm = tcm
-                        zcm[zcm < 5E-4] = 5E-4
-                        zsqcm = np.sqrt(zcm)
-                        zvp10 = curr_raw['zvp10']
-                        gust = zvp10 + (3.0 * 2.4 + 0.09 * zvp10) * zsqcm * zvp10
-                        gust = gust.to_frame()
-
-                    elif field_name == G.GUST_ICON:
-                        
-                        ugn = 7.71
-                        hpbl = 1000
-                        g = 9.80665
-                        Rd = 287.05
-                        etv = 0.6078
-                        cp = 1005.0
-                        kappa = Rd/cp
-
-                        umlev = curr_raw['ul1'].values
-                        vmlev = curr_raw['vl1'].values
-                        ps = curr_raw['ps'].values
-                        qvflx = curr_raw['qvflx'].values
-                        shflx = curr_raw['shflx'].values
-                        z0 = curr_raw['z0'].values
-                        Tskin = curr_raw['Tskin'].values
-                        Tmlev = curr_raw['Tl1'].values
-                        qvmlev = curr_raw['qvl1'].values
-                        phimlev = curr_raw['phil1'].values
-
-                        # density
-                        rho = ps / ( Rd*Tmlev * ( 1 + etv*qvmlev ) )
-
-                        # buoyancy
-                        buoy = g * ( - etv*qvflx - shflx/( Tskin*cp ) ) / rho
-
-                        # surface stress
-                        zcdn = ( kappa / np.log( 1 + phimlev/(g*z0) ) )**2
-                        dua = np.sqrt( np.maximum( 0.1**2, umlev**2 + vmlev**2 ) )
-                        ustr = rho*umlev*dua*zcdn
-                        vstr = rho*vmlev*dua*zcdn
-
-                        # friction velocity
-                        ustar2 = np.sqrt( ustr**2 + vstr**2 ) / rho 
-                        wstar2 = ( buoy[buoy > 0]*hpbl )**(2/3)
-                        ustar2[buoy > 0] = ustar2[buoy > 0] + 2E-3*wstar2
-                        ustar = np.maximum( np.sqrt(ustar2), 0.0001 )
-
-                        # wind gust
-                        zvp10 = curr_raw['zvp10']
-                        idl = -hpbl*kappa*buoy/ustar**3
-                        gust = zvp10
-                        greater0 = idl >= 0
-                        gust[greater0] = gust[greater0] + ustar[greater0]*ugn
-                        smaller0 = idl < 0
-                        gust[smaller0] = gust[smaller0] + ustar[smaller0]*ugn * (1 - 0.5/12*idl[smaller0])**(1/3)
-                        #gust = zvp10 + ustar*ugn*( 1 + 0.5/12*hpbl*kappa*buoy/ustar**3 )**(1/3)
-                        gust = gust.to_frame()
-                        
-                    elif field_name in G.FIELDS_BRA_GUST:
-                        if field_name == G.GUST_BRASSEUR_ESTIM:
-                            gust_field_name = 'zv_bra_es'
-                        elif field_name == G.GUST_BRASSEUR_LOBOU:
-                            gust_field_name = 'zv_bra_lb'
-                        elif field_name == G.GUST_BRASSEUR_UPBOU:
-                            gust_field_name = 'zv_bra_ub'
-            
-                        gust = curr_raw[gust_field_name].to_frame()
-
-                    # resample to maximum hourly value
-                    # time index shifted backward 10 seconds make sure resampling has expected behavior
-                    gust = gust.shift(freq='-10s')
-                    field = gust.resample('H', loffset=offset).max()
-                    #field = gust.resample('H', how=lambda x: np.percentile(x, q=80))
-
-                elif field_name in G.FIELDS_BRA_KVAL:
-
-                    if field_name == G.KVAL_BRASSEUR_ESTIM:
-                        gust_field_name = 'zv_bra_es'
-                        k_field_name = 'k_bra_es'
-                    elif field_name == G.KVAL_BRASSEUR_LOBOU:
-                        gust_field_name = 'zv_bra_lb'
-                        k_field_name = 'k_bra_lb'
-                    elif field_name == G.KVAL_BRASSEUR_UPBOU:
-                        gust_field_name = 'zv_bra_ub'
-                        k_field_name = 'k_bra_ub'
-
-                    gust = curr_raw[gust_field_name]
-                    # time index shifted backward 10 seconds make sure resampling has expected behavior
-                    gust = gust.shift(freq='-10s')
-                    maxid = gust.resample('H', convention='end').agg({gust_field_name: np.argmax})
-                    values = curr_raw[k_field_name][maxid].values
-                    raise NotImplementedError()
-                    field = pd.DataFrame(values, index=maxid.index.levels[1], columns=[field_name]).astype(int)
-
-                elif field_name == G.MODEL_MEAN_WIND:
-                    
-                    field = curr_raw['zvp10'].to_frame()
-                    # time index shifted backward 10 seconds make sure resampling has expected behavior
-                    field = field.shift(freq='-10s')
-                    field = field.resample('H', loffset=offset).mean()
-
-                elif field_name == G.MEAN_WIND_INST:
-                    
-                    field = curr_raw['zvp10'].to_frame()
-                    # time index shifted backward 10 seconds make sure resampling has expected behavior
-                    field = field.shift(freq='-10s')
-                    field = field.resample('H', loffset=offset).apply(custom_resampler)
-
-                else:
-                    raise ValueError('Unknown user input "' + field_name + '" in list i_gust_fields!')
-        
-                field.columns = [field_name]
-                all_fields.append(field)
-            
-            all_fields = pd.concat(all_fields, axis=1)
-
-            # save in data
-            data[G.MODEL][G.STAT][stat][G.FIELDS][lm_run] = all_fields
-
-    return(data)
-    
-
-def join_model_and_obs(data):
-
-    """
-    Combines the hourly calculated model fields with the hourly observation.
-    Puts this into data-sub-dictionary G.BOTH
-
-    INPUT
-    data:           dictionary containing the dict data[G.MODEL][...][G.FIELDS]
-
-    OUTPUT
-    data:           added G.BOTH entry to data dictionary
-    """
-    hist_tag = 'join_model_and_obs'
-    prerequisites = ['01_prep_obs', '02_prep_model',
-                    'calc_model_fields']
-    data = check_prerequisites(data, prerequisites, hist_tag)
-
-    data[G.BOTH] = {G.STAT:{}}
-
-    # loop through all stations
-    for stat in data[G.STAT_NAMES]:
-
-        data[G.BOTH][G.STAT][stat] = {}
-
-        for lm_run in list(data[G.MODEL][G.STAT][stat][G.FIELDS].keys()):
-            
-            model = data[G.MODEL][G.STAT][stat][G.FIELDS][lm_run]
-            obs = data[G.OBS][G.STAT][stat]
-
-            both = pd.concat([model, obs], axis=1, join='inner')
-            data[G.BOTH][G.STAT][stat][lm_run] = both
-            
-    return(data)
+def apply_scaling(var):
+    sd_var = np.std(var)
+    var = var/sd_var
+    return(var, sd_var)
 
 
-def join_model_runs(data):
-
-    """
-    Assumes that data already contains data[G.BOTH] !
-    Joins the dataframes of all model runs (with different lead time) into one dataframe.
-
-    INPUT
-    data:           dictionary containing the dict data[G.BOTH]
-
-    OUTPUT
-    data:           combined all data[G.BOTH][...][model run].df into data[G.BOTH][...].df
-    """
-    hist_tag = 'join_model_runs'
-    prerequisites = ['01_prep_obs', '02_prep_model',
-                    'calc_model_fields', 'join_model_and_obs']
-    data = check_prerequisites(data, prerequisites, hist_tag)
-
-    # loop through all stations
-    for stat in data[G.STAT_NAMES]:
-
-        dfs = []
-        for lm_run in list(data[G.MODEL][G.STAT][stat][G.FIELDS].keys()):
-            
-            dfs.append(data[G.BOTH][G.STAT][stat][lm_run])
-
-        df = pd.concat(dfs, axis=0)
-        data[G.BOTH][G.STAT][stat] = df
-            
-    return(data)
 
 
-def join_all_stations(data):
+def prepare_model_params(use_model_fields, lm_runs, CN,
+                        stat_fort_ind, stat_key, mod_stations,
+                        model_params, model_dt, nhrs_forecast,
+                        data_obs_stat, progress, njobs):
 
-    """
-    Assumes that data already contains data[G.BOTH] and model runs with different lead time joined !
-    Joins the dataframes of all stations
+    # user output
+    #if njobs > 1:
+    #    progress += 1
+    print('############# use ' + stat_key + '\t' + \
+            str(round(progress/len(mod_stations),2)))
 
-    INPUT
-    data:           dictionary containing the dict data[G.BOTH]
 
-    OUTPUT
-    data:           combined all data[G.BOTH][G.STAT][...].df to data[G.BOTH][G.ALL_STAT].df
-    """
-    hist_tag = 'join_all_stations'
-    prerequisites = ['01_prep_obs', '02_prep_model',
-                    'calc_model_fields', 'join_model_and_obs', 'join_model_runs']
-    data = check_prerequisites(data, prerequisites, hist_tag)
+    # find indices for columns in model time step files
+    tstep_col_ind = np.argwhere(np.asarray(model_params) == 'tstep')[0]
+    zvp10_col_ind = np.argwhere(np.asarray(model_params) == 'zvp10')[0]
 
-    dfs = []
-    # loop through all stations
-    for stat in data[G.STAT_NAMES]:
-        dfs.append(data[G.BOTH][G.STAT][stat])
+    # prepare station observation fields
+    n_hours_all_lm = len(lm_runs)*nhrs_forecast
+    obs_mean_stat  = np.full( ( n_hours_all_lm ), np.nan )
+    obs_gust_stat  = np.full( ( n_hours_all_lm ), np.nan )
 
-    df = pd.concat(dfs, axis=0)
-    data[G.BOTH][G.ALL_STAT] = df
-            
-    return(data)
+    # prepare station model_fields
+    model_fields_stat = {}
+    for field_name in use_model_fields:
+        model_fields_stat[field_name] = \
+                np.full( ( n_hours_all_lm, int(3600/model_dt) ), np.nan )
+
+    ## add model data
+    #raw_data = {}
+    ##raw_data2 = {}
+    #stat_data = {G.RAW:raw_data}
+    ##stat_data = {G.RAW:raw_data, G.RAW2:raw_data2}
+    #data[G.MODEL][G.STAT][stat_key] = stat_data
+
+    # load data from all lm runs
+    for lmI,lm_run in enumerate(lm_runs):
+
+        ###################################################################
+        ####### PART 1: Read and format model time step output file
+        ###################################################################
+        # construct file path
+        mod_file_path = CN.raw_mod_path + lm_run + '/' + 'fort.' + str(stat_fort_ind)
+
+        # time of first time step
+        start_time = datetime.strptime(lm_run, '%Y%m%d%H')
+
+        # opt 1: ignore invalid values but warn
+        #values = np.genfromtxt(mod_file_path, delimiter=',',\
+        #           dtype=np.float, loose=1)
+        #if np.sum(np.isnan(values)) > 0:
+        #    print(str(np.sum(np.isnan(values))) + ' invalid values!')
+        # opt 2: raise error for invalid values
+        values = np.genfromtxt(mod_file_path, delimiter=',',\
+                    dtype=np.float)
+
+        # After read in time step 0 has to be removed.
+        # However, each time step has n_grid_points file rows,
+        # where n_grid_points is the number
+        # of output grid points around each station.
+        # Therefore, first determine n_grid_points and remove the
+        # n_grid_points first lines of file.
+        n_grid_points = 0
+        n_grid_points = np.sum(values[:,tstep_col_ind] == 0)
+        if n_grid_points == 0:
+            raise ValueError('n_grid_points is 0! Possibly ' + \
+                                'model output is not as expected')
+        values = values[n_grid_points:,:]
+        time_steps = np.unique(values[:,tstep_col_ind])
+        n_time_steps = len(time_steps)
+        if not values.shape[0]/n_time_steps == n_grid_points:
+            raise ValueError('number of entries does not ' + \
+                                'divide by n_time_steps!')
+
+
+        ###################################################################
+        ####### PART 2: For each hour find best fitting model grid point
+        ###################################################################
+        # 1) For each hour, find for all of the n_grid_points of model 
+        #    output the corresponding 3600/dt time steps
+        # 2) Calculate the model hourly mean wind. Compare to observed
+        #    hourly mean wind and determine the best fitting model grid
+        #    point.
+        # 3) Only keep this one and store in final_values
+
+        nts_per_hr = int(3600/model_dt)
+        #final_values = np.full( (n_hours_all_lm*nts_per_hr, values.shape[1]), np.nan )
+
+        # TODO remove this after testing
+        # contains for each hour the index of the best fitting model
+        # grid point
+        best_fit_gp_inds = np.full(nhrs_forecast, np.nan)
+        best_mean_winds = np.full(nhrs_forecast, np.nan)
+
+        # loop over hours in lm_run
+        # hour label corresponds to time before label
+        hrs = range(1,nhrs_forecast+1)
+        for hI,hr in enumerate(hrs):
+            #hr = 15
+
+            # contains model mean wind values for each grid point and
+            # time step of given hour
+            model_mean_gp = np.zeros( (n_grid_points, nts_per_hr) )
+
+            # loop over time steps of current hour
+            # attention: this happens in model counter style starting @ 1)
+            #            not in python style (starting @ 0))
+            ts_inds = range((hr-1)*nts_per_hr+1, hr*nts_per_hr+1)
+            for tsI,ts_ind in enumerate(ts_inds):
+                row_inds = range((ts_ind-1)*n_grid_points, \
+                                ts_ind*n_grid_points)
+                model_mean_gp[:,tsI] = values[row_inds,zvp10_col_ind]
+            model_mean_wind = np.mean(model_mean_gp, axis=1)
+
+            # get observation date
+            cur_time = start_time + timedelta(hours=hr)
+            obs_mean_hr  = data_obs_stat[G.OBS_MEAN_WIND].\
+                                loc[cur_time]
+            obs_gust_hr = data_obs_stat[G.OBS_GUST_SPEED].\
+                                loc[cur_time]
+
+            # select best fitting model grid point
+            grid_point_ind = np.argmin(np.abs(
+                                model_mean_wind - obs_mean_hr))
+            # TODO testing
+            best_fit_gp_inds[hI] = grid_point_ind
+            best_mean_winds[hI] = model_mean_wind[grid_point_ind]
+
+            # select best fitting rows with time steps of best fitting
+            # grid point
+            sel_inds = (np.asarray(ts_inds)-1) * n_grid_points + \
+                                                grid_point_ind
+            #sel_values = values[sel_inds,:]
+
+            hr_sel_inds = lmI*nhrs_forecast + hI
+            obs_mean_stat[hr_sel_inds] = obs_mean_hr
+            obs_gust_stat[hr_sel_inds] = obs_gust_hr
+
+            for field_name in use_model_fields:
+                col_ind = np.argwhere(
+                            np.asarray(model_params) == field_name)[0]
+                model_fields_stat[field_name][hr_sel_inds,:] = \
+                                        values[sel_inds,col_ind]
+                
+            #zvp10_loc   [hr_sel_inds,:] = values[sel_inds,zvp10_col_ind]
+            #tcm_loc     [hr_sel_inds,:] = values[sel_inds,tcm_col_ind]
+            #print('nan ' + str(np.sum(np.isnan(zvp10))))
+
+
+            ## store selection of current hour in final value array for 
+            ## this lm_run
+            #final_values[hI*nts_per_hr:(hI+1)*nts_per_hr, :] = sel_values
+
+
+        ## Save in raw_data dictionary
+        #ts_secs = (np.arange(1,nhrs_forecast*nts_per_hr+1)*model_dt).\
+        #            astype(np.float)
+        #dts = [start_time + timedelta(seconds=ts_sec) for ts_sec in ts_secs]
+        #df = pd.DataFrame(final_values, index=dts, columns=model_params)
+        #raw_data[lm_run] = df
+
+    #print('obs mean wind')
+    #print(obs_mean[:,sI])
+    #print('best model mean wind')
+    #print(np.round(best_mean_winds,1))
+
+
+
+    result = (  obs_mean_stat,
+                obs_gust_stat,
+                model_fields_stat
+             )
+    return(result)
 
 
 
@@ -417,43 +303,55 @@ def draw_error_grid(xmax, ymax, ax):
             ax.plot([0,xmax], [i*dy,ymax+i*dy], color='grey', linewidth=0.5)
 
 
-def plot_mod_vs_obs(obs, gust, gust_init):
+def draw_scatterplot(xvals, yvals, xlims, ylims,
+                    xlab, ylab, title, ax):
+    ax.scatter(xvals, yvals, color=get_point_col(xvals, yvals), marker=".")
+    draw_error_grid(xlims[1], ylims[1], ax)
+    draw_error_percentile_lines(xvals, yvals, ax)
+    ax.axhline(y=0,c='grey')
+    ax.set_xlim(xlims)
+    ax.set_ylim(ylims)
+    ax.set_title(title)
+    ax.set_xlabel(xlab)
+    ax.set_ylabel(ylab)
 
-    xmin = 0
-    xmax = 60
-    ymin = 0
-    #ymin = -60
-    ymax = 60
+def plot_mod_vs_obs(obs, gust, gust_init, obs_mean, mod_mean):
 
-    fig,axes = plt.subplots(1,2, figsize=(12,5.3))
+    xlims = (0,60)
+    ylims = (0,60)
 
+    xlims_mean = (0,40)
+    ylims_mean = (0,40)
+
+    fig,axes = plt.subplots(1,3, figsize=(18,5.3))
+
+    ##########################################################################
     # obs gust vs model gust initial
     xlab = 'MOD gust [m/s]'
     ylab = 'OBS gust [m/s]'
+    title = 'original MOD gust vs OBS gust'
     ax = axes[0]
-    ax.scatter(gust_init, obs, color=get_point_col(gust_init, obs), marker=".")
-    draw_error_grid(xmax, ymax, ax)
-    draw_error_percentile_lines(gust_init, obs, ax)
-    ax.axhline(y=0,c='grey')
-    ax.set_xlim(xmin,xmax)
-    ax.set_ylim(ymin,ymax)
-    ax.set_title('original MOD gust vs OBS gust')
-    ax.set_xlabel(xlab)
-    ax.set_ylabel(ylab)
+    draw_scatterplot(gust_init, obs, xlims, ylims,
+                    xlab, ylab, title, ax)
 
+    ##########################################################################
     # obs gust vs model gust
     xlab = 'MOD gust [m/s]'
     ylab = 'OBS gust [m/s]'
+    title = 'MOD gust vs OBS gust'
     ax = axes[1]
-    ax.scatter(gust, obs, color=get_point_col(gust, obs), marker=".")
-    draw_error_grid(xmax, ymax, ax)
-    draw_error_percentile_lines(gust, obs, ax)
-    ax.axhline(y=0,c='grey')
-    ax.set_xlim(0,xmax)
-    ax.set_ylim(0,xmax)
-    ax.set_title('MOD gust vs OBS gust')
-    ax.set_xlabel(xlab)
-    ax.set_ylabel(ylab)
+    draw_scatterplot(gust, obs, xlims, ylims,
+                    xlab, ylab, title, ax)
+
+
+    ##########################################################################
+    # obs mean vs model mean
+    xlab = 'MOD mean wind [m/s]'
+    ylab = 'OBS mean wind [m/s]'
+    title = 'MOD wind vs OBS wind'
+    ax = axes[2]
+    draw_scatterplot(mod_mean, obs_mean, xlims_mean, ylims_mean,
+                    xlab, ylab, title, ax)
 
 
 def plot_error(obs, model_mean, obs_mean, gust, gust_init):
@@ -747,21 +645,6 @@ def plot_error(obs, model_mean, obs_mean, gust, gust_init):
 
     #plt.tight_layout()
     plt.subplots_adjust(left=0.04,bottom=0.08,right=0.99,top=0.9,wspace=0.23,hspace=0.3)
-
-
-
-#def apply_full_scaling(var):
-#    mean_var = np.mean(var)
-#    var = var - mean_var
-#    sd_var = np.std(var)
-#    var = var/sd_var
-#    return(var, mean_var, sd_var)
-
-
-def apply_scaling(var):
-    sd_var = np.std(var)
-    var = var/sd_var
-    return(var, sd_var)
 
 
 

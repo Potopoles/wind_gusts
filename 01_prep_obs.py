@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-#import matplotlib.pyplot as plt
 import pickle
 from datetime import datetime, timedelta
 import globals as G
@@ -95,7 +94,6 @@ for stat_key in inp_station_names:
         stations[stat_key] = df
 
     else:
-        #print(stat_key)
         pass
 
 

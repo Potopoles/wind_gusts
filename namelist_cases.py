@@ -4,10 +4,10 @@
 # 11 June_18
 # 12 December_17
 # 13 June 18 and December 17
-case_index      = 0
+case_index      = 4
 # do not plot (0) show plot (1) save plot (2)
 i_plot          = 1
-i_plot_type     = 0
+i_plot_type     = 1
 model_dt        = 10
 nhrs_forecast   = 24
 i_load          = 0
