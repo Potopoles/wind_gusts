@@ -185,14 +185,16 @@ fields['zvp10_tcm'] = zvp10*tcm
 gust_orig = zvp10 + 7.2*tcm*zvp10
 gust_max_orig = find_hourly_max(gust_orig)
 
-alpha = 2
+alpha = 5
 learning_rate = 0.5
 
-for i in range(0,20):
+for i in range(0,50):
     gust = fields['zvp10'] + alpha*fields['zvp10_tcm']
     gust_max, fields_max = find_hourly_max(gust, fields)
 
     #speed, error = plot_rotation(gust_max, obs_gust)
+    #plt.show()
+    #quit()
 
     #x = np.asarray([0,1,2,3])
     #y = np.asarray([0,1,2,3])
