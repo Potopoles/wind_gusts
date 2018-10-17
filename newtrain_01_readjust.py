@@ -229,6 +229,7 @@ for i in range(0,50):
     print(alpha)
 
 
+
 gust = fields['zvp10'] + alpha*fields['zvp10_tcm']
 gust_max = find_hourly_max(gust)
 

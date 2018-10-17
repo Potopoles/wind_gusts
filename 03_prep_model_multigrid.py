@@ -20,7 +20,7 @@ model_dt = nl.model_dt
 nhrs_forecast = nl.nhrs_forecast
 # starting index of fortran files
 ind0 = 701
-debug_max_stat_ind = 701
+debug_max_stat_ind = 731
 i_draw_grid_wind_plot = 1
 
 

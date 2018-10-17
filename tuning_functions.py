@@ -235,17 +235,18 @@ def rotate(xy, angle):
     return(xy_rot)
 
 
-def draw_error_percentile_lines(x, y, ax):
+def draw_error_percentile_lines(x, y, ax, draw_legend=True):
 
     # PREPARE PERCENTILE LINES
     ###############
-    q0 = 10
-    q1 = 50
-    q2 = 90
-    qs = [q0,q1,q2]
-    qscol = ['red','orange','red']
-    qslst = ['--','-','--']
-    qslwd = [1.5,2,1.5]
+    #qs = [10,50,90]
+    #qscol = ['red','orange','red']
+    #qslst = ['--','-','--']
+    #qslwd = [1.5,2,1.5]
+    qs = [10,25,50,75,90]
+    qscol = ['red','blue','orange','blue','red']
+    qslst = ['--','--','-','--','--']
+    qslwd = [1.5,1.5,2,1.5,1.5]
     dmp = 2. # = dx
     ###############
 
@@ -259,7 +260,7 @@ def draw_error_percentile_lines(x, y, ax):
 
     mp_borders = np.arange(np.floor(0),np.ceil(np.max(speed)),dmp)
     mp_x = mp_borders[:-1] + np.diff(mp_borders)/2
-    mgog = np.full((len(mp_x),3),np.nan)
+    mgog = np.full((len(mp_x),len(qs)),np.nan)
     for qi in range(0,len(qs)):
         for i in range(0,len(mp_x)):
             # model gust vs obs gust
@@ -267,13 +268,17 @@ def draw_error_percentile_lines(x, y, ax):
             if np.sum(inds) > 10:
                 mgog[i,qi] = np.percentile(error[inds],q=qs[qi])
 
+    lines = []
     for qi in range(0,len(qs)):
-        #ax.plot(mp_x, mgog[:,qi], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
-
         # backtransform percentile lines
         line_rot = np.row_stack( [mp_x, mgog[:,qi]] )
         line = rotate(line_rot, np.pi/4)
-        ax.plot(line[0,:], line[1,:], color=qscol[qi], linestyle=qslst[qi], linewidth=qslwd[qi])
+        # draw lines
+        line, = ax.plot(line[0,:], line[1,:], color=qscol[qi],
+                linestyle=qslst[qi], linewidth=qslwd[qi], label=qs[qi])
+        lines.append(line)
+    if draw_legend:
+        ax.legend(handles=lines, loc=4, title='percentiles')
 
 def draw_error_grid(xmax, ymax, ax):
     ax.plot([0,xmax], [0,ymax], color='k', linewidth=0.5)
@@ -284,16 +289,38 @@ def draw_error_grid(xmax, ymax, ax):
 
 
 def draw_scatterplot(xvals, yvals, xlims, ylims,
-                    xlab, ylab, title, ax):
+                    xlab, ylab, title, ax, draw_legend=True):
     ax.scatter(xvals, yvals, color=get_point_col(xvals, yvals), marker=".")
     draw_error_grid(xlims[1], ylims[1], ax)
-    draw_error_percentile_lines(xvals, yvals, ax)
+    draw_error_percentile_lines(xvals, yvals, ax, draw_legend)
     ax.axhline(y=0,c='grey')
     ax.set_xlim(xlims)
     ax.set_ylim(ylims)
     ax.set_title(title)
     ax.set_xlabel(xlab)
     ax.set_ylabel(ylab)
+
+    # calcualte some scores
+    xy = np.row_stack( [xvals, yvals] )
+    xy_rot = rotate(xy, -np.pi/4)
+    error = xy_rot[1,:]
+    rmse = np.sqrt(np.mean(error**2))
+    corr = np.corrcoef(xvals, yvals)
+    me   = np.mean(-error) # positive values means model overestimates
+    mae  = np.mean(np.abs(error))
+    ax.text(0.02*(xlims[1]-xlims[0]),
+            ylims[1]-0.04*(ylims[1]-ylims[0]),
+            'rmse '+str(np.round(rmse,3)), color='red')
+    ax.text(0.02*(xlims[1]-xlims[0]),
+            ylims[1]-0.08*(ylims[1]-ylims[0]),
+            'corr  '+str(np.round(corr[1,0],3)), color='red')
+    ax.text(0.02*(xlims[1]-xlims[0]),
+            ylims[1]-0.12*(ylims[1]-ylims[0]),
+            'me   '+str(np.round(me,3)), color='red')
+    ax.text(0.02*(xlims[1]-xlims[0]),
+            ylims[1]-0.16*(ylims[1]-ylims[0]),
+            'mae  '+str(np.round(mae,3)), color='red')
+
 
 def plot_mod_vs_obs(obs, gust, gust_init, obs_mean, mod_mean):
 
@@ -321,7 +348,7 @@ def plot_mod_vs_obs(obs, gust, gust_init, obs_mean, mod_mean):
     title = 'MOD gust vs OBS gust'
     ax = axes[1]
     draw_scatterplot(gust, obs, xlims, ylims,
-                    xlab, ylab, title, ax)
+                    xlab, ylab, title, ax, draw_legend=False)
 
 
     ##########################################################################
@@ -331,7 +358,7 @@ def plot_mod_vs_obs(obs, gust, gust_init, obs_mean, mod_mean):
     title = 'MOD wind vs OBS wind'
     ax = axes[2]
     draw_scatterplot(mod_mean, obs_mean, xlims_mean, ylims_mean,
-                    xlab, ylab, title, ax)
+                    xlab, ylab, title, ax, draw_legend=False)
 
 
 def plot_error(obs, model_mean, obs_mean, gust, gust_init):
