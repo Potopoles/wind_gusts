@@ -53,13 +53,6 @@ def prepare_model_params(use_model_fields, lm_runs, CN,
         model_fields_stat[field_name] = \
                 np.full( ( n_hours_all_lm, int(3600/model_dt) ), np.nan )
 
-    ## add model data
-    #raw_data = {}
-    ##raw_data2 = {}
-    #stat_data = {G.RAW:raw_data}
-    ##stat_data = {G.RAW:raw_data, G.RAW2:raw_data2}
-    #data[G.MODEL][G.STAT][stat_key] = stat_data
-
     # load data from all lm runs
     for lmI,lm_run in enumerate(lm_runs):
 
@@ -111,13 +104,12 @@ def prepare_model_params(use_model_fields, lm_runs, CN,
         # 3) Only keep this one and store in final_values
 
         nts_per_hr = int(3600/model_dt)
-        #final_values = np.full( (n_hours_all_lm*nts_per_hr, values.shape[1]), np.nan )
 
-        # TODO remove this after testing
-        # contains for each hour the index of the best fitting model
-        # grid point
-        best_fit_gp_inds = np.full(nhrs_forecast, np.nan)
-        best_mean_winds = np.full(nhrs_forecast, np.nan)
+        ## TESTING
+        ## contains for each hour the index of the best fitting model
+        ## grid point
+        #best_fit_gp_inds = np.full(nhrs_forecast, np.nan)
+        #best_mean_winds = np.full(nhrs_forecast, np.nan)
 
         # loop over hours in lm_run
         # hour label corresponds to time before label
@@ -149,15 +141,14 @@ def prepare_model_params(use_model_fields, lm_runs, CN,
             # select best fitting model grid point
             grid_point_ind = np.argmin(np.abs(
                                 model_mean_wind - obs_mean_hr))
-            # TODO testing
-            best_fit_gp_inds[hI] = grid_point_ind
-            best_mean_winds[hI] = model_mean_wind[grid_point_ind]
+            ## TESTING
+            #best_fit_gp_inds[hI] = grid_point_ind
+            #best_mean_winds[hI] = model_mean_wind[grid_point_ind]
 
             # select best fitting rows with time steps of best fitting
             # grid point
             sel_inds = (np.asarray(ts_inds)-1) * n_grid_points + \
                                                 grid_point_ind
-            #sel_values = values[sel_inds,:]
 
             hr_sel_inds = lmI*nhrs_forecast + hI
             obs_mean_stat[hr_sel_inds] = obs_mean_hr
@@ -168,36 +159,15 @@ def prepare_model_params(use_model_fields, lm_runs, CN,
                             np.asarray(model_params) == field_name)[0]
                 model_fields_stat[field_name][hr_sel_inds,:] = \
                                         values[sel_inds,col_ind]
-                
-            #zvp10_loc   [hr_sel_inds,:] = values[sel_inds,zvp10_col_ind]
-            #tcm_loc     [hr_sel_inds,:] = values[sel_inds,tcm_col_ind]
-            #print('nan ' + str(np.sum(np.isnan(zvp10))))
-
-
-            ## store selection of current hour in final value array for 
-            ## this lm_run
-            #final_values[hI*nts_per_hr:(hI+1)*nts_per_hr, :] = sel_values
-
-
-        ## Save in raw_data dictionary
-        #ts_secs = (np.arange(1,nhrs_forecast*nts_per_hr+1)*model_dt).\
-        #            astype(np.float)
-        #dts = [start_time + timedelta(seconds=ts_sec) for ts_sec in ts_secs]
-        #df = pd.DataFrame(final_values, index=dts, columns=model_params)
-        #raw_data[lm_run] = df
-
-    #print('obs mean wind')
-    #print(obs_mean[:,sI])
-    #print('best model mean wind')
-    #print(np.round(best_mean_winds,1))
-
-
 
     result = (  obs_mean_stat,
                 obs_gust_stat,
                 model_fields_stat
              )
     return(result)
+
+
+
 
 
 

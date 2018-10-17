@@ -2,12 +2,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
-import pickle
 import globals as G
 from namelist_cases import Case_Namelist
 import namelist_cases as nl
-import os
-import sys
+import pickle, os, sys
 from netCDF4 import Dataset
 from tuning_functions import prepare_model_params
 import multiprocessing as mp
@@ -20,30 +18,35 @@ model_dt = nl.model_dt
 nhrs_forecast = nl.nhrs_forecast
 # starting index of fortran files
 ind0 = 701
+debug_max_stat_ind = 711
 
 njobs = 1
 if len(sys.argv) > 1:
     njobs = int(sys.argv[1])
     print('Number of jobs is set to ' + str(njobs) + '.')
 else:
-    print('Number of jobs not given. Default values is 1.')
+    print('Number of jobs not given. Default values is ' + str(njobs) + '.')
 
-use_model_fields = ['tcm', 'zvp10']
+use_model_fields = ['k_bra_es','k_bra_lb','k_bra_ub',
+                    'tcm', 'zvp10',
+                    'zv_bra_es','zv_bra_lb','zv_bra_ub',
+                    'ul1', 'vl1', 'tkel1', 'z0', 'Tl1',
+                    'shflx', 'qvflx', 'Tskin', 'qvl1','phil1', 'ps']
 
 # header of fortran output files
 if CN.exp_id == 101:
     model_params = \
-        ['tstep','i_shift','j_shift',
-         'k_bra_es','k_bra_lb','k_bra_ub', # time step and model levels of brassuer         # 3
-         'tcm','zvp10', # turbulent coefficient of momentum and abs wind at 10 m            # 5 
-         'zv_bra_es','zv_bra_lb','zv_bra_ub', # brasseur gust velocities                    # 8
-         'ul1', 'vl1', # u and v at lowest model level                                      # 13
-         'tkel1',# 'tke_bra_es', # tke at lowest level and mean tke between sfc and bra estimate # 14
-         'z0', 'Tl1', # surface roughness and temperature at lowest model level             # 16
-         'shflx', 'qvflx', # surface sensible heat and water vapor flux 
-         'Tskin', 'qvl1', # skin temperature and water vapor at lowest model level
-         'phil1', # geopotential at lowest model level 
-         'ps'] # surface pressure
+    ['tstep','i_shift','j_shift',
+     'k_bra_es','k_bra_lb','k_bra_ub', # time step and model levels of brassuer
+     'tcm','zvp10', # turbulent coefficient of momentum and abs wind at 10 m
+     'zv_bra_es','zv_bra_lb','zv_bra_ub', # brasseur gust velocities
+     'ul1', 'vl1', # u and v at lowest model level          
+     'tkel1',# tke at lowest level
+     'z0', 'Tl1', # surface roughness and temperature at lowest model level
+     'shflx', 'qvflx', # surface sensible heat and water vapor flux 
+     'Tskin', 'qvl1', # skin temperature and water vapor at lowest model level
+     'phil1', # geopotential at lowest model level 
+     'ps'] # surface pressure
 else:
     raise NotImplementedError()
 
@@ -51,50 +54,53 @@ hist_tag = '02_prep_model'
 
 ext_files = {}
 ext_files['sso_stdh']   = '../extern_par/SSO_STDH.nc'
-ext_files['slo_ang']    = '../extern_par/SLO_ANG.nc'
-ext_files['skyview']    = '../extern_par/SKYVIEW.nc'
-ext_files['slo_asp']    = '../extern_par/SLO_ASP.nc'
+#ext_files['slo_ang']    = '../extern_par/SLO_ANG.nc'
+#ext_files['skyview']    = '../extern_par/SKYVIEW.nc'
+#ext_files['slo_asp']    = '../extern_par/SLO_ASP.nc'
 ext_files['z0']         = '../extern_par/Z0.nc'
 ext_files['hsurf']      = '../extern_par/HSURF.nc'
 #####################################
+
+
+###########################################################################
+############### PART 0: PREPARATIONS
+###########################################################################
 
 lm_runs = os.listdir(CN.raw_mod_path)
 mod_stations_file = CN.raw_mod_path + lm_runs[0] + '/fort.700'
 print(mod_stations_file)
 
 # read model station names
-mod_stations = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,0]
+mod_stations = np.genfromtxt(mod_stations_file,
+                skip_header=2, dtype=np.str)[:,0]
 file_inds = ind0 + np.arange(0,len(mod_stations))
-stat_i_inds = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[:,8].astype(np.int)
+stat_i_inds = np.genfromtxt(mod_stations_file, 
+                skip_header=2, dtype=np.str)[:,8].astype(np.int)
 
 if case_index == 0:
-    use_stat = file_inds <= 711
-    # Filter out stations with i_ind = 0 (those with height = -99999999)
+    use_stat = file_inds <= debug_max_stat_ind
+    # Filter out stations with i_ind = 0
+    # (those with height = -99999999)
     use_stat[stat_i_inds == 0] = False
-elif case_index == 9:
-    use_stat = file_inds <= 911
-    # Filter out stations with i_ind = 0 (those with height = -99999999)
-    use_stat[stat_i_inds == 0] = False
-    #use_stat = stat_i_inds != 0
 else:
-    # Filter out stations with i_ind = 0 (those with height = -99999999)
+    # Filter out stations with i_ind = 0
+    # (those with height = -99999999)
     use_stat = stat_i_inds != 0
 
-##TODO debug
-#use_stat = file_inds <= 703
-## Filter out stations with i_ind = 0 (those with height = -99999999)
-#use_stat[stat_i_inds == 0] = False
-
 # filter out missing files
-exist_file_inds = [int(file[5:])-ind0 for file in os.listdir(CN.raw_mod_path + lm_runs[0])]
+exist_file_inds = [int(file[5:])-ind0 for file in \
+                    os.listdir(CN.raw_mod_path + lm_runs[0])]
 exist_file_inds = [ind for ind in exist_file_inds if ind >= 0]
-use_stat = [use_stat[i] if i in exist_file_inds else False for i in range(0,len(use_stat))]
+use_stat = [use_stat[i] if i in exist_file_inds else False \
+                        for i in range(0,len(use_stat))]
 
 mod_stations = mod_stations[use_stat]
 file_inds = file_inds[use_stat]
 stat_i_inds = stat_i_inds[use_stat]
-stat_j_inds = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[use_stat,9].astype(np.int)
-stat_dz = np.genfromtxt(mod_stations_file, skip_header=2, dtype=np.str)[use_stat,11].astype(np.float)
+stat_j_inds = np.genfromtxt(mod_stations_file, skip_header=2,
+                    dtype=np.str)[use_stat,9].astype(np.int)
+stat_dz = np.genfromtxt(mod_stations_file, skip_header=2,
+                    dtype=np.str)[use_stat,11].astype(np.float)
 
 # nc file for sso_stdh
 sso_stdh = Dataset(ext_files['sso_stdh'], 'r')['SSO_STDH'][:]
@@ -121,11 +127,6 @@ for field_name in use_model_fields:
     model_fields[field_name]  = np.full( ( n_hours_all_lm,
                                            len(mod_stations), 
                                            int(3600/model_dt) ), np.nan )
-
-#zvp10      = np.full( ( n_hours_all_lm, len(mod_stations)  , 
-#                                       int(3600/model_dt) ), np.nan )
-#tcm        = np.full( ( n_hours_all_lm, len(mod_stations)  , 
-#                                       int(3600/model_dt) ), np.nan )
 
 
 ###########################################################################
@@ -166,7 +167,7 @@ for sI,stat_key in enumerate(mod_stations):
 
 
 ###########################################################################
-############### PART 1: PREPARE MODEL DATA
+############### PART 2: PREPARE MODEL DATA
 ###########################################################################
 if njobs == 1:
     for sI,stat_key in enumerate(mod_stations):
@@ -188,10 +189,10 @@ if njobs == 1:
         else:
             print('############# do not use ' + stat_key)
 
+# if njobs > 1 will run in parallel over stations
 elif njobs > 1:
 
     p = mp.Pool(processes=njobs)
-    #progress = mp.Value('i',0)
     input = []
 
     for sI,stat_key in enumerate(mod_stations):
@@ -225,6 +226,9 @@ elif njobs > 1:
             c += 1
 
 
+###########################################################################
+############### PART 3: SAVE DATA
+###########################################################################
 
 print('##################')
 
@@ -238,4 +242,4 @@ data['obs_gust'] = obs_gust
 data['model_fields'] = model_fields
 
 # save output file
-pickle.dump(data, open(CN.new_mod_path, 'wb'))
+pickle.dump(data, open(CN.mod_path, 'wb'))
