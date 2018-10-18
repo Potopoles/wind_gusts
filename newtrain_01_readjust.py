@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
-from plot_functions import plot_error, plot_mod_vs_obs
+from plot_functions import plot_error, plot_type1
 import globals as G
 from namelist_cases import Case_Namelist
 import namelist_cases as nl
@@ -190,17 +190,17 @@ gust_max_orig = find_hourly_max(gust_orig)
 # TODO make vectors
 alpha = 5
 learning_rate = 0.20
-n_bins = 8
+n_bins = 2
 # BIN NAMELIST
 if n_bins == 8:
     bins = [(0,10),(10,20),(20,30),(30,40),(40,50),(50,60),(60,70),(70,80)]
-    bin_weights = [1,1,1,3,5,1,1,1]
+    bin_weights = [1,1,1,1,1,1,1,1]
 elif n_bins == 1:
     bins = [(0,80)]
     bin_weights = [1]
 elif n_bins == 2:
     bins = [(0,40),(40,80)]
-    bin_weights = [1,1]
+    bin_weights = [1,2]
 elif n_bins == 4:
     bins = [(0,20),(20,40),(40,60),(60,80)]
     bin_weights = [1,1,1,1]
@@ -388,7 +388,7 @@ if i_plot > 0:
     if i_plot_type == 0:
         plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_orig)
     elif i_plot_type == 1:
-        plot_mod_vs_obs(obs_gust, gust_max, gust_max_orig, obs_mean, model_mean)
+        plot_type1(obs_gust, gust_max, gust_max_orig, obs_mean, model_mean)
     else:
         raise NotImplementedError()
     plt.suptitle('READJUST  '+mode)
@@ -526,7 +526,7 @@ for mode_int in i_mode_ints:
         if i_plot_type == 0:
             plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_orig)
         elif i_plot_type == 1:
-            plot_mod_vs_obs(obs_gust, gust_max, gust_max_orig, obs_mean, model_mean)
+            plot_type1(obs_gust, gust_max, gust_max_orig, obs_mean, model_mean)
         else:
             raise NotImplementedError()
         plt.suptitle('READJUST  '+mode)

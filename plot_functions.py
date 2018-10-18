@@ -51,7 +51,10 @@ def get_point_col(vals1, vals2, xmin=0, xmax=100, ymin=-100, ymax=100):
 
 
 
-def draw_error_percentile_lines(x, y, ax, draw_legend=True, loc=0):
+def draw_error_percentile_lines(x, y, ax, draw_legend=True, loc=0, rot_angle=0):
+
+    #rot_angle = -np.pi/4
+    #rot_angle = 0
 
     # PREPARE PERCENTILE LINES
     ###############
@@ -67,7 +70,7 @@ def draw_error_percentile_lines(x, y, ax, draw_legend=True, loc=0):
     ###############
 
     xy = np.row_stack( [x, y] )
-    xy_rot = rotate(xy, -np.pi/4)
+    xy_rot = rotate(xy, rot_angle)
 
     speed = xy_rot[0,:]
     error = xy_rot[1,:]
@@ -88,7 +91,7 @@ def draw_error_percentile_lines(x, y, ax, draw_legend=True, loc=0):
     for qi in range(0,len(qs)):
         # backtransform percentile lines
         line_rot = np.row_stack( [mp_x, mgog[:,qi]] )
-        line = rotate(line_rot, np.pi/4)
+        line = rotate(line_rot, -rot_angle)
         # draw lines
         line, = ax.plot(line[0,:], line[1,:], color=qscol[qi],
                 linestyle=qslst[qi], linewidth=qslwd[qi], label=qs[qi])
@@ -104,11 +107,12 @@ def draw_error_grid(xmax, ymax, ax):
             ax.plot([0,xmax], [i*dy,ymax+i*dy], color='grey', linewidth=0.5)
 
 
-def draw_scatterplot(xvals, yvals, xlims, ylims,
+def draw_1_1_scatter(xvals, yvals, xlims, ylims,
                     xlab, ylab, title, ax, draw_legend=True, legend_loc=0):
     ax.scatter(xvals, yvals, color=get_point_col(xvals, yvals), marker=".")
     draw_error_grid(xlims[1], ylims[1], ax)
-    draw_error_percentile_lines(xvals, yvals, ax, draw_legend, legend_loc)
+    draw_error_percentile_lines(xvals, yvals, ax, draw_legend, legend_loc,
+                                rot_angle=-np.pi/4)
     ax.axhline(y=0,c='grey')
     ax.set_xlim(xlims)
     ax.set_ylim(ylims)
@@ -133,45 +137,65 @@ def draw_scatterplot(xvals, yvals, xlims, ylims,
         fars[tI] = np.sum(yvals[xvals > thrsh] <  thrsh)/np.sum(xvals > thrsh)
     # print scores on plot
     col = 'k'
+    offs = 0.05
     ax.text(0.02*(xlims[1]-xlims[0]),
-            ylims[1]-0.04*(ylims[1]-ylims[0]),
+            ylims[1]-1*offs*(ylims[1]-ylims[0]),
             'pod({}) {}'.format(str(categ_thrshs),
             str(np.round(pods,2))), color=col)
     ax.text(0.02*(xlims[1]-xlims[0]),
-            ylims[1]-0.08*(ylims[1]-ylims[0]),
+            ylims[1]-2*offs*(ylims[1]-ylims[0]),
             'far  ({}) {}'.format(str(categ_thrshs),
             str(np.round(fars,2))), color=col)
     ax.text(0.02*(xlims[1]-xlims[0]),
-            ylims[1]-0.12*(ylims[1]-ylims[0]),
+            ylims[1]-3*offs*(ylims[1]-ylims[0]),
             'rmse '+str(np.round(rmse,3)), color=col)
     ax.text(0.02*(xlims[1]-xlims[0]),
-            ylims[1]-0.16*(ylims[1]-ylims[0]),
+            ylims[1]-4*offs*(ylims[1]-ylims[0]),
             'corr   '+str(np.round(corr[1,0],3)), color=col)
     ax.text(0.02*(xlims[1]-xlims[0]),
-            ylims[1]-0.20*(ylims[1]-ylims[0]),
+            ylims[1]-5*offs*(ylims[1]-ylims[0]),
             'me    '+str(np.round(me,3)), color=col)
     #ax.text(0.02*(xlims[1]-xlims[0]),
-    #        ylims[1]-0.16*(ylims[1]-ylims[0]),
+    #        ylims[1]-6*offs*(ylims[1]-ylims[0]),
     #        'mae  '+str(np.round(mae,3)), color=col)
 
 
-def plot_mod_vs_obs(obs, gust, gust_init, obs_mean, mod_mean):
+def draw_error_scatter(mod, obs, xlims, ylims,
+                    xlab, ylab, title, ax, draw_legend=True, legend_loc=0):
+    error = mod - obs
+    ax.scatter(obs, error, color=get_point_col(obs, error), marker=".")
+    ax.grid()
+    draw_error_percentile_lines(obs, error, ax, draw_legend, legend_loc)
+    ax.axhline(y=0,c='grey')
+    ax.set_xlim(xlims)
+    ax.set_ylim(ylims)
+    ax.set_title(title)
+    ax.set_xlabel(xlab)
+    ax.set_ylabel(ylab)
+
+
+
+
+def plot_type1(obs, gust, gust_init, obs_mean, mod_mean):
 
     xlims = (0,60)
     ylims = (0,60)
-
     xlims_mean = (0,30)
     ylims_mean = (0,30)
+    ylims_err = (-30,30)
+    ylims_err_mean = (-15,15)
 
-    fig,axes = plt.subplots(1,3, figsize=(18,5.3))
+    fig,axes = plt.subplots(2,3, figsize=(13.0,9.2))
+    plt.subplots_adjust(left=0.05,bottom=0.08,right=0.99,top=0.9,
+                        wspace=0.23,hspace=0.3)
 
     ##########################################################################
     # obs gust vs model gust initial
     xlab = 'MOD gust [m/s]'
     ylab = 'OBS gust [m/s]'
     title = 'original MOD gust vs OBS gust'
-    ax = axes[0]
-    draw_scatterplot(gust_init, obs, xlims, ylims,
+    ax = axes[0,0]
+    draw_1_1_scatter(gust_init, obs, xlims, ylims,
                     xlab, ylab, title, ax, legend_loc=4)
 
     ##########################################################################
@@ -179,19 +203,72 @@ def plot_mod_vs_obs(obs, gust, gust_init, obs_mean, mod_mean):
     xlab = 'MOD gust [m/s]'
     ylab = 'OBS gust [m/s]'
     title = 'MOD gust vs OBS gust'
-    ax = axes[1]
-    draw_scatterplot(gust, obs, xlims, ylims,
+    ax = axes[0,1]
+    draw_1_1_scatter(gust, obs, xlims, ylims,
                     xlab, ylab, title, ax, draw_legend=False)
-
 
     ##########################################################################
     # obs mean vs model mean
     xlab = 'MOD mean wind [m/s]'
     ylab = 'OBS mean wind [m/s]'
     title = 'MOD wind vs OBS wind'
-    ax = axes[2]
-    draw_scatterplot(mod_mean, obs_mean, xlims_mean, ylims_mean,
+    ax = axes[0,2]
+    draw_1_1_scatter(mod_mean, obs_mean, xlims_mean, ylims_mean,
                     xlab, ylab, title, ax, draw_legend=False)
+
+    ##########################################################################
+    # original model error vs obs
+    xlab = 'OBS gust [m/s]'
+    ylab = 'original MOD gust error [m/s]'
+    title = 'original MOD gust error vs OBS gust'
+    ax = axes[1,0]
+    draw_error_scatter(gust_init, obs, xlims, ylims_err,
+                    xlab, ylab, title, ax, draw_legend=False)
+
+    ##########################################################################
+    # model error vs obs
+    xlab = 'OBS gust [m/s]'
+    ylab = 'MOD gust error [m/s]'
+    title = 'MOD gust error vs OBS gust'
+    ax = axes[1,1]
+    draw_error_scatter(gust, obs, xlims, ylims_err,
+                    xlab, ylab, title, ax, draw_legend=False)
+
+    ##########################################################################
+    # model mean error vs obs mean
+    xlab = 'OBS mean wind [m/s]'
+    ylab = 'MOD mean wind error [m/s]'
+    title = 'MOD mean wind error vs OBS mean wind'
+    ax = axes[1,2]
+    draw_error_scatter(mod_mean, obs_mean, xlims_mean, ylims_err_mean,
+                    xlab, ylab, title, ax, draw_legend=False)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def plot_error(obs, model_mean, obs_mean, gust, gust_init):
