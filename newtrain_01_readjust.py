@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
-from tuning_functions import plot_error, plot_mod_vs_obs
+from plot_functions import plot_error, plot_mod_vs_obs
 import globals as G
 from namelist_cases import Case_Namelist
 import namelist_cases as nl
@@ -169,11 +169,13 @@ def plot_rotation(mod, obs):
 
     xy = np.row_stack( [mod, obs] )
     xy_rot = rotate(xy, -np.pi/4)
+    #quit()
     speed = xy_rot[0,:]
     error = xy_rot[1,:]
 
     plt.scatter(speed, error, marker='.', color='orange')
     #plt.show()
+    #quit()
 
     return(speed, error)
 
@@ -185,10 +187,31 @@ fields['zvp10_tcm'] = zvp10*tcm
 gust_orig = zvp10 + 7.2*tcm*zvp10
 gust_max_orig = find_hourly_max(gust_orig)
 
+# TODO make vectors
 alpha = 5
-learning_rate = 0.5
+learning_rate = 0.20
+n_bins = 8
+# BIN NAMELIST
+if n_bins == 8:
+    bins = [(0,10),(10,20),(20,30),(30,40),(40,50),(50,60),(60,70),(70,80)]
+    bin_weights = [1,1,1,3,5,1,1,1]
+elif n_bins == 1:
+    bins = [(0,80)]
+    bin_weights = [1]
+elif n_bins == 2:
+    bins = [(0,40),(40,80)]
+    bin_weights = [1,1]
+elif n_bins == 4:
+    bins = [(0,20),(20,40),(40,60),(60,80)]
+    bin_weights = [1,1,1,1]
+n_bins = len(bins)
 
-for i in range(0,50):
+sin_th = np.sin(-np.pi/4)
+cos_th = np.cos(-np.pi/4)
+
+N = len(obs_gust)
+
+for i in range(0,30):
     gust = fields['zvp10'] + alpha*fields['zvp10_tcm']
     gust_max, fields_max = find_hourly_max(gust, fields)
 
@@ -198,18 +221,17 @@ for i in range(0,50):
 
     #x = np.asarray([0,1,2,3])
     #y = np.asarray([0,1,2,3])
+    #y = np.asarray([0,2,4,6])
     #xy = np.row_stack( [x, y] )
     #xy_rot = rotate(xy, -np.pi/4)
     #plot_rotation(x, y)
+    #plt.show()
+    #quit()
 
-    sin_th = np.sin(-np.pi/4)
-    cos_th = np.cos(-np.pi/4)
-
-    N = len(obs_gust)
 
     # TODO what needs to be done here to get in agreement with theory?
-    speed_now = - sin_th * gust_max + cos_th * obs_gust
-    error_now = sin_th * gust_max + cos_th * obs_gust
+    speed       =   - sin_th * gust_max + cos_th * obs_gust
+    model_error = -(  sin_th * gust_max + cos_th * obs_gust )
 
     #error_test = sin_th * fields_max['zvp10'] + \
     #             alpha * sin_th * fields_max['zvp10_tcm'] + \
@@ -220,13 +242,53 @@ for i in range(0,50):
     #plt.scatter(speed_now, error_now, color='red', marker='.')
     #plt.show()
 
-    model_error = - error_now
+    tot_weight = 0
+    dalpha = 0
+    for bI in range(0,n_bins):
+        #bI = 4
 
-    dalpha = 2/N * np.sum(model_error * sin_th * fields_max['zvp10_tcm'])
-    #print(dalpha)
+        bin_inds = np.argwhere((speed >= bins[bI][0]) & \
+                               (speed < bins[bI][1])).squeeze()
 
+        model_error_bin = model_error[bin_inds]
+        #bin_obs_gust = obs_gust.squeeze()[bin_inds]
+        fields_bin = {}
+        fields_bin['zvp10_tcm'] = fields_max['zvp10_tcm'][bin_inds]
+        try:
+            N_bin = len(model_error_bin)
+        except TypeError: # in case model_error_bin is scalar not array
+            N_bin = 1
+
+        if N_bin > 20:
+            #print('bin number: \t' + str(bI))
+            #print('n samples: \t' + str(N_bin))
+
+            # calculate derivative of loss function with respect to alpha
+            #dalpha = 2/N * np.sum(model_error * sin_th * fields_max['zvp10_tcm'])
+            dalpha += bin_weights[bI] * \
+                      2/N_bin * np.sum(model_error_bin * sin_th *
+                                        fields_bin['zvp10_tcm'])
+            tot_weight += bin_weights[bI]
+    dalpha = dalpha/tot_weight
+
+    # update alpha
     alpha += learning_rate*dalpha
     print(alpha)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

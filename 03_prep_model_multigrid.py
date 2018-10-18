@@ -7,9 +7,10 @@ from namelist_cases import Case_Namelist
 import namelist_cases as nl
 import pickle, os, sys
 from netCDF4 import Dataset
-from tuning_functions import (prepare_model_params,
-                            draw_error_percentile_lines,
-                            draw_error_grid)
+from tuning_functions import (prepare_model_params)
+from plot_functions import (draw_error_percentile_lines,
+                            draw_error_grid,
+                            get_point_col)
 import multiprocessing as mp
 
 ############ USER INPUT #############
@@ -20,7 +21,7 @@ model_dt = nl.model_dt
 nhrs_forecast = nl.nhrs_forecast
 # starting index of fortran files
 ind0 = 701
-debug_max_stat_ind = 731
+debug_max_stat_ind = 1001
 i_draw_grid_wind_plot = 1
 
 
@@ -90,6 +91,9 @@ else:
     # Filter out stations with i_ind = 0
     # (those with height = -99999999)
     use_stat = stat_i_inds != 0
+
+# TODO: DEBUG
+#use_stat = file_inds <= debug_max_stat_ind
 
 # filter out missing files
 exist_file_inds = [int(file[5:])-ind0 for file in \
@@ -275,13 +279,15 @@ if i_draw_grid_wind_plot:
     print(best_model_mean.shape)
     print(centre_model_mean.shape)
     # draw plot
-    plt.scatter(centre_model_mean, best_model_mean, marker=".", color='k')
+    plt.scatter(centre_model_mean, best_model_mean,
+                marker=".",
+                color=get_point_col(centre_model_mean, best_model_mean))
     ax = plt.gca()
     ax.set_xlim((0,limit))
     ax.set_ylim((0,limit))
     ax.set_xlabel('centre grid point')
     ax.set_ylabel('best fitting grid point')
-    ax.grid()
+    #ax.grid()
     draw_error_grid(limit, limit, ax)
     ax.set_aspect('equal')
     draw_error_percentile_lines(centre_model_mean, best_model_mean, ax)
