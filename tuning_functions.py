@@ -10,12 +10,53 @@ from datetime import datetime, timedelta
 #    var = var/sd_var
 #    return(var, mean_var, sd_var)
 
+def box_cox(data, l1, l2):
+    if l1 != 0:
+        data = (data + l2)**l1 - 1
+    else:
+        data = np.log(data + l2)
+    return(data)
+
 
 def apply_scaling(var):
     sd_var = np.std(var)
     var = var/sd_var
     return(var, sd_var)
 
+def find_hourly_max(gust, fields=None):
+    if fields is not None: 
+        # find maximum gust
+        maxid = gust.argmax(axis=1)
+        I = np.indices(maxid.shape)
+        gust_max = gust[I,maxid].squeeze()
+        max_fields = {}
+        for field_name,value in fields.items():
+            max_fields[field_name] = fields[field_name][I,maxid].squeeze()
+        return(gust_max, max_fields)
+    else:
+        gust_max = np.max(gust, axis=1)
+        return(gust_max)
+
+
+def calc_bins(n_bins, max_val_err_space=60, weight_slope=0):
+    bin_limits = np.linspace(0,max_val_err_space, n_bins+1)
+    bins = {'1_1':[],'err':[]}
+    weight0 = 1
+    bin_weights = []
+    for i in range(0,n_bins):
+        bins['err'].append( (bin_limits[i],bin_limits[i+1]) )
+        bins['1_1'].append( (bin_limits[i]*np.sqrt(2),
+                             bin_limits[i+1]*np.sqrt(2)) )
+        # weights (assuming linear trend with slope weights_slope)
+        bin_weights.append( weight0 + weight_slope*i )
+
+    print('######################################')
+    print('bins err space: ' + str(bins['err']))
+    print('bins 1_1 space: ' + str(bins['1_1']))
+    print('bin  weights  : ' + str(bin_weights))
+    print('######################################')
+    
+    return(bins, bin_weights)
 
 
 

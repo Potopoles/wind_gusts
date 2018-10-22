@@ -4,16 +4,16 @@
 HIST = 'hist'
 # 1st level: key to model data
 # data[MODEL]
-MODEL = 'model'
+#MODEL = 'model'
 # 1st level: key to obs data
 # data[OBS]
 OBS = 'obs'
-# 1st level: key to combined data
-# data[BOTH]
-BOTH = 'both'
-# 1st level:  key to hourly scores data
-# data[SCORE]
-SCORE = 'scores'
+## 1st level: key to combined data
+## data[BOTH]
+#BOTH = 'both'
+## 1st level:  key to hourly scores data
+## data[SCORE]
+#SCORE = 'scores'
 # 1st level: key to names of stations
 # data[STAT_NAMES]
 STAT_NAMES = 'station_names'
@@ -23,18 +23,15 @@ STAT_META = 'station_meta'
 # 2nd level: key in MODEL and OBS leading to station dictionary
 # data[MODEL/OBS][STAT]
 STAT = 'stations'
-# 2nd level: key in BOTH containing arrays for all stations combined 
-# data[BOTH][ALL_STAT]
-ALL_STAT = 'all_stations'
-# 3rd level: key in STAT leading to raw (time step) model output fields 
-# data[MODEL][STAT][RAW]
-RAW = 'raw'
-# 3rd level: key in STAT leading to raw (time step) model output fields for brasseur lower bound vertical profile wind & tke
-# data[MODEL][STAT][RAW2]
-RAW2 = 'raw2'
-# 3rd level MODEL:  key to hourly gust data
-# data[MODEL][STAT][FIELDS]
-FIELDS = 'fields'
+## 2nd level: key in BOTH containing arrays for all stations combined 
+## data[BOTH][ALL_STAT]
+#ALL_STAT = 'all_stations'
+## 3rd level: key in STAT leading to raw (time step) model output fields 
+## data[MODEL][STAT][RAW]
+#RAW = 'raw'
+## 3rd level MODEL:  key to hourly gust data
+## data[MODEL][STAT][FIELDS]
+#FIELDS = 'fields'
 
 
 

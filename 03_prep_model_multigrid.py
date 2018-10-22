@@ -7,6 +7,7 @@ from namelist_cases import Case_Namelist
 import namelist_cases as nl
 import pickle, os, sys
 from netCDF4 import Dataset
+
 from tuning_functions import (prepare_model_params)
 from plot_functions import (draw_error_percentile_lines,
                             draw_error_grid,
@@ -123,8 +124,8 @@ data = pd.read_pickle(CN.obs_path)
 # stations to use as given by observation data set
 obs_stations = list(data[G.OBS][G.STAT].keys())
 
-# add entry for model data
-data[G.MODEL] = {G.STAT:{}}
+## add entry for model data
+#data[G.MODEL] = {G.STAT:{}}
 
 # set up containers for model_fields
 model_fields = {}
@@ -142,10 +143,14 @@ centre_model_mean = np.full( ( n_hours_all_lm, len(mod_stations) ), np.nan )
 ###########################################################################
 ############### PART 1: STATION META DATA
 ###########################################################################
+data[G.STAT_NAMES] = []
 for sI,stat_key in enumerate(mod_stations):
     stat_fort_ind = file_inds[sI]
 
     if stat_key in obs_stations:
+
+        data[G.STAT_NAMES].append(stat_key)
+
         ## Add model related information to station metadata
         #series = pd.Series([stat_dz[sI]], index=data[G.STAT_META][stat_key].index)
         #data[G.STAT_META][stat_key]['dz'] = series
@@ -173,6 +178,11 @@ for sI,stat_key in enumerate(mod_stations):
         series = pd.Series(hsurf[stat_j_inds[[sI]],stat_i_inds[[sI]]],
                         index=data[G.STAT_META][stat_key].index)
         data[G.STAT_META][stat_key]['hsurf'] = series
+
+    else:
+        data[G.STAT_NAMES].append(np.nan)
+
+data[G.STAT_NAMES] = np.asarray(data[G.STAT_NAMES])
 
 
 
@@ -245,16 +255,37 @@ elif njobs > 1:
 ###########################################################################
 print('##################')
 
-# save names of used stations
-data[G.STAT_NAMES] = list(data[G.MODEL][G.STAT].keys())
+## save names of used stations
+#data[G.STAT_NAMES] = list(data[G.MODEL][G.STAT].keys())
 
 data[G.HIST].append(hist_tag)
 
+print(sys.getsizeof(obs_mean)/1000000)
+print(sys.getsizeof(obs_gust)/1000000)
+size = 0
+for field in model_fields.keys():
+    size += sys.getsizeof(model_fields[field])
+print(size/1000000)
+print(sys.getsizeof(best_model_mean)/1000000)
+print(sys.getsizeof(centre_model_mean)/1000000)
+#quit()
+
+
 data['obs_mean'] = obs_mean
 data['obs_gust'] = obs_gust
-data['model_fields'] = model_fields
+#data['model_fields'] = model_fields
 data['best_model_mean'] = best_model_mean
 data['centre_model_mean'] = centre_model_mean
+
+ncf = Dataset(CN.mod_nc_path, 'w')
+shape = model_fields['zvp10'].shape
+ncf.createDimension('hour', size=shape[0])
+ncf.createDimension('station', size=shape[1])
+ncf.createDimension('ts', size=shape[2])
+for field_name in model_fields.keys():
+    var = ncf.createVariable(field_name, 'f', ('hour','station','ts'))
+    var[:] = model_fields[field_name]
+ncf.close()
 
 # save output file
 pickle.dump(data, open(CN.mod_path, 'wb'))

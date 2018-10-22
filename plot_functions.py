@@ -128,13 +128,13 @@ def draw_1_1_scatter(xvals, yvals, xlims, ylims,
     error = xy_rot[1,:]
     rmse = np.sqrt(np.mean(error**2))
     corr = np.corrcoef(xvals, yvals)
-    me   = np.mean(-error) # positive values means model overestimates
+    me   = np.mean(error) # positive values means model overestimates
     #mae  = np.mean(np.abs(error))
     pods = np.zeros(len(categ_thrshs))
     fars = np.zeros(len(categ_thrshs))
     for tI,thrsh in enumerate(categ_thrshs):
-        pods[tI] = np.sum(xvals[yvals > thrsh] >= thrsh)/np.sum(yvals > thrsh)
-        fars[tI] = np.sum(yvals[xvals > thrsh] <  thrsh)/np.sum(xvals > thrsh)
+        pods[tI] = np.sum(yvals[xvals > thrsh] >= thrsh)/np.sum(xvals > thrsh)
+        fars[tI] = np.sum(xvals[yvals > thrsh] <  thrsh)/np.sum(yvals > thrsh)
     # print scores on plot
     col = 'k'
     offs = 0.05
@@ -176,7 +176,7 @@ def draw_error_scatter(mod, obs, xlims, ylims,
 
 
 
-def plot_type1(obs, gust, gust_init, obs_mean, mod_mean):
+def plot_type1(obs, gust, gust_ref, obs_mean, mod_mean):
 
     xlims = (0,60)
     ylims = (0,60)
@@ -190,43 +190,38 @@ def plot_type1(obs, gust, gust_init, obs_mean, mod_mean):
                         wspace=0.23,hspace=0.3)
 
     ##########################################################################
-    # obs gust vs model gust initial
-    xlab = 'MOD gust [m/s]'
-    ylab = 'OBS gust [m/s]'
-    title = 'original MOD gust vs OBS gust'
+    xlab = 'OBS gust [m/s]'
+    ylab = 'MOD gust [m/s]'
+    title = 'reference MOD gust vs OBS gust'
     ax = axes[0,0]
-    draw_1_1_scatter(gust_init, obs, xlims, ylims,
+    draw_1_1_scatter(obs, gust_ref, xlims, ylims,
                     xlab, ylab, title, ax, legend_loc=4)
 
     ##########################################################################
-    # obs gust vs model gust
-    xlab = 'MOD gust [m/s]'
-    ylab = 'OBS gust [m/s]'
+    xlab = 'OBS gust [m/s]'
+    ylab = 'MOD gust [m/s]'
     title = 'MOD gust vs OBS gust'
     ax = axes[0,1]
-    draw_1_1_scatter(gust, obs, xlims, ylims,
+    draw_1_1_scatter(obs, gust, xlims, ylims,
                     xlab, ylab, title, ax, draw_legend=False)
 
     ##########################################################################
-    # obs mean vs model mean
-    xlab = 'MOD mean wind [m/s]'
-    ylab = 'OBS mean wind [m/s]'
+    xlab = 'OBS mean wind [m/s]'
+    ylab = 'MOD mean wind [m/s]'
     title = 'MOD wind vs OBS wind'
     ax = axes[0,2]
-    draw_1_1_scatter(mod_mean, obs_mean, xlims_mean, ylims_mean,
+    draw_1_1_scatter(obs_mean, mod_mean, xlims_mean, ylims_mean,
                     xlab, ylab, title, ax, draw_legend=False)
 
     ##########################################################################
-    # original model error vs obs
     xlab = 'OBS gust [m/s]'
-    ylab = 'original MOD gust error [m/s]'
-    title = 'original MOD gust error vs OBS gust'
+    ylab = 'reference MOD gust error [m/s]'
+    title = 'reference MOD gust error vs OBS gust'
     ax = axes[1,0]
-    draw_error_scatter(gust_init, obs, xlims, ylims_err,
+    draw_error_scatter(gust_ref, obs, xlims, ylims_err,
                     xlab, ylab, title, ax, draw_legend=False)
 
     ##########################################################################
-    # model error vs obs
     xlab = 'OBS gust [m/s]'
     ylab = 'MOD gust error [m/s]'
     title = 'MOD gust error vs OBS gust'
@@ -235,7 +230,6 @@ def plot_type1(obs, gust, gust_init, obs_mean, mod_mean):
                     xlab, ylab, title, ax, draw_legend=False)
 
     ##########################################################################
-    # model mean error vs obs mean
     xlab = 'OBS mean wind [m/s]'
     ylab = 'MOD mean wind error [m/s]'
     title = 'MOD mean wind error vs OBS mean wind'

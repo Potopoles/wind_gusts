@@ -12,7 +12,7 @@ model_dt        = 10
 nhrs_forecast   = 24
 #i_load          = 0
 #i_train         = 1
-delete_existing_param_file = 1
+#delete_existing_param_file = 1
 #max_mean_wind_error = 10000.0
 #sample_weight = 'linear'
 #sample_weight = 'squared'
@@ -87,19 +87,11 @@ class Case_Namelist:
         # 9 Gewittertage
         {OBS_RAW:['20180529sfc.','20180530sfc.','20180531sfc.','20180601sfc.'],
                     OBS:'20180530_Gewittertage', MOD:'20180530_Gewittertage'},
-        ## 10 all
-        #{OBS_RAW:['20170304sfc.','20170305sfc.','20170306sfc.','20170307sfc.','20170308sfc.',
-        #          '20170719sfc.',
-        #          '20170723sfc.','20170724sfc.','20170725sfc.','20170726sfc.',
-        #          '20180102sfc.','20180103sfc.','20180104sfc.',
-        #          '20180115sfc.','20180116sfc.','20180117sfc.','20180118sfc.','20180119sfc.',
-        #          '20180228sfc.','20180301sfc.','20180302sfc.',
-        #          '20180428sfc.','20180429sfc.','20180430sfc.','20180501sfc.',
-        #          '20180502sfc.','20180503sfc.','20180504sfc.','20180505sfc.',
-        #          '20180529sfc.','20180530sfc.','20180531sfc.','20180601sfc.'],
-        #            OBS:'All', MOD:'All'},
         # 10 all
-        {OBS_RAW:['20180102sfc.','20180103sfc.','20180104sfc.',
+        {OBS_RAW:['20170304sfc.','20170305sfc.','20170306sfc.','20170307sfc.','20170308sfc.',
+                  '20170719sfc.',
+                  '20170723sfc.','20170724sfc.','20170725sfc.','20170726sfc.',
+                  '20180102sfc.','20180103sfc.','20180104sfc.',
                   '20180115sfc.','20180116sfc.','20180117sfc.','20180118sfc.','20180119sfc.',
                   '20180228sfc.','20180301sfc.','20180302sfc.',
                   '20180428sfc.','20180429sfc.','20180430sfc.','20180501sfc.',
@@ -181,6 +173,7 @@ class Case_Namelist:
                         '_EXPID_' + str(self.exp_id)
 
         self.mod_path = self.data_folder + self.case_name + '.pkl'
+        self.mod_nc_path = self.data_folder + self.case_name + '.nc'
 
         self.plot_path = self.plot_base_dir + self.case_name + '/'
 
