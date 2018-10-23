@@ -1,4 +1,6 @@
 ############################
+grid_point_selection = 'BEST'
+#grid_point_selection = 'CENTRE'
 # TRAIN AND PREPARE SCRIPT SETTINGS
 # 10 all
 # 11 June_18
@@ -6,7 +8,7 @@
 # 13 June 18 and December 17
 case_index      = 0
 # do not plot (0) show plot (1) save plot (2)
-i_plot          = 1
+i_plot          = 0
 i_plot_type     = 1
 model_dt        = 10
 nhrs_forecast   = 24
@@ -19,7 +21,7 @@ nhrs_forecast   = 24
 #sample_weight = '1'
 ############################
 # APPLY SCRIPT SETTINGS
-train_case_index    = 10
+train_case_index    = 0
 apply_case_index    = 13
 apply_i_plot        = 2
 apply_model_dt      = 10
@@ -170,7 +172,8 @@ class Case_Namelist:
                             '/' + str(self.exp_id) + '/'
 
         self.case_name = 'MOD_' + self.cases[case_ind][self.MOD] + \
-                        '_EXPID_' + str(self.exp_id)
+                        '_EXPID_' + str(self.exp_id) + '_' + \
+                        grid_point_selection 
 
         self.mod_path = self.data_folder + self.case_name + '.pkl'
         self.mod_nc_path = self.data_folder + self.case_name + '.nc'

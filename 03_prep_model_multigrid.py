@@ -22,8 +22,10 @@ model_dt = nl.model_dt
 nhrs_forecast = nl.nhrs_forecast
 # starting index of fortran files
 ind0 = 701
+debug_min_stat_ind = 701
 debug_max_stat_ind = 1001
 i_draw_grid_wind_plot = 1
+grid_point_selection = nl.grid_point_selection
 
 
 njobs = 1
@@ -31,7 +33,7 @@ if len(sys.argv) > 1:
     njobs = int(sys.argv[1])
     print('Number of jobs is set to ' + str(njobs) + '.')
 else:
-    print('Number of jobs not given. Default values is ' + str(njobs) + '.')
+    print('Number of jobs not given. Default value is ' + str(njobs) + '.')
 
 use_model_fields = ['k_bra_es','k_bra_lb','k_bra_ub',
                     'tcm', 'zvp10',
@@ -84,7 +86,7 @@ stat_i_inds = np.genfromtxt(mod_stations_file,
                 skip_header=2, dtype=np.str)[:,8].astype(np.int)
 
 if case_index == 0:
-    use_stat = file_inds <= debug_max_stat_ind
+    use_stat = (file_inds <= debug_max_stat_ind) & (file_inds >= debug_min_stat_ind)
     # Filter out stations with i_ind = 0
     # (those with height = -99999999)
     use_stat[stat_i_inds == 0] = False
@@ -95,6 +97,7 @@ else:
 
 # TODO: DEBUG
 #use_stat = file_inds <= debug_max_stat_ind
+
 
 # filter out missing files
 exist_file_inds = [int(file[5:])-ind0 for file in \
@@ -185,6 +188,7 @@ for sI,stat_key in enumerate(mod_stations):
 data[G.STAT_NAMES] = np.asarray(data[G.STAT_NAMES])
 
 
+#obs_stations = ['NABDUE']
 
 ###########################################################################
 ############### PART 2: PREPARE MODEL DATA
@@ -192,16 +196,17 @@ data[G.STAT_NAMES] = np.asarray(data[G.STAT_NAMES])
 if njobs == 1:
     for sI,stat_key in enumerate(mod_stations):
         stat_fort_ind = file_inds[sI]
+        #print(stat_fort_ind)
 
         if stat_key in obs_stations:
 
             result = prepare_model_params(use_model_fields, lm_runs, CN,
                                 stat_fort_ind, stat_key, mod_stations,
                                 model_params, model_dt, nhrs_forecast,
-                                data[G.OBS][G.STAT][stat_key], sI, njobs,)
-
-            obs_mean[:,sI]  = result[0]
-            obs_gust[:,sI]  = result[1]
+                                data[G.OBS][G.STAT][stat_key], sI, njobs,
+                                grid_point_selection)
+            obs_mean[:,sI] = np.nan
+            obs_gust[:,sI]  = np.nan
             model_fields_stat = result[2]
             for field_name in use_model_fields:
                 model_fields[field_name][:,sI,:] = \
@@ -224,7 +229,8 @@ elif njobs > 1:
             input.append((use_model_fields, lm_runs, CN,
                         stat_fort_ind, stat_key, mod_stations,
                         model_params, model_dt, nhrs_forecast,
-                        data[G.OBS][G.STAT][stat_key], sI, njobs))
+                        data[G.OBS][G.STAT][stat_key], sI, njobs,
+                        grid_point_selection))
         else:
             print('############# do not use ' + stat_key)
 
@@ -260,23 +266,22 @@ print('##################')
 
 data[G.HIST].append(hist_tag)
 
-print(sys.getsizeof(obs_mean)/1000000)
-print(sys.getsizeof(obs_gust)/1000000)
-size = 0
-for field in model_fields.keys():
-    size += sys.getsizeof(model_fields[field])
-print(size/1000000)
-print(sys.getsizeof(best_model_mean)/1000000)
-print(sys.getsizeof(centre_model_mean)/1000000)
-#quit()
+#print(sys.getsizeof(obs_mean)/1000000)
+#print(sys.getsizeof(obs_gust)/1000000)
+#size = 0
+#for field in model_fields.keys():
+#    size += sys.getsizeof(model_fields[field])
+#print(size/1000000)
+#print(sys.getsizeof(best_model_mean)/1000000)
+#print(sys.getsizeof(centre_model_mean)/1000000)
 
 
 data['obs_mean'] = obs_mean
 data['obs_gust'] = obs_gust
-#data['model_fields'] = model_fields
 data['best_model_mean'] = best_model_mean
 data['centre_model_mean'] = centre_model_mean
 
+# Store model output fields in nc file.
 ncf = Dataset(CN.mod_nc_path, 'w')
 shape = model_fields['zvp10'].shape
 ncf.createDimension('hour', size=shape[0])
@@ -291,11 +296,10 @@ ncf.close()
 pickle.dump(data, open(CN.mod_path, 'wb'))
 
 
-
 ###########################################################################
 ############### PART 4: DRAW PLOT
 ###########################################################################
-if i_draw_grid_wind_plot:
+if (i_draw_grid_wind_plot and (grid_point_selection == 'BEST')):
     # create directories
     if not os.path.exists(CN.plot_path):
         os.mkdir(CN.plot_path)
@@ -321,7 +325,7 @@ if i_draw_grid_wind_plot:
     #ax.grid()
     draw_error_grid(limit, limit, ax)
     ax.set_aspect('equal')
-    draw_error_percentile_lines(centre_model_mean, best_model_mean, ax)
+    draw_error_percentile_lines(centre_model_mean, best_model_mean, ax, rot_angle=-np.pi/4)
     #plt.show()
     plot_name = CN.plot_path + 'grid_point_wind.png'
     plt.savefig(plot_name)

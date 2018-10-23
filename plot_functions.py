@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from tuning_functions import rotate
+from training_functions import rotate
 
 
 

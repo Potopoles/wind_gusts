@@ -6,8 +6,8 @@
 #SBATCH --cpus-per-task=24
 #SBATCH --account='s83'
 #SBATCH --partition=postproc
-#SBATCH --output=bOut/sbatch0.out
-#SBATCH --error=bOut/sbatch0.err
+#SBATCH --output=bOut/sbatch1.out
+#SBATCH --error=bOut/sbatch1.err
 
 
 echo -e "$SLURM_JOB_NAME started on $(date):\n $command $1 $2\n"
