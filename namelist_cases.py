@@ -8,7 +8,7 @@ grid_point_selection = 'BEST'
 # 13 June 18 and December 17
 case_index      = 0
 # do not plot (0) show plot (1) save plot (2)
-i_plot          = 0
+i_plot          = 1
 i_plot_type     = 1
 model_dt        = 10
 nhrs_forecast   = 24
@@ -38,8 +38,10 @@ class Case_Namelist:
     raw_mod_folder = '../model_out/'
     # folder where all the data except raw obs files is saved
     data_folder = '../data/'
-    # folder where the trained parameters are stored
-    param_folder = data_folder + 'params/'
+    # folder where the trained coefficients are stored
+    coef_folder = data_folder + 'coefs/'
+    # folder where the scores of the trained models are stored
+    output_folder = data_folder + 'output/'
     # plots are put here
     plot_base_dir = '../plots/'
 
@@ -180,83 +182,8 @@ class Case_Namelist:
 
         self.plot_path = self.plot_base_dir + self.case_name + '/'
 
-
-###########################################################################
-############### TRAIN
-###########################################################################
-
-        self.train_readj_path = self.data_folder + \
-                        'train_readj_' + self.case_name + '.pkl'
-
-        #self.train_stat_path = self.data_folder + \
-        #                'train_stat_MOD_' + self.cases[case_ind][self.MOD] + \
-        #                '_EXPID_' + str(self.exp_id) + '.pkl'
-
-        #self.train_braes_path = self.data_folder + \
-        #                'train_braes_MOD_' + self.cases[case_ind][self.MOD] + \
-        #                '_EXPID_' + str(self.exp_id) + '.pkl'
-
-        #self.train_bralb_path = self.data_folder + \
-        #                'train_bralb_MOD_' + self.cases[case_ind][self.MOD] + \
-        #                '_EXPID_' + str(self.exp_id) + '.pkl'
-
-        #self.train_braub_path = self.data_folder + \
-        #                'train_braub_MOD_' + self.cases[case_ind][self.MOD] + \
-        #                '_EXPID_' + str(self.exp_id) + '.pkl'
-
-        #self.train_icon_path = self.data_folder + \
-        #                'train_icon_MOD_' + self.cases[case_ind][self.MOD] + \
-        #                '_EXPID_' + str(self.exp_id) + '.pkl'
-
-        #self.phys_bra_path = self.data_folder + \
-        #                'train_phys_MOD_' + self.cases[case_ind][self.MOD] + \
-        #                '_EXPID_' + str(self.exp_id) + '.pkl'
-
-
-        ## new readjustment approach
-        #self.train_readjNEW_path = self.data_folder + \
-        #                'train_readjNEW_MOD_' + self.cases[case_ind][self.MOD] + \
-        #                '_EXPID_' + str(self.exp_id) + '.pkl'
-
-        #### ML
-
-        #self.ML_braes_path = self.data_folder + \
-        #                'ML_braes_MOD_' + self.cases[case_ind][self.MOD] + \
-        #                '_EXPID_' + str(self.exp_id) + '.pkl'
-
-
-###########################################################################
-############### TRAINED PARAMETERS
-###########################################################################
-
-        self.params_readj_path = self.param_folder + 'readj_MOD_' + \
-                        self.cases[case_ind][self.MOD] + '_EXPID_' + \
-                        str(self.exp_id) + '.pkl'
-
-        self.params_stat_path = self.param_folder + 'stat_MOD_' + \
-                        self.cases[case_ind][self.MOD] + '_EXPID_' + \
-                        str(self.exp_id) + '.pkl'
-
-        self.params_braes_path = self.param_folder + 'braes_MOD_' + \
-                        self.cases[case_ind][self.MOD] + '_EXPID_' + \
-                        str(self.exp_id) + '.pkl'
-
-        self.params_bralb_path = self.param_folder + 'bralb_MOD_' + \
-                        self.cases[case_ind][self.MOD] + '_EXPID_' + \
-                        str(self.exp_id) + '.pkl'
-
-        self.params_icon_path = self.param_folder + 'icon_MOD_' + \
-                        self.cases[case_ind][self.MOD] + '_EXPID_' + \
-                        str(self.exp_id) + '.pkl'
-
-        self.params_phys_bra_path = self.param_folder + 'phys_MOD_' + \
-                        self.cases[case_ind][self.MOD] + '_EXPID_' + \
-                        str(self.exp_id) + '.pkl'
-
-        self.params_braub_path = self.param_folder + 'braub_MOD_' + \
-                        self.cases[case_ind][self.MOD] + '_EXPID_' + \
-                        str(self.exp_id) + '.pkl'
-
+        self.output_path = self.output_folder + self.case_name + '/'
+        self.output_binary = self.output_path + 'binary.pkl'
 
         print('##########################################')
         print(self.case_name)

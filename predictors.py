@@ -12,17 +12,145 @@ class Predictors:
         self.ncf = ncf
 
         preproc = {}
-        no_preproc_fields = ['zvp10', 'zv_bra_lb', 'zv_bra_es', 'zv_bra_ub']
+        # fields that can be loaded directly without any preprocessing
+        # after loading
+        no_preproc_fields = ['zvp10', 'zv_bra_lb', 'zv_bra_es', 'zv_bra_ub',
+                            'tkel1', 'z0']
         for fld in no_preproc_fields:
             preproc[fld]        = self.load
+        # fields that need some form of preprocessing
         preproc['tcm']          = self.calc_tcm
         preproc['IFS']          = self.calc_IFS_gust_term
+        preproc['wdir']         = self.calc_wdir
+        preproc['zbralb']       = self.calc_zbra
+        preproc['zbraes']       = self.calc_zbra
+        preproc['zbraub']       = self.calc_zbra
         self.preproc = preproc
 
+        ps = {}
+        self.predictor_structure = ps
+
+        ps['z0']                =   {'fix':0,
+                                    'prod':[('z0',1)]
+                                    }
+        ps['tcm']               =   {'fix':0,
+                                    'prod':[('tcm',1)]
+                                    }
+        ps['tke']               =   {'fix':0,
+                                    'prod':[('tkel1',1)]
+                                    }
+        ps['IFS']               =   {'fix':0,
+                                    'prod':[('IFS',1)]
+                                    }
+        #######################################################################
+        ###### zvp10
+        #######################################################################
+        ps['zvp10fix']          =   {'fix':1,
+                                    'prod':[('zvp10',1)]
+                                    }
+        ps['zvp10']             =   {'fix':0,
+                                    'prod':[('zvp10',1)]
+                                    }
+        ps['zvp10_2']             =   {'fix':0,
+                                    'prod':[('zvp10',2)]
+                                    }
+        ps['zvp10_3']             =   {'fix':0,
+                                    'prod':[('zvp10',3)]
+                                    }
+        ps['(zvp10)']           =   {'fix':0,'transform':'box',
+                                    'prod':[('zvp10',1)]
+                                    }
+        ps['(zvp10)_2']           =   {'fix':0,'transform':'box',
+                                    'prod':[('zvp10',2)]
+                                    }
+        ps['(zvp10)_3']           =   {'fix':0,'transform':'box',
+                                    'prod':[('zvp10',3)]
+                                    }
+        ps['zvp10_tcm']         =   {'fix':0,
+                                    'prod':[('zvp10',1),('tcm',1)]
+                                    }
+        ps['zvp10_2_tcm']       =   {'fix':0,
+                                    'prod':[('zvp10',2),('tcm',1)]
+                                    }
+        ps['zvp10_wdir']        =   {'fix':0,
+                                    'prod':[('zvp10',1),('wdir',1)]
+                                    }
+        ps['zvp10_z0']          =   {'fix':0,
+                                    'prod':[('zvp10',1),('z0',1)]
+                                    }
+        ps['zvp10_tke']         =   {'fix':0,
+                                    'prod':[('zvp10',1),('tkel1',1)]
+                                    }
+        ps['zvp10_IFS']         =   {'fix':0,
+                                    'prod':[('zvp10',1),('IFS',1)]
+                                    }
+        #######################################################################
+        ###### bralb
+        #######################################################################
+        ps['zvp10_bralb']       =   {'fix':0,
+                                    'prod':[('zvp10',1),('zv_bra_lb',1)]
+                                    }
+        ps['zvp10_bralb_2']     =   {'fix':0,
+                                    'prod':[('zvp10',1),('zv_bra_lb',2)]
+                                    }
+        ps['zvp10_bralb_3']     =   {'fix':0,
+                                    'prod':[('zvp10',1),('zv_bra_lb',3)]
+                                    }
+        ps['zbralb']            =   {'fix':0,
+                                    'prod':[('zbralb',1)]
+                                    }
+        ps['zvp10_zbralb']      =   {'fix':0,
+                                    'prod':[('zvp10',1),('zbralb',1)]
+                                    }
+        ps['zvp10_zbralb_2']    =   {'fix':0,
+                                    'prod':[('zvp10',1),('zbralb',2)]
+                                    }
+        ps['zvp10_zbralb_3']    =   {'fix':0,
+                                    'prod':[('zvp10',1),('zbralb',3)]
+                                    }
+        #######################################################################
+        ###### braes
+        #######################################################################
+        ps['zvp10_braes']       =   {'fix':0,
+                                    'prod':[('zvp10',1),('zv_bra_es',1)]
+                                    }
+        ps['zvp10_braes_2']     =   {'fix':0,
+                                    'prod':[('zvp10',1),('zv_bra_es',2)]
+                                    }
+        ps['zvp10_braes_3']     =   {'fix':0,
+                                    'prod':[('zvp10',1),('zv_bra_es',3)]
+                                    }
+        ps['zbraes']            =   {'fix':0,
+                                    'prod':[('zbraes',1)]
+                                    }
+        ps['zvp10_zbraes']      =   {'fix':0,
+                                    'prod':[('zvp10',1),('zbraes',1)]
+                                    }
+        ps['zvp10_zbraes_2']    =   {'fix':0,
+                                    'prod':[('zvp10',1),('zbraes',2)]
+                                    }
+        ps['zvp10_zbraes_3']    =   {'fix':0,
+                                    'prod':[('zvp10',1),('zbraes',3)]
+                                    }
+        #######################################################################
+        ###### braub
+        #######################################################################
+        ps['zvp10_braub']       =   {'fix':0,
+                                    'prod':[('zvp10',1),('zv_bra_ub',1)]
+                                    }
+        ps['zvp10_braub_2']     =   {'fix':0,
+                                    'prod':[('zvp10',1),('zv_bra_ub',2)]
+                                    }
+        ps['zvp10_braub_3']     =   {'fix':0,
+                                    'prod':[('zvp10',1),('zv_bra_ub',3)]
+                                    }
+        ps['zbraub']            =   {'fix':0,
+                                    'prod':[('zbraub',1)]
+                                    }
 
 
     def load(self, field_name):
-        #print('load ' + str(field_name))
+        print('load ' + str(field_name))
         field_values = np.ma.filled(self.ncf[field_name][:], fill_value=np.nan)
         return(field_values)
 
@@ -80,3 +208,37 @@ class Predictors:
         gust_term[smaller0] = ustar[smaller0]*ugn * (1 - 0.5/12*idl[smaller0])**(1/3)
 
         return(gust_term)
+
+    def calc_zbra(self, field_name):
+        bra_type = field_name[-2:]
+        if bra_type == 'es':
+            kbra_load_name = 'k_bra_es'
+        elif bra_type == 'lb':
+            kbra_load_name = 'k_bra_lb'
+        elif bra_type == 'ub':
+            kbra_load_name = 'k_bra_ub'
+        else:
+            raise ValueError()
+        kbra = self.load(kbra_load_name)
+        zbra = np.copy(kbra)
+        kalts = np.loadtxt('../data/kaltitudes.txt')
+        kinds = kalts[:,0].astype(np.int)
+        kalts = kalts[:,1]
+        for i,kind in enumerate(kinds):
+            zbra[kbra == kind] = kalts[i]
+        return(zbra)
+
+
+    def calc_wdir(self, field_name):
+
+        wdir_shift = np.pi*1/4
+
+        umlev = self.load('ul1')
+        vmlev = self.load('vl1')
+
+        wind_abs = np.sqrt(umlev**2 + vmlev**2)
+        wind_dir_trig_to = np.arctan2(umlev/wind_abs, vmlev/wind_abs)
+
+        wdir = np.sin(wind_dir_trig_to + wdir_shift)
+
+        return(wdir)

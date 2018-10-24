@@ -27,7 +27,6 @@ debug_max_stat_ind = 1001
 i_draw_grid_wind_plot = 1
 grid_point_selection = nl.grid_point_selection
 
-
 njobs = 1
 if len(sys.argv) > 1:
     njobs = int(sys.argv[1])

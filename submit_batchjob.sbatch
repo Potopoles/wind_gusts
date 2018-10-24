@@ -1,9 +1,9 @@
 #!/bin/bash -l
 #
-#SBATCH --job-name="03"
+#SBATCH --job-name="run_training"
 #SBATCH --time=08:00:00
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=24
+#SBATCH --cpus-per-task=2
 #SBATCH --account='s83'
 #SBATCH --partition=postproc
 #SBATCH --output=bOut/sbatch1.out

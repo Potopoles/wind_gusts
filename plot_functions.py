@@ -3,35 +3,7 @@ import matplotlib.pyplot as plt
 from training_functions import rotate
 
 
-
-# THIS IS WAY TOO SLOW
-#def get_point_col(vals1, vals2):
-#    print('start')
-#    t0 = time.time()
-#    max_rad = 1.0 
-#
-#    cmap = plt.cm.get_cmap('gray')
-#
-#    N = len(vals1)
-#    nk_array = np.zeros( (N, 2) )
-#    nk_array[:,0] = vals1
-#    nk_array[:,1] = vals2
-#
-#    kdtree = KDTree(nk_array, leafsize=10)
-#    result = kdtree.query_ball_tree(kdtree, r=max_rad, eps=1.3)
-#    result = np.asarray([len(res) for res in result])
-#    #result = 1 - np.sqrt(result/np.max(result))
-#    #result = 1 - result/np.max(result)
-#    result = np.sqrt(result/np.max(result))
-#    col = cmap(result)
-#    t1 = time.time()
-#    print(t1-t0)
-#    return(col)
-
-# THIS IS NICE!
 def get_point_col(vals1, vals2, xmin=0, xmax=100, ymin=-100, ymax=100):
-    #dx = 0.5
-    #dy = 1
     dx = 1
     dy = 1
     dx = dx*1
@@ -41,7 +13,12 @@ def get_point_col(vals1, vals2, xmin=0, xmax=100, ymin=-100, ymax=100):
     H, xseq, yseq = np.histogram2d(vals1, vals2, bins=(xseq,yseq), normed=True)
     inds1 = np.digitize(vals1, xseq) - 1
     inds2 = np.digitize(vals2, yseq) - 1
-    result = H[inds1,inds2]
+    try:
+        result = H[inds1,inds2]
+    except:
+        print('WARNING: Troubles setting colors in get_point_col.' + \
+                'Too large values.')
+        result = 0.
 
     cmap = plt.cm.get_cmap('gray')
 
@@ -52,9 +29,6 @@ def get_point_col(vals1, vals2, xmin=0, xmax=100, ymin=-100, ymax=100):
 
 
 def draw_error_percentile_lines(x, y, ax, draw_legend=True, loc=0, rot_angle=0):
-
-    #rot_angle = -np.pi/4
-    #rot_angle = 0
 
     # PREPARE PERCENTILE LINES
     ###############
@@ -74,8 +48,6 @@ def draw_error_percentile_lines(x, y, ax, draw_legend=True, loc=0, rot_angle=0):
 
     speed = xy_rot[0,:]
     error = xy_rot[1,:]
-
-    #ax.scatter(speed, error, color='grey', marker=".")
 
     mp_borders = np.arange(np.floor(0),np.ceil(np.max(speed)),dmp)
     mp_x = mp_borders[:-1] + np.diff(mp_borders)/2
@@ -127,7 +99,7 @@ def draw_1_1_scatter(xvals, yvals, xlims, ylims,
     xy_rot = rotate(xy, -np.pi/4)
     error = xy_rot[1,:]
     rmse = np.sqrt(np.mean(error**2))
-    corr = np.corrcoef(xvals, yvals)
+    corr = np.corrcoef(xvals, yvals)[1,0]
     me   = np.mean(error) # positive values means model overestimates
     #mae  = np.mean(np.abs(error))
     pods = np.zeros(len(categ_thrshs))
@@ -135,6 +107,11 @@ def draw_1_1_scatter(xvals, yvals, xlims, ylims,
     for tI,thrsh in enumerate(categ_thrshs):
         pods[tI] = np.sum(yvals[xvals > thrsh] >= thrsh)/np.sum(xvals > thrsh)
         fars[tI] = np.sum(xvals[yvals > thrsh] <  thrsh)/np.sum(yvals > thrsh)
+    errors = {'rmse':rmse,'corr':corr,'me':me,
+                'pod'+str(categ_thrshs[0]):pods[0],
+                'pod'+str(categ_thrshs[1]):pods[1],
+                'far'+str(categ_thrshs[0]):fars[0],
+                'far'+str(categ_thrshs[1]):fars[1]}
     # print scores on plot
     col = 'k'
     offs = 0.05
@@ -151,13 +128,14 @@ def draw_1_1_scatter(xvals, yvals, xlims, ylims,
             'rmse '+str(np.round(rmse,3)), color=col)
     ax.text(0.02*(xlims[1]-xlims[0]),
             ylims[1]-4*offs*(ylims[1]-ylims[0]),
-            'corr   '+str(np.round(corr[1,0],3)), color=col)
+            'corr   '+str(np.round(corr,3)), color=col)
     ax.text(0.02*(xlims[1]-xlims[0]),
             ylims[1]-5*offs*(ylims[1]-ylims[0]),
             'me    '+str(np.round(me,3)), color=col)
     #ax.text(0.02*(xlims[1]-xlims[0]),
     #        ylims[1]-6*offs*(ylims[1]-ylims[0]),
     #        'mae  '+str(np.round(mae,3)), color=col)
+    return(errors)
 
 
 def draw_error_scatter(mod, obs, xlims, ylims,
@@ -172,8 +150,6 @@ def draw_error_scatter(mod, obs, xlims, ylims,
     ax.set_title(title)
     ax.set_xlabel(xlab)
     ax.set_ylabel(ylab)
-
-
 
 
 def plot_type1(obs, gust, gust_ref, obs_mean, mod_mean):
@@ -194,7 +170,7 @@ def plot_type1(obs, gust, gust_ref, obs_mean, mod_mean):
     ylab = 'MOD gust [m/s]'
     title = 'reference MOD gust vs OBS gust'
     ax = axes[0,0]
-    draw_1_1_scatter(obs, gust_ref, xlims, ylims,
+    errors_ref = draw_1_1_scatter(obs, gust_ref, xlims, ylims,
                     xlab, ylab, title, ax, legend_loc=4)
 
     ##########################################################################
@@ -202,7 +178,7 @@ def plot_type1(obs, gust, gust_ref, obs_mean, mod_mean):
     ylab = 'MOD gust [m/s]'
     title = 'MOD gust vs OBS gust'
     ax = axes[0,1]
-    draw_1_1_scatter(obs, gust, xlims, ylims,
+    errors = draw_1_1_scatter(obs, gust, xlims, ylims,
                     xlab, ylab, title, ax, draw_legend=False)
 
     ##########################################################################
@@ -238,6 +214,7 @@ def plot_type1(obs, gust, gust_ref, obs_mean, mod_mean):
                     xlab, ylab, title, ax, draw_legend=False)
 
 
+    return((errors_ref, errors))
 
 
 

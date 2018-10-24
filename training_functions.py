@@ -1,6 +1,32 @@
+import os
 import numpy as np
 import globals as G
 from datetime import datetime, timedelta
+
+def write_performance_report(CN, data_out, score_name, reverse, scores_ref):
+    #print(score_name)
+
+
+    scores = []
+    model_keys = []
+    for model_key in data_out['models'].keys():
+        model_keys.append(model_key)
+        scores.append(data_out['scores'][model_key][score_name])
+
+    # add reference
+    scores.append(scores_ref[score_name])
+    model_keys.append('REF')
+
+    scores, model_keys = zip(*sorted(zip(scores, model_keys), reverse=reverse))
+    #print(model_keys)
+    #print(scores)
+
+    file_name = CN.output_path + score_name + '.txt'
+    with open(file_name, 'w') as f:
+        f.write('{}\n'.format(score_name))
+        for i in range(0,len(scores)):
+            f.write('{}\t {}\n'.format(model_keys[i], np.round(scores[i],2)))
+
 
 
 #def apply_full_scaling(var):
@@ -16,6 +42,13 @@ from datetime import datetime, timedelta
 #    else:
 #        data = np.log(data + l2)
 #    return(data)
+
+
+def rotate(xy, angle):
+    rot_mat = np.column_stack( [[ np.cos(angle), np.sin(angle)],
+                                [-np.sin(angle), np.cos(angle)]] )
+    xy_rot = rot_mat @ xy
+    return(xy_rot)
 
 
 def fill_dict(lm, value=0):
@@ -299,13 +332,5 @@ def prepare_model_params(use_model_fields, lm_runs, CN,
 
 
 
-def rotate(xy, angle):
-    rot_mat = np.column_stack( [[ np.cos(angle), np.sin(angle)],
-                                [-np.sin(angle), np.cos(angle)]] )
-    #print(rot_mat)
-    #print(xy)
-    xy_rot = rot_mat @ xy
-    #print(xy_rot)
-    return(xy_rot)
 
 
