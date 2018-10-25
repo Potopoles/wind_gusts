@@ -16,25 +16,14 @@ from linear_models import Linear_Models
 import multiprocessing as mp
 
 ############ USER INPUT #############
-case_index = nl.case_index
-CN = Case_Namelist(case_index)
+train_case_index = nl.train_case_index
+apply_case_index = nl.apply_case_index
+CNtrain = Case_Namelist(train_case_index)
+CNapply = Case_Namelist(apply_case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = nl.i_plot
 i_plot_type = nl.i_plot_type
-max_tuning_steps = 1000
-coef_conv_thresh = 1E-3
-n_bins = 4
-weight_slope = 4/n_bins
-weights_err_spaces = {'1_1':0.5,'err':1}
-nth_ts_out = 15
-reset_model_constellation = nl.reset_model_constellation
-
-if len(sys.argv) > 1:
-    run_which_models = [int(sys.argv[1])]
-    print('Run model number ' + str(sys.argv[1]) + '.')
-else:
-    run_which_models = [0]
-    print('Model number not given. Default is ' + str(0) + '.')
+reset_model_constellation = nl.apply_reset_model_constellation
 #####################################
 
 ###############################################################################
@@ -43,16 +32,37 @@ else:
 print('########################### PART 0: General Setup')
 
 # create directories
-if i_plot > 1 and not os.path.exists(CN.plot_path):
-    os.mkdir(CN.plot_path)
+if i_plot > 1 and not os.path.exists(CNapply.plot_path):
+    os.mkdir(CNapply.plot_path)
 
 # load data
-data = pickle.load( open(CN.mod_path, 'rb') )
-ncf = Dataset(CN.mod_nc_path, 'r')
+data = pickle.load( open(CNapply.mod_path, 'rb') )
+ncf = Dataset(CNapply.mod_nc_path, 'r')
+
+# load trained linear models
+lms_stored = pickle.load( open(CNtrain.output_binary, 'rb') )
+#print(lms_stored['models'])
+#print(lms_stored['coefs'])
 
 # load Predictor class and linear model (lm)
 PR = Predictors(ncf, data)
-lms = Linear_Models(PR, CN, reset_model_constellation, run_which_models)
+predictor_list = []
+run_which_models = []
+keys = []
+c = 0
+for model_key,model in lms_stored['models'].items():
+    print(model_key)
+    predictor_list.append(model)
+    keys.append(int(model_key))
+
+    run_which_models.append(c)
+    c += 1
+# order predictor_list according to key numbers
+keys, predictor_list = zip(*sorted(zip(keys, predictor_list), reverse=False))
+
+# load linear model
+lms = Linear_Models(PR, CNapply, reset_model_constellation, run_which_models,
+                    predictor_list)
 
 # data that must be loaded in any case.
 obs_mean = data['obs_mean']
@@ -74,13 +84,10 @@ model_mean = model_mean[~obsmask]
 tcm = tcm[~obsmask]
 zvp10 = zvp10[~obsmask]
 
-#obs_gust[obs_gust < 0.1] = 0.1
-#obs_gust = np.log(obs_gust)
-#obs_gust = np.sqrt(obs_gust)
-
 # Calculate reference gust
 gust_ref = zvp10 + 7.2*zvp10*tcm
 gust_max_ref = find_hourly_max(gust_ref)
+
 
 ###############################################################################
 ###### PART 1: Load and Calculate and Preprocess Predictors
@@ -116,80 +123,92 @@ for model_key,model in lms.models.items():
 
             # transform
             if 'transform' in model[pred_name].keys():
-                pred_values[pred_values < 0.1] = 0.1
-                pred_values = np.log(pred_values)
-
-            # apply scaling
-            if model[pred_name]['fix'] is not 1:
-                pred_values,sd = apply_scaling(pred_values)
-                scales[pred_name] = sd
-            else:
-                scales[pred_name] = 1
+                raise NotImplementedError()
+                #pred_values[pred_values < 0.1] = 0.1
+                #pred_values = np.log(pred_values)
 
             # store
             predictors[pred_name] = pred_values
 
+
+# LOAD COEFFICIENTS 
+rm_keys = []
+for model_key,lm in lms.models.items():
+    try:
+        lms.coefs[model_key] = lms_stored['coefs'][model_key]
+    # if model does not exist because training failed: remove it
+    except KeyError:
+        print('WARNING: Model with key ' + model_key + ' does not exist.')
+        rm_keys.append(model_key)
+for model_key in rm_keys:
+    del lms.models[model_key]
+
+
 ###############################################################################
-###### PART 2: Training and Output
+###### PART 2: Plot and Scores
 ###############################################################################
-print('########################### PART 2: Train')
+print('########################### PART 2: Plot and Scores')
+
+
 
 for model_key,lm in lms.models.items():
+    print(model_key)
+
+    #print(lms.coefs[model_key])
+    #print(lms.models[model_key])
+    #quit()
 
     lm_predictors = {}
     for pred_name in lm.keys():
         lm_predictors[pred_name] = np.copy(predictors[pred_name])
 
-    result = train_linear_model(model_key, lm, lm_predictors,
-                        obs_gust, obs_mean,
-                        gust_max_ref, model_mean,
-                        n_bins, weight_slope, max_tuning_steps,
-                        weights_err_spaces, coef_conv_thresh, nth_ts_out,
-                        i_plot, i_plot_type, plot_type1, CN)
-    lms.coefs[model_key]    = result[0]
-    scores_ref              = result[1]
-    lms.scores[model_key]   = result[2]
+    # calculate timestep gusts
+    gust = np.zeros(lm_predictors[next(iter(lm_predictors))].shape)
+    #print(lm_predictors.keys())
+    for pred_name in lm_predictors.keys():
+        if lm[pred_name]['fix']:
+            gust += lm_predictors[pred_name]
+        else:
+            gust += lms.coefs[model_key][pred_name] * lm_predictors[pred_name]
 
-print('Finished Tuning!')
+    # calculate current hourly gusts
+    gust_max = find_hourly_max(gust)
+    #quit()
+
+
+
+    # PLOT
+    if i_plot_type == 0:
+        plot_error(obs_gust, model_mean, obs_mean, gust_max, gust_max_ref)
+    elif i_plot_type == 1:
+        (scores_ref, scores) = plot_type1(obs_gust, gust_max,
+                                gust_max_ref, obs_mean, model_mean)
+    plt.suptitle('Linear Model '+model_key)
+
+    lms_stored['scores'][model_key] = scores
+
+    if i_plot == 1:
+        plt.show()
+    elif i_plot > 1:
+        if i_plot_type == 0:
+            plot_name = CNapply.plot_path + model_key + '.png'
+        elif i_plot_type == 1:
+            plot_name = CNapply.plot_path + 'plot1_' + model_key + '.png'
+        print(plot_name)
+        plt.savefig(plot_name)
+        plt.close('all')
+    #quit()
+
+
 ###############################################################################
 ###### PART 3: Output
 ###############################################################################
 print('########################### PART 3: Output')
 
-# Unscaling
-for model_key,lm in lms.models.items():
-    for pred_name in lm.keys():
-        lms.coefs[model_key][pred_name] /= scales[pred_name]
-
-
-# SAVE MODEL PARAMETERS 
-if not os.path.exists(CN.output_path):
-    os.mkdir(CN.output_path)
-if not os.path.exists(CN.output_binary):
-    data_out = {}
-    data_out['models'] = {}
-    data_out['coefs'] = {}
-    data_out['scores'] = {}
-    pickle.dump(data_out, open(CN.output_binary, 'wb'))
-data_out = pickle.load( open(CN.output_binary, 'rb') )
-for model_key,lm in lms.models.items():
-    data_out['models'][model_key] = list(lm.keys())
-    data_out['coefs'][model_key] = lms.coefs[model_key]
-    data_out['scores'][model_key] = lms.scores[model_key]
-pickle.dump(data_out, open(CN.output_binary, 'wb'))
-
-
-# Update Coefficient Report
-file_name = CN.output_path + 'coefs.txt'
-with open(file_name, 'w') as f:
-    #for model_key,lm in lms.models.items():
-    for model_key in data_out['coefs'].keys():
-        f.write('{}\t {}\n'.format(model_key, data_out['coefs'][model_key]))
-
 # Update Performance Report
 score_names = ['me', 'rmse', 'corr', 'pod20', 'pod40', 'far20', 'far40']
 reverses =    [False, False, True,   True,     True,     False,  False ]
 for i in range(0,len(score_names)):
-    write_performance_report(CN, data_out, score_names[i], reverses[i],
+    write_performance_report(CNapply, lms_stored, score_names[i], reverses[i],
                             scores_ref)
 

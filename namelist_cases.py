@@ -6,25 +6,20 @@ grid_point_selection = 'BEST'
 # 11 June_18
 # 12 December_17
 # 13 June 18 and December 17
-case_index      = 0
+case_index      = 10
 # do not plot (0) show plot (1) save plot (2)
-i_plot          = 1
+i_plot          = 2
 i_plot_type     = 1
 model_dt        = 10
 nhrs_forecast   = 24
-#i_load          = 0
-#i_train         = 1
-#delete_existing_param_file = 1
-#max_mean_wind_error = 10000.0
-#sample_weight = 'linear'
-#sample_weight = 'squared'
-#sample_weight = '1'
+reset_model_constellation = 0
 ############################
 # APPLY SCRIPT SETTINGS
-train_case_index    = 0
+train_case_index    = 10
 apply_case_index    = 13
 apply_i_plot        = 2
 apply_model_dt      = 10
+apply_reset_model_constellation = 1
 ############################
 class Case_Namelist:
 
@@ -46,7 +41,8 @@ class Case_Namelist:
     plot_base_dir = '../plots/'
 
    
-    # 01_prep_obs: path to file containing meta information about stations (mainly column 'Use' is interesting)
+    # 01_prep_obs: path to file containing meta information about stations
+    # (mainly column 'Use' is interesting)
     stations_meta_path = '../obs_out/ps_fkl010b1_2262.csv'
     #stations_meta_path = '../obs_out/ps_fkl010b1_2262_SMN.csv'
 

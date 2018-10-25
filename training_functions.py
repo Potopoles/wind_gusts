@@ -133,6 +133,7 @@ def prepare_model_params(use_model_fields, lm_runs, CN,
 
     # load data from all lm runs
     for lmI,lm_run in enumerate(lm_runs):
+        #print(lm_run)
 
         ###################################################################
         ####### PART 1: Read and format model time step output file

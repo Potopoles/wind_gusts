@@ -8,10 +8,10 @@ import namelist_cases as nl
 import pickle, os, sys
 from netCDF4 import Dataset
 
-from tuning_functions import (prepare_model_params)
+from training_functions import (prepare_model_params)
 from plot_functions import (draw_error_percentile_lines,
                             draw_error_grid,
-                            get_point_col)
+                            get_point_col, draw_grid_wind_plot)
 import multiprocessing as mp
 
 ############ USER INPUT #############
@@ -24,6 +24,7 @@ nhrs_forecast = nl.nhrs_forecast
 ind0 = 701
 debug_min_stat_ind = 701
 debug_max_stat_ind = 1001
+# 0 do not plot, 1 plot, 2 only plot from loaded data
 i_draw_grid_wind_plot = 1
 grid_point_selection = nl.grid_point_selection
 
@@ -72,6 +73,11 @@ ext_files['hsurf']      = '../extern_par/HSURF.nc'
 ###########################################################################
 ############### PART 0: PREPARATIONS
 ###########################################################################
+if i_draw_grid_wind_plot == 2:
+    data = pickle.load( open(CN.mod_path, 'rb') )
+    draw_grid_wind_plot(CN, data)
+    quit()
+    
 
 lm_runs = os.listdir(CN.raw_mod_path)
 mod_stations_file = CN.raw_mod_path + lm_runs[0] + '/fort.700'
@@ -299,32 +305,4 @@ pickle.dump(data, open(CN.mod_path, 'wb'))
 ############### PART 4: DRAW PLOT
 ###########################################################################
 if (i_draw_grid_wind_plot and (grid_point_selection == 'BEST')):
-    # create directories
-    if not os.path.exists(CN.plot_path):
-        os.mkdir(CN.plot_path)
-
-    limit = 35
-
-    # process data
-    best_model_mean = best_model_mean.flatten()
-    best_model_mean = best_model_mean[np.isnan(best_model_mean) == False]
-    centre_model_mean = centre_model_mean.flatten()
-    centre_model_mean = centre_model_mean[np.isnan(centre_model_mean) == False]
-    print(best_model_mean.shape)
-    print(centre_model_mean.shape)
-    # draw plot
-    plt.scatter(centre_model_mean, best_model_mean,
-                marker=".",
-                color=get_point_col(centre_model_mean, best_model_mean))
-    ax = plt.gca()
-    ax.set_xlim((0,limit))
-    ax.set_ylim((0,limit))
-    ax.set_xlabel('centre grid point')
-    ax.set_ylabel('best fitting grid point')
-    #ax.grid()
-    draw_error_grid(limit, limit, ax)
-    ax.set_aspect('equal')
-    draw_error_percentile_lines(centre_model_mean, best_model_mean, ax, rot_angle=-np.pi/4)
-    #plt.show()
-    plot_name = CN.plot_path + 'grid_point_wind.png'
-    plt.savefig(plot_name)
+    draw_grid_wind_plot(CN, data)

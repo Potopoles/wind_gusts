@@ -1,6 +1,38 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from training_functions import rotate
+
+def draw_grid_wind_plot(CN, data):
+    # create directories
+    if not os.path.exists(CN.plot_path):
+        os.mkdir(CN.plot_path)
+
+    limit = 35
+
+    # process data
+    best_model_mean = data['best_model_mean'].flatten()
+    best_model_mean = best_model_mean[np.isnan(best_model_mean) == False]
+    centre_model_mean = data['centre_model_mean'].flatten()
+    centre_model_mean = centre_model_mean[np.isnan(centre_model_mean) == False]
+    print(best_model_mean.shape)
+    print(centre_model_mean.shape)
+    # draw plot
+    plt.scatter(centre_model_mean, best_model_mean,
+                marker=".",
+                color=get_point_col(centre_model_mean, best_model_mean))
+    ax = plt.gca()
+    ax.set_xlim((0,limit))
+    ax.set_ylim((0,limit))
+    ax.set_xlabel('centre grid point')
+    ax.set_ylabel('best fitting grid point')
+    #ax.grid()
+    draw_error_grid(limit, limit, ax)
+    ax.set_aspect('equal')
+    draw_error_percentile_lines(centre_model_mean, best_model_mean, ax, rot_angle=-np.pi/4)
+    #plt.show()
+    plot_name = CN.plot_path + 'grid_point_wind.png'
+    plt.savefig(plot_name)
 
 
 def get_point_col(vals1, vals2, xmin=0, xmax=100, ymin=-100, ymax=100):
@@ -36,10 +68,17 @@ def draw_error_percentile_lines(x, y, ax, draw_legend=True, loc=0, rot_angle=0):
     #qscol = ['red','orange','red']
     #qslst = ['--','-','--']
     #qslwd = [1.5,2,1.5]
-    qs = [10,25,50,75,90]
-    qscol = ['red','blue','orange','blue','red']
-    qslst = ['--','--','-','--','--']
-    qslwd = [1.5,1.5,2,1.5,1.5]
+
+    #qs = [10,25,50,75,90]
+    #qscol = ['red','blue','orange','blue','red']
+    #qslst = ['--','--','-','--','--']
+    #qslwd = [1.5,1.5,2,1.5,1.5]
+
+    qs = [10,25,50,'mean',75,90]
+    qscol = ['red','blue','orange','orange','blue','red']
+    qslst = ['--','--','-','--','--','--']
+    qslwd = [1.5,1.5,2,2,1.5,1.5]
+
     dmp = 2. # = dx
     ###############
 
@@ -56,8 +95,11 @@ def draw_error_percentile_lines(x, y, ax, draw_legend=True, loc=0, rot_angle=0):
         for i in range(0,len(mp_x)):
             # model gust vs obs gust
             inds = (speed > mp_borders[i]) & (speed <= mp_borders[i+1])
-            if np.sum(inds) > 10:
-                mgog[i,qi] = np.percentile(error[inds],q=qs[qi])
+            if np.sum(inds) > 20:
+                if qs[qi] == 'mean':
+                    mgog[i,qi] = np.mean(error[inds])
+                else:
+                    mgog[i,qi] = np.percentile(error[inds],q=qs[qi])
 
     lines = []
     for qi in range(0,len(qs)):

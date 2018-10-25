@@ -1,4 +1,5 @@
 import numpy as np
+import globals as G
 
 
 
@@ -6,10 +7,14 @@ import numpy as np
 
 class Predictors:
 
-    def __init__(self, ncf):
+    def __init__(self, ncf, data):
         
         # nc file containing all the fields
         self.ncf = ncf
+        # pickle binary containing meta data and observations
+        self.data = data
+
+        self.array_shape = None
 
         preproc = {}
         # fields that can be loaded directly without any preprocessing
@@ -25,14 +30,13 @@ class Predictors:
         preproc['zbralb']       = self.calc_zbra
         preproc['zbraes']       = self.calc_zbra
         preproc['zbraub']       = self.calc_zbra
+        preproc['sso_stdh']     = self.load_external
+        preproc['hsurf']        = self.load_external
         self.preproc = preproc
 
         ps = {}
         self.predictor_structure = ps
 
-        ps['z0']                =   {'fix':0,
-                                    'prod':[('z0',1)]
-                                    }
         ps['tcm']               =   {'fix':0,
                                     'prod':[('tcm',1)]
                                     }
@@ -51,20 +55,8 @@ class Predictors:
         ps['zvp10']             =   {'fix':0,
                                     'prod':[('zvp10',1)]
                                     }
-        ps['zvp10_2']             =   {'fix':0,
-                                    'prod':[('zvp10',2)]
-                                    }
-        ps['zvp10_3']             =   {'fix':0,
-                                    'prod':[('zvp10',3)]
-                                    }
-        ps['(zvp10)']           =   {'fix':0,'transform':'box',
+        ps['(zvp10)']           =   {'fix':0,'transform':'log',
                                     'prod':[('zvp10',1)]
-                                    }
-        ps['(zvp10)_2']           =   {'fix':0,'transform':'box',
-                                    'prod':[('zvp10',2)]
-                                    }
-        ps['(zvp10)_3']           =   {'fix':0,'transform':'box',
-                                    'prod':[('zvp10',3)]
                                     }
         ps['zvp10_tcm']         =   {'fix':0,
                                     'prod':[('zvp10',1),('tcm',1)]
@@ -75,14 +67,32 @@ class Predictors:
         ps['zvp10_wdir']        =   {'fix':0,
                                     'prod':[('zvp10',1),('wdir',1)]
                                     }
-        ps['zvp10_z0']          =   {'fix':0,
-                                    'prod':[('zvp10',1),('z0',1)]
-                                    }
         ps['zvp10_tke']         =   {'fix':0,
                                     'prod':[('zvp10',1),('tkel1',1)]
                                     }
         ps['zvp10_IFS']         =   {'fix':0,
                                     'prod':[('zvp10',1),('IFS',1)]
+                                    }
+        ps['zvp10_z0']          =   {'fix':0,
+                                    'prod':[('zvp10',1),('z0',1)]
+                                    }
+        ps['zvp10_sso']         =   {'fix':0,
+                                    'prod':[('zvp10',1),('sso_stdh',1)]
+                                    }
+        ps['zvp10_sso_2']       =   {'fix':0,
+                                    'prod':[('zvp10',1),('sso_stdh',2)]
+                                    }
+        ps['zvp10_sso_3']       =   {'fix':0,
+                                    'prod':[('zvp10',1),('sso_stdh',3)]
+                                    }
+        ps['zvp10_hsurf']       =   {'fix':0,
+                                    'prod':[('zvp10',1),('hsurf',1)]
+                                    }
+        ps['zvp10_hsurf_2']     =   {'fix':0,
+                                    'prod':[('zvp10',1),('hsurf',2)]
+                                    }
+        ps['zvp10_hsurf_3']     =   {'fix':0,
+                                    'prod':[('zvp10',1),('hsurf',3)]
                                     }
         #######################################################################
         ###### bralb
@@ -147,11 +157,18 @@ class Predictors:
         ps['zbraub']            =   {'fix':0,
                                     'prod':[('zbraub',1)]
                                     }
+        ps['zvp10_zbraub']      =   {'fix':0,
+                                    'prod':[('zvp10',1),('zbraub',1)]
+                                    }
 
 
     def load(self, field_name):
         print('load ' + str(field_name))
         field_values = np.ma.filled(self.ncf[field_name][:], fill_value=np.nan)
+        # set array_shape attribute which can be use for
+        # external fields later
+        if self.array_shape is None:
+            self.array_shape = field_values.shape
         return(field_values)
 
     def calc_tcm(self, field_name):
@@ -242,3 +259,22 @@ class Predictors:
         wdir = np.sin(wind_dir_trig_to + wdir_shift)
 
         return(wdir)
+
+
+    def load_external(self, field_name):
+        
+        if self.array_shape is None:
+            raise ValueError('Predictors class does not know about ' +\
+                    'array shape. Load another (non-external) field first.')
+
+        nhrs_forecast   = self.array_shape[0]
+        nstat           = self.array_shape[1]
+        n_ts_per_hr     = self.array_shape[2]
+        ext_field = np.full( self.array_shape , np.nan)
+        for sI,stat_name in enumerate(self.data[G.STAT_NAMES]):
+            #stat_name = 'ABO'
+            if stat_name != 'nan':
+                ext_field[:,sI,:] = self.data[G.STAT_META]\
+                                    [stat_name][field_name].values[0]
+
+        return(ext_field)

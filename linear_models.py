@@ -16,10 +16,12 @@ import os
 #['zvp10', 'zvp10_tcm', 'bralb', 'bralb_2', 'bralb_3'],
 
 # bad features ['zvp10_IFS']
+# bad features ['tke']
 
 class Linear_Models:
 
-    def __init__(self, PR, CN, reset_model_constellation, use=[0]):
+    def __init__(self, PR, CN, reset_model_constellation, use,
+                predictor_list=None):
 
         #use = [0]
         #use = np.arange(2,4)
@@ -31,28 +33,101 @@ class Linear_Models:
             ['zvp10', 'zvp10_z0', 'IFS'],
             ['zvp10', 'zvp10_wdir'],
 
-            ['zvp10', 'zvp10_tcm', 'zvp10_braes', 'zvp10_braes_2', 'zvp10_braes_3'],
-            ['zvp10', 'zvp10_tcm', 'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3'],
-            ['zvp10', 'zvp10_tcm', 'zvp10_braub', 'zvp10_braub_2', 'zvp10_braub_3'],
-            ['zvp10', 'zvp10_tcm', 'zvp10_zbraes', 'zvp10_zbraes_2', 'zvp10_zbraes_3'],
-            ['zvp10', 'zvp10_tcm', 'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbralb_3'],
-            ['zvp10', 'zvp10_tcm', 'zvp10_braes', 'zvp10_braes_2', 'zvp10_braes_3',
-                                   'zvp10_zbraes', 'zvp10_zbraes_2'],
-            ['zvp10', 'zvp10_tcm', 'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
-                                   'zvp10_zbralb', 'zvp10_zbralb_2'],
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_braes', 'zvp10_braes_2', 'zvp10_braes_3'],
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3'],
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_braub', 'zvp10_braub_2', 'zvp10_braub_3'],
 
-            ['zvp10', 'zvp10_tcm', 'zvp10_zbraes', 'zvp10_zbraes_2', 'IFS'], #semi
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_zbraes', 'zvp10_zbraes_2', 'zvp10_zbraes_3'],
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbralb_3'],
+
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_braes', 'zvp10_braes_2', 'zvp10_braes_3',
+                'zvp10_zbraes', 'zvp10_zbraes_2'],
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+                'zvp10_zbralb', 'zvp10_zbralb_2'],
+
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+                'zvp10_zbralb', 'zvp10_zbralb_2',
+                'zvp10_zbraes', 'zvp10_zbraub'],
+
+            ['zvp10', 'zvp10_tcm', 'zvp10_z0',  
+               'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+               'zvp10_zbralb', 'zvp10_zbralb_2',
+               'zvp10_zbraes', 'zvp10_zbraub'],
+
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+                'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbraes'],
+
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_hsurf', 'zvp10_hsurf_2', 'zvp10_hsurf_3',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+                'zvp10_zbralb', 'zvp10_zbralb_2',
+                'zvp10_zbraes', 'zvp10_zbraub'],
+
+            ['zvp10', 'zvp10_tcm', 'IFS',
+                'zvp10_zbraes', 'zvp10_zbraes_2']
         ]
 
-        predictor_list = [
+        if predictor_list is None:
+            predictor_list = [
 
-            ['zvp10', 'zvp10_tcm', 'zvp10_braes', 'zvp10_braes_2', 'zvp10_braes_3',
-                                   'zvp10_zbraes', 'zvp10_zbraes_2'],
+            ['zvp10fix', 'zvp10_tcm'],
             ['zvp10', 'zvp10_tcm'],
-            ['(zvp10)', '(zvp10)_2', '(zvp10)_3'],
-            ['zvp10', 'zvp10_2', 'zvp10_3'],
 
-            ]
+            ['zvp10', 'zvp10_z0', 'IFS'],
+            ['zvp10', 'zvp10_wdir'],
+
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_braes', 'zvp10_braes_2', 'zvp10_braes_3'],
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3'],
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_braub', 'zvp10_braub_2', 'zvp10_braub_3'],
+
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_zbraes', 'zvp10_zbraes_2', 'zvp10_zbraes_3'],
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbralb_3'],
+
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_braes', 'zvp10_braes_2', 'zvp10_braes_3',
+                'zvp10_zbraes', 'zvp10_zbraes_2'],
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+                'zvp10_zbralb', 'zvp10_zbralb_2'],
+
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+                'zvp10_zbralb', 'zvp10_zbralb_2',
+                'zvp10_zbraes', 'zvp10_zbraub'],
+
+            ['zvp10', 'zvp10_tcm', 'zvp10_z0',  
+               'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+               'zvp10_zbralb', 'zvp10_zbralb_2',
+               'zvp10_zbraes', 'zvp10_zbraub'],
+
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+                'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbraes'],
+
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_hsurf', 'zvp10_hsurf_2', 'zvp10_hsurf_3',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+                'zvp10_zbralb', 'zvp10_zbralb_2',
+                'zvp10_zbraes', 'zvp10_zbraub'],
+
+            ['zvp10', 'zvp10_tcm', 'IFS',
+                'zvp10_zbraes', 'zvp10_zbraes_2']
+
+                ]
 
         # in case this is set only update the list of models and exit
         if reset_model_constellation:
@@ -63,7 +138,11 @@ class Linear_Models:
                     os.remove(CN.plot_path + file)
 
             print('Clean and update output folder')
-            files = os.listdir(CN.output_path)
+            try:
+                files = os.listdir(CN.output_path)
+            except FileNotFoundError:
+                os.mkdir(CN.output_path)
+                files = os.listdir(CN.output_path)
             for file in files:
                 if not file == 'Session.vim':
                     os.remove(CN.output_path + file)
