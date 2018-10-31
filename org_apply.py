@@ -41,8 +41,6 @@ ncf = Dataset(CNapply.mod_nc_path, 'r')
 
 # load trained linear models
 lms_stored = pickle.load( open(CNtrain.output_binary, 'rb') )
-#print(lms_stored['models'])
-#print(lms_stored['coefs'])
 
 # load Predictor class and linear model (lm)
 PR = Predictors(ncf, data)
@@ -51,7 +49,6 @@ run_which_models = []
 keys = []
 c = 0
 for model_key,model in lms_stored['models'].items():
-    print(model_key)
     predictor_list.append(model)
     keys.append(int(model_key))
 
@@ -152,7 +149,6 @@ print('########################### PART 2: Plot and Scores')
 
 
 for model_key,lm in lms.models.items():
-    print(model_key)
 
     #print(lms.coefs[model_key])
     #print(lms.models[model_key])

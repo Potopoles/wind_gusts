@@ -171,6 +171,8 @@ def train_linear_model(model_key, lm, predictors,
     ###### PART 3: Output
     ###############################################################################
 
+    coefs['zvp10_tcm'] = 4
+
     # calculate final timestep gusts
     gust = np.zeros(predictors[next(iter(predictors))].shape)
     for pred_name in predictors.keys():

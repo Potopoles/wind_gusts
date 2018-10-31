@@ -19,7 +19,7 @@ train_case_index    = 10
 apply_case_index    = 13
 apply_i_plot        = 2
 apply_model_dt      = 10
-apply_reset_model_constellation = 1
+apply_reset_model_constellation = 0
 ############################
 class Case_Namelist:
 

@@ -1,13 +1,13 @@
 #!/bin/bash -l
 #
-#SBATCH --job-name="03"
-#SBATCH --time=12:00:00
+#SBATCH --job-name="org_apply"
+#SBATCH --time=2:00:00
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=24
+#SBATCH --cpus-per-task=1
 #SBATCH --account='s83'
 #SBATCH --partition=postproc
-#SBATCH --output=bOut/sbatch22.out
-#SBATCH --error=bOut/sbatch22.err
+#SBATCH --output=bOut/sbatch20.out
+#SBATCH --error=bOut/sbatch20.err
 
 
 echo -e "$SLURM_JOB_NAME started on $(date):\n $command $1 $2\n"

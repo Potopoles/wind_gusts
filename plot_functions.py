@@ -64,22 +64,27 @@ def draw_error_percentile_lines(x, y, ax, draw_legend=True, loc=0, rot_angle=0):
 
     # PREPARE PERCENTILE LINES
     ###############
+    # ONLY REDUCED PERCENTILES
     #qs = [10,50,90]
     #qscol = ['red','orange','red']
     #qslst = ['--','-','--']
     #qslwd = [1.5,2,1.5]
 
-    #qs = [10,25,50,75,90]
-    #qscol = ['red','blue','orange','blue','red']
-    #qslst = ['--','--','-','--','--']
-    #qslwd = [1.5,1.5,2,1.5,1.5]
+    # ONLY MEDIAN
+    qs = [10,25,50,75,90]
+    qscol = ['red','blue','orange','blue','red']
+    qslst = ['--','--','-','--','--']
+    qslwd = [1.5,1.5,2,1.5,1.5]
 
-    qs = [10,25,50,'mean',75,90]
-    qscol = ['red','blue','orange','orange','blue','red']
-    qslst = ['--','--','-','--','--','--']
-    qslwd = [1.5,1.5,2,2,1.5,1.5]
+    # WITH MEAN
+    #qs = [10,25,50,'mean',75,90]
+    #qscol = ['red','blue','orange','orange','blue','red']
+    #qslst = ['--','--','-','--','--','--']
+    #qslwd = [1.5,1.5,2,2,1.5,1.5]
 
+    # below 2 becomes noisy
     dmp = 2. # = dx
+    min_n_samples = 25
     ###############
 
     xy = np.row_stack( [x, y] )
@@ -88,14 +93,14 @@ def draw_error_percentile_lines(x, y, ax, draw_legend=True, loc=0, rot_angle=0):
     speed = xy_rot[0,:]
     error = xy_rot[1,:]
 
-    mp_borders = np.arange(np.floor(0),np.ceil(np.max(speed)),dmp)
+    mp_borders = np.arange(0,np.ceil(np.max(speed)),dmp)
     mp_x = mp_borders[:-1] + np.diff(mp_borders)/2
     mgog = np.full((len(mp_x),len(qs)),np.nan)
     for qi in range(0,len(qs)):
         for i in range(0,len(mp_x)):
             # model gust vs obs gust
             inds = (speed > mp_borders[i]) & (speed <= mp_borders[i+1])
-            if np.sum(inds) > 20:
+            if np.sum(inds) > min_n_samples:
                 if qs[qi] == 'mean':
                     mgog[i,qi] = np.mean(error[inds])
                 else:

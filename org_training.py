@@ -129,6 +129,9 @@ for model_key,model in lms.models.items():
             # store
             predictors[pred_name] = pred_values
 
+print(scales)
+
+
 ###############################################################################
 ###### PART 2: Training and Output
 ###############################################################################
