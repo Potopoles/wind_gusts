@@ -40,6 +40,7 @@ def train_linear_model(model_key, lm, predictors,
                 gust += predictors[pred_name]
             else:
                 gust += coefs[pred_name] * predictors[pred_name]
+        gust[gust < 0] = 0.0
 
         # calculate current hourly gusts
         gust_max, predictors_max = find_hourly_max(gust, predictors)
@@ -171,7 +172,7 @@ def train_linear_model(model_key, lm, predictors,
     ###### PART 3: Output
     ###############################################################################
 
-    coefs['zvp10_tcm'] = 4
+    #coefs['zvp10_tcm'] = 4
 
     # calculate final timestep gusts
     gust = np.zeros(predictors[next(iter(predictors))].shape)
@@ -180,6 +181,7 @@ def train_linear_model(model_key, lm, predictors,
             gust += predictors[pred_name]
         else:
             gust += coefs[pred_name] * predictors[pred_name]
+    gust[gust < 0] = 0.0
 
     # calculate current hourly gusts
     gust_max = find_hourly_max(gust)

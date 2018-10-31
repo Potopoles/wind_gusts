@@ -24,8 +24,8 @@ i_plot_type = nl.i_plot_type
 max_tuning_steps = 1000
 coef_conv_thresh = 1E-3
 n_bins = 4
-weight_slope = 4/n_bins
-weights_err_spaces = {'1_1':0.5,'err':1}
+weight_slope = 2/n_bins
+weights_err_spaces = {'1_1':1,'err':1}
 nth_ts_out = 15
 reset_model_constellation = nl.reset_model_constellation
 
@@ -129,7 +129,6 @@ for model_key,model in lms.models.items():
             # store
             predictors[pred_name] = pred_values
 
-print(scales)
 
 
 ###############################################################################
