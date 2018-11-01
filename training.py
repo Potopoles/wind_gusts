@@ -7,7 +7,7 @@ from predictors import Predictors
 
 def train_linear_model(model_key, lm, predictors,
                 obs_gust, obs_mean,
-                gust_max_ref, model_mean,
+                gust_max_ref, model_mean, i_transform,
                 n_bins, weight_slope, max_tuning_steps,
                 weights_err_spaces, coef_conv_thresh, nth_ts_out,
                 i_plot, i_plot_type, plot_type1, CN):
@@ -22,7 +22,13 @@ def train_linear_model(model_key, lm, predictors,
             coefs[pred_name] = 1
     learning_rate = fill_dict(lm, 3E-3)
 
-    bins, bin_weights = calc_bins(n_bins, weight_slope=weight_slope)
+    #bins, bin_weights = calc_bins(n_bins, weight_slope=weight_slope)
+    val_range = (np.floor(np.min(obs_gust)),
+                np.ceil(np.max(obs_gust)))
+    bins, bin_weights = calc_bins(n_bins, val_range, weight_slope=weight_slope)
+    #print(bins)
+    #print(bin_weights)
+    #quit()
 
     sin_th = np.sin(-np.pi/4)
     cos_th = np.cos(-np.pi/4)
@@ -65,6 +71,7 @@ def train_linear_model(model_key, lm, predictors,
             if weights_err_spaces['err'] > 0:
                 bin_inds = np.argwhere((obs_gust >= bins['err'][bI][0]) & \
                                        (obs_gust < bins['err'][bI][1])).squeeze()
+                #print(str(bI) + ' ' + str(len(bin_inds)))
             else:
                 bin_inds = []
             mod_err_bin = dev_err_space[bin_inds]
@@ -173,6 +180,7 @@ def train_linear_model(model_key, lm, predictors,
     ###############################################################################
 
     #coefs['zvp10_tcm'] = 4
+    #print(coefs)
 
     # calculate final timestep gusts
     gust = np.zeros(predictors[next(iter(predictors))].shape)
@@ -186,10 +194,9 @@ def train_linear_model(model_key, lm, predictors,
     # calculate current hourly gusts
     gust_max = find_hourly_max(gust)
 
-    #gust_max = np.exp(gust_max)
-    #obs_gust = np.exp(obs_gust)
-    #gust_max = gust_max**2
-    #obs_gust = obs_gust**2
+    if i_transform:
+        gust_max = np.exp(gust_max)
+        obs_gust = np.exp(obs_gust)
 
     # PLOT
     if i_plot_type == 0:
@@ -203,9 +210,9 @@ def train_linear_model(model_key, lm, predictors,
         plt.show()
     elif i_plot > 1:
         if i_plot_type == 0:
-            plot_name = CN.plot_path + model_key + '.png'
+            plot_name = CN.plot_path + 'plot0_' + model_key + '.png'
         elif i_plot_type == 1:
-            plot_name = CN.plot_path + 'plot1_' + model_key + '.png'
+            plot_name = CN.plot_path + model_key + '.png'
         print(plot_name)
         plt.savefig(plot_name)
         plt.close('all')

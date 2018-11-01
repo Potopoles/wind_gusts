@@ -1,9 +1,9 @@
 #!/bin/bash -l
 #
-#SBATCH --job-name="org_apply"
+#SBATCH --job-name="03"
 #SBATCH --time=2:00:00
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=24
 #SBATCH --account='s83'
 #SBATCH --partition=postproc
 #SBATCH --output=bOut/sbatch20.out

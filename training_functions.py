@@ -77,8 +77,8 @@ def find_hourly_max(gust, fields=None):
         return(gust_max)
 
 
-def calc_bins(n_bins, max_val_err_space=60, weight_slope=0):
-    bin_limits = np.linspace(0,max_val_err_space, n_bins+1)
+def calc_bins(n_bins, val_range=(0,60), weight_slope=0):
+    bin_limits = np.linspace(val_range[0],val_range[1], n_bins+1)
     bins = {'1_1':[],'err':[]}
     weight0 = 1
     bin_weights = []

@@ -23,11 +23,16 @@ i_plot = nl.i_plot
 i_plot_type = nl.i_plot_type
 max_tuning_steps = 1000
 coef_conv_thresh = 1E-3
-n_bins = 4
-weight_slope = 2/n_bins
-weights_err_spaces = {'1_1':1,'err':1}
-nth_ts_out = 15
+weights_err_spaces = {'1_1':0,'err':1}
+nth_ts_out = 20
 reset_model_constellation = nl.reset_model_constellation
+i_transform = 0
+if i_transform:
+    n_bins = 2
+    weight_slope = 0/n_bins
+else:
+    n_bins = 4
+    weight_slope = 4/n_bins
 
 if len(sys.argv) > 1:
     run_which_models = [int(sys.argv[1])]
@@ -82,6 +87,12 @@ zvp10 = zvp10[~obsmask]
 gust_ref = zvp10 + 7.2*zvp10*tcm
 gust_max_ref = find_hourly_max(gust_ref)
 
+
+if i_transform:
+    obs_gust[obs_gust == 0] = 0.1
+    obs_gust = np.log(obs_gust)
+
+
 ###############################################################################
 ###### PART 1: Load and Calculate and Preprocess Predictors
 ###############################################################################
@@ -114,9 +125,10 @@ for model_key,model in lms.models.items():
             # remove data where masked due observation missing values
             pred_values = pred_values[~obsmask]
 
-            # transform
-            if 'transform' in model[pred_name].keys():
-                pred_values[pred_values < 0.1] = 0.1
+            if i_transform:
+                if np.min(pred_values) < 0:
+                    raise ValueError('Smallest values is below 0')
+                pred_values[pred_values == 0] = np.min(pred_values)
                 pred_values = np.log(pred_values)
 
             # apply scaling
@@ -144,7 +156,7 @@ for model_key,lm in lms.models.items():
 
     result = train_linear_model(model_key, lm, lm_predictors,
                         obs_gust, obs_mean,
-                        gust_max_ref, model_mean,
+                        gust_max_ref, model_mean, i_transform,
                         n_bins, weight_slope, max_tuning_steps,
                         weights_err_spaces, coef_conv_thresh, nth_ts_out,
                         i_plot, i_plot_type, plot_type1, CN)
@@ -162,6 +174,8 @@ print('########################### PART 3: Output')
 for model_key,lm in lms.models.items():
     for pred_name in lm.keys():
         lms.coefs[model_key][pred_name] /= scales[pred_name]
+    print('Unscaled coefficients: ')
+    print(lms.coefs[model_key])
 
 
 # SAVE MODEL PARAMETERS 

@@ -151,7 +151,8 @@ if not i_load:
                 greater0 = idl >= 0
                 gust[greater0] = gust[greater0] + ustar[greater0]*ugn
                 smaller0 = idl < 0
-                gust[smaller0] = gust[smaller0] + ustar[smaller0]*ugn * (1 - 0.5/12*idl[smaller0])**(1/3)
+                gust[smaller0] = gust[smaller0] + ustar[smaller0]*ugn * \
+                                (1 - 0.5/12*idl[smaller0])**(1/3)
                 #gust = zvp10 + ustar*ugn*( 1 + 0.5/12*hpbl*kappa*buoy/ustar**3 )**(1/3)
 
                 gust_ico[hr_ind,si,:] = gust

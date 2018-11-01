@@ -46,6 +46,15 @@ class Predictors:
         ps['IFS']               =   {'fix':0,
                                     'prod':[('IFS',1)]
                                     }
+        ps['IFS_2']             =   {'fix':0,
+                                    'prod':[('IFS',2)]
+                                    }
+        ps['IFS_3']             =   {'fix':0,
+                                    'prod':[('IFS',3)]
+                                    }
+        ps['IFSfix']            =   {'fix':1,
+                                    'prod':[('IFS',1)]
+                                    }
         #######################################################################
         ###### zvp10
         #######################################################################
@@ -57,6 +66,9 @@ class Predictors:
                                     }
         ps['(zvp10)']           =   {'fix':0,'transform':'log',
                                     'prod':[('zvp10',1)]
+                                    }
+        ps['(zvp10_tcm)']       =   {'fix':0,'transform':'log',
+                                    'prod':[('zvp10',1),('tcm',1)]
                                     }
         ps['zvp10_tcm']         =   {'fix':0,
                                     'prod':[('zvp10',1),('tcm',1)]
@@ -72,6 +84,15 @@ class Predictors:
                                     }
         ps['zvp10_IFS']         =   {'fix':0,
                                     'prod':[('zvp10',1),('IFS',1)]
+                                    }
+        ps['zvp10_IFS_2']       =   {'fix':0,
+                                    'prod':[('zvp10',1),('IFS',2)]
+                                    }
+        ps['zvp10_IFS_3']       =   {'fix':0,
+                                    'prod':[('zvp10',1),('IFS',3)]
+                                    }
+        ps['zvp10_IFS_4']       =   {'fix':0,
+                                    'prod':[('zvp10',1),('IFS',4)]
                                     }
         ps['zvp10_z0']          =   {'fix':0,
                                     'prod':[('zvp10',1),('z0',1)]
@@ -179,7 +200,9 @@ class Predictors:
 
     def calc_IFS_gust_term(self, field_name):
 
-        ugn = 7.71
+        ugn = 1
+        #ugn = 7.71
+        #ugn *= 3
         hpbl = 1000
         g = 9.80665
         Rd = 287.05

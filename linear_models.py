@@ -30,9 +30,6 @@ class Linear_Models:
             ['zvp10fix', 'zvp10_tcm'],
             ['zvp10', 'zvp10_tcm'],
 
-            ['zvp10', 'zvp10_z0', 'IFS'],
-            ['zvp10', 'zvp10_wdir'],
-
             ['zvp10', 'zvp10_tcm',
                 'zvp10_braes', 'zvp10_braes_2', 'zvp10_braes_3'],
             ['zvp10', 'zvp10_tcm',
@@ -72,62 +69,56 @@ class Linear_Models:
                 'zvp10_zbralb', 'zvp10_zbralb_2',
                 'zvp10_zbraes', 'zvp10_zbraub'],
 
-            ['zvp10', 'zvp10_tcm', 'IFS',
-                'zvp10_zbraes', 'zvp10_zbraes_2']
         ]
 
         if predictor_list is None:
             predictor_list = [
 
-            ['zvp10fix', 'zvp10_tcm'],
-            ['zvp10', 'zvp10_tcm'],
+            ['zvp10', 'zvp10_tcm']
+                #'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbralb_3'],
 
-            ['zvp10', 'zvp10_z0', 'IFS'],
-            ['zvp10', 'zvp10_wdir'],
+            #['zvp10fix', 'zvp10_tcm'],
+            #['zvp10', 'zvp10_tcm'],
 
-            ['zvp10', 'zvp10_tcm',
-                'zvp10_braes', 'zvp10_braes_2', 'zvp10_braes_3'],
-            ['zvp10', 'zvp10_tcm',
-                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3'],
-            ['zvp10', 'zvp10_tcm',
-                'zvp10_braub', 'zvp10_braub_2', 'zvp10_braub_3'],
+            #['zvp10', 'zvp10_tcm',
+            #    'zvp10_braes', 'zvp10_braes_2', 'zvp10_braes_3'],
+            #['zvp10', 'zvp10_tcm',
+            #    'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3'],
+            #['zvp10', 'zvp10_tcm',
+            #    'zvp10_braub', 'zvp10_braub_2', 'zvp10_braub_3'],
 
-            ['zvp10', 'zvp10_tcm',
-                'zvp10_zbraes', 'zvp10_zbraes_2', 'zvp10_zbraes_3'],
-            ['zvp10', 'zvp10_tcm',
-                'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbralb_3'],
-            ['zvp10', 
-                'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbralb_3'],
+            #['zvp10', 'zvp10_tcm',
+            #    'zvp10_zbraes', 'zvp10_zbraes_2', 'zvp10_zbraes_3'],
+            #['zvp10', 'zvp10_tcm',
+            #    'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbralb_3'],
 
-            ['zvp10', 'zvp10_tcm',
-                'zvp10_braes', 'zvp10_braes_2', 'zvp10_braes_3',
-                'zvp10_zbraes', 'zvp10_zbraes_2'],
-            ['zvp10', 'zvp10_tcm',
-                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
-                'zvp10_zbralb', 'zvp10_zbralb_2'],
+            #['zvp10', 'zvp10_tcm',
+            #    'zvp10_braes', 'zvp10_braes_2', 'zvp10_braes_3',
+            #    'zvp10_zbraes', 'zvp10_zbraes_2'],
+            #['zvp10', 'zvp10_tcm',
+            #    'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+            #    'zvp10_zbralb', 'zvp10_zbralb_2'],
 
-            ['zvp10', 'zvp10_tcm',
-                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
-                'zvp10_zbralb', 'zvp10_zbralb_2',
-                'zvp10_zbraes', 'zvp10_zbraub'],
+            #['zvp10', 'zvp10_tcm',
+            #    'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+            #    'zvp10_zbralb', 'zvp10_zbralb_2',
+            #    'zvp10_zbraes', 'zvp10_zbraub'],
 
-            ['zvp10', 'zvp10_tcm', 'zvp10_z0',  
-               'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
-               'zvp10_zbralb', 'zvp10_zbralb_2',
-               'zvp10_zbraes', 'zvp10_zbraub'],
+            #['zvp10', 'zvp10_tcm', 'zvp10_z0',  
+            #   'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+            #   'zvp10_zbralb', 'zvp10_zbralb_2',
+            #   'zvp10_zbraes', 'zvp10_zbraub'],
 
-            ['zvp10', 'zvp10_tcm',
-                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
-                'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbraes'],
+            #['zvp10', 'zvp10_tcm',
+            #    'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+            #    'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbraes'],
 
-            ['zvp10', 'zvp10_tcm',
-                'zvp10_hsurf', 'zvp10_hsurf_2', 'zvp10_hsurf_3',
-                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
-                'zvp10_zbralb', 'zvp10_zbralb_2',
-                'zvp10_zbraes', 'zvp10_zbraub'],
+            #['zvp10', 'zvp10_tcm',
+            #    'zvp10_hsurf', 'zvp10_hsurf_2', 'zvp10_hsurf_3',
+            #    'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+            #    'zvp10_zbralb', 'zvp10_zbralb_2',
+            #    'zvp10_zbraes', 'zvp10_zbraub'],
 
-            ['zvp10', 'zvp10_tcm', 'IFS',
-                'zvp10_zbraes', 'zvp10_zbraes_2']
 
                 ]
 

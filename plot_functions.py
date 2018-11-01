@@ -130,6 +130,7 @@ def draw_1_1_scatter(xvals, yvals, xlims, ylims,
                     xlab, ylab, title, ax, errors=None,
                     draw_legend=True, legend_loc=0):
     ax.scatter(xvals, yvals, color=get_point_col(xvals, yvals), marker=".")
+    #ax.scatter(xvals, yvals, color='k', marker=".")
     draw_error_grid(xlims[1], ylims[1], ax)
     draw_error_percentile_lines(xvals, yvals, ax, draw_legend, legend_loc,
                                 rot_angle=-np.pi/4)
@@ -167,6 +168,7 @@ def draw_error_scatter(mod, obs, xlims, ylims,
                     xlab, ylab, title, ax, draw_legend=True, legend_loc=0):
     error = mod - obs
     ax.scatter(obs, error, color=get_point_col(obs, error), marker=".")
+    #ax.scatter(obs, error, color='k', marker=".")
     ax.grid()
     draw_error_percentile_lines(obs, error, ax, draw_legend, legend_loc)
     ax.axhline(y=0,c='grey')
