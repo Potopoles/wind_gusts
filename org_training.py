@@ -122,6 +122,8 @@ for model_key,model in lms.models.items():
                 else:
                     pred_values = pred_values * field_values**field[1]
 
+            quit()
+
             # remove data where masked due observation missing values
             pred_values = pred_values[~obsmask]
 

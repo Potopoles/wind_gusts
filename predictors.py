@@ -64,17 +64,8 @@ class Predictors:
         ps['zvp10']             =   {'fix':0,
                                     'prod':[('zvp10',1)]
                                     }
-        ps['(zvp10)']           =   {'fix':0,'transform':'log',
-                                    'prod':[('zvp10',1)]
-                                    }
-        ps['(zvp10_tcm)']       =   {'fix':0,'transform':'log',
-                                    'prod':[('zvp10',1),('tcm',1)]
-                                    }
         ps['zvp10_tcm']         =   {'fix':0,
                                     'prod':[('zvp10',1),('tcm',1)]
-                                    }
-        ps['zvp10_2_tcm']       =   {'fix':0,
-                                    'prod':[('zvp10',2),('tcm',1)]
                                     }
         ps['zvp10_wdir']        =   {'fix':0,
                                     'prod':[('zvp10',1),('wdir',1)]

@@ -74,7 +74,7 @@ class Linear_Models:
         if predictor_list is None:
             predictor_list = [
 
-            ['zvp10', 'zvp10_tcm']
+            #[('zvp10',1), ('zvp10_tcm',2)]
                 #'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbralb_3'],
 
             #['zvp10fix', 'zvp10_tcm'],
@@ -151,10 +151,10 @@ class Linear_Models:
 
         models = {}
         self.models = models
-        for i,pred_names in enumerate(predictor_list):
+        for i,pred_classes in enumerate(predictor_list):
             if i in use:
                 model_key = str('{:03d}'.format(i))
-                models[model_key] = self.create_model(pred_names, PR)
+                models[model_key] = self.create_model(pred_classes, PR)
 
         coefs = {}
         self.coefs = coefs
@@ -167,8 +167,10 @@ class Linear_Models:
 
 
 
-    def create_model(self, pred_names, PR):
+    def create_model(self, pred_classes, PR):
         lm_out = {}
-        for pred_name in pred_names:
-            lm_out[pred_name] = PR.predictor_structure[pred_name]
+        for pred_class in pred_classes:
+            for power in range(1,pred_class[1]):
+            # TODO
+            lm_out[pred_name] = PR.predictor_structure[pred_class[0]]
         return(lm_out)
