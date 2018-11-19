@@ -147,12 +147,14 @@ def draw_1_1_scatter(xvals, yvals, xlims, ylims,
         offs = 0.05
         ax.text(0.02*(xlims[1]-xlims[0]),
                 ylims[1]-1*offs*(ylims[1]-ylims[0]),
-                'pod({}) {}'.format(str(errors['categ_thrshs']),
-                str(np.round(errors['pods'],2))), color=col)
+                'pod(20,40) {}'.format(
+                str([np.round(errors['pod20'],2),
+                np.round(errors['pod40'],2)])), color=col)
         ax.text(0.02*(xlims[1]-xlims[0]),
                 ylims[1]-2*offs*(ylims[1]-ylims[0]),
-                'far  ({}) {}'.format(str(errors['categ_thrshs']),
-                str(np.round(errors['fars'],2))), color=col)
+                'far (20,40) {}'.format(
+                str([np.round(errors['far20'],2),
+                np.round(errors['far40'],2)])), color=col)
         ax.text(0.02*(xlims[1]-xlims[0]),
                 ylims[1]-3*offs*(ylims[1]-ylims[0]),
                 'rmse '+str(np.round(errors['rmse'],3)), color=col)
@@ -180,22 +182,21 @@ def draw_error_scatter(mod, obs, xlims, ylims,
 
     # calcualte some scores
     categ_thrshs = [int(xlims[1]*1/3),int(xlims[1]*2/3)]
+    #categ_thrshs = [2.5,5,10,12.5,15,20,25,30,35,40,45,50]
     rmse = np.sqrt(np.mean(error**2))
     corr = np.corrcoef(mod, obs)[1,0]
     me   = np.mean(error)
     pods = np.zeros(len(categ_thrshs))
     fars = np.zeros(len(categ_thrshs))
+    errors = {}
     for tI,thrsh in enumerate(categ_thrshs):
         pods[tI] = np.sum(mod[obs >= thrsh] >= thrsh)/np.sum(obs >= thrsh)
         fars[tI] = np.sum(mod[obs < thrsh] >=  thrsh)/np.sum(mod >= thrsh)
-    errors = {'rmse':rmse,'corr':corr,'me':me,
-                'pods':pods,
-                'pod'+str(categ_thrshs[0]):pods[0],
-                'pod'+str(categ_thrshs[1]):pods[1],
-                'fars':fars,
-                'far'+str(categ_thrshs[0]):fars[0],
-                'far'+str(categ_thrshs[1]):fars[1],
-                'categ_thrshs':categ_thrshs}
+        errors['pod'+str(categ_thrshs[tI])] = pods[tI]
+        errors['far'+str(categ_thrshs[tI])] = fars[tI]
+    errors['rmse'] = rmse
+    errors['me'] = me
+    errors['corr'] = corr
     return(errors)
 
 
@@ -219,6 +220,7 @@ def plot_type1(obs, gust, gust_ref, obs_mean, mod_mean):
     ax = axes[1,0]
     errors_ref = draw_error_scatter(gust_ref, obs, xlims, ylims_err,
                     xlab, ylab, title, ax, draw_legend=False)
+    #print(errors_ref)
 
     ##########################################################################
     xlab = 'OBS gust [m/s]'
@@ -227,6 +229,8 @@ def plot_type1(obs, gust, gust_ref, obs_mean, mod_mean):
     ax = axes[1,1]
     errors = draw_error_scatter(gust, obs, xlims, ylims_err,
                     xlab, ylab, title, ax, draw_legend=False)
+    #print(errors)
+    #quit()
 
     ##########################################################################
     xlab = 'OBS gust [m/s]'

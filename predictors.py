@@ -64,6 +64,12 @@ class Predictors:
         ps['zvp10']             =   {'fix':0,
                                     'prod':[('zvp10',1)]
                                     }
+        ps['zvp10_2']           =   {'fix':0,
+                                    'prod':[('zvp10',2)]
+                                    }
+        ps['zvp10_3']           =   {'fix':0,
+                                    'prod':[('zvp10',3)]
+                                    }
         ps['(zvp10)']           =   {'fix':0,'transform':'log',
                                     'prod':[('zvp10',1)]
                                     }
@@ -126,6 +132,9 @@ class Predictors:
                                     }
         ps['zvp10_bralb_3']     =   {'fix':0,
                                     'prod':[('zvp10',1),('zv_bra_lb',3)]
+                                    }
+        ps['zvp10_bralb_4']    =   {'fix':0,
+                                    'prod':[('zvp10',1),('zv_bra_lb',4)]
                                     }
         ps['zbralb']            =   {'fix':0,
                                     'prod':[('zbralb',1)]

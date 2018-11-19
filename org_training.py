@@ -21,7 +21,7 @@ CN = Case_Namelist(case_index)
 # do not plot (0) show plot (1) save plot (2)
 i_plot = nl.i_plot
 i_plot_type = nl.i_plot_type
-max_tuning_steps = 1000
+max_tuning_steps = 2000
 coef_conv_thresh = 1E-3
 weights_err_spaces = {'1_1':0,'err':1}
 nth_ts_out = 20
