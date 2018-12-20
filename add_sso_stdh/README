@@ -1,0 +1,7 @@
+run ./add_sso_stdh.sh after entering the dates of your choice to list (format YYYYMMDDHH).
+
+output folder can be set in add_sso_stdh.sh
+
+if the template file (the file containing the SSO_STDH that needs to be added to other laf files) is changed:
+    - name of template file (currently laf_template) has to be indicated in fxfilter.nl.
+    - date of template file (laf_template) has to be indicated in add_sso_stdh and fxfilter.nl.
