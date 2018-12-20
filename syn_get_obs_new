@@ -1,0 +1,498 @@
+#!/bin/bash
+#+==============================================================================
+#
+# Category : Verification package - SYNOP
+# Description: Get observations as daily observation files from DWH or the
+#              file system.
+#
+# Exit status: 0 normal completion
+# 1 incorrect arguments
+# 2 incorrect installation (not applicable in this script)
+# 3 error during execution
+#
+# Revision:
+  revision='2.2 ps 1'   #vincr# Version of script, may be incremented using vincr
+# See git log for history of modifications
+#-==============================================================================
+
+#===============================================================================
+# Settings
+#===============================================================================
+# Command for data retrieval from DWH, one of
+# retrieve_cscs (operational version),
+# retrieve_cscs_devt, retrieve_cscs_depl, retrieve_cscs_prod
+dwh_retrieve_cmd=dwh_retrieve
+# Number of retries if retrieval fails
+n_retries=3
+# File names for obs data
+# must be in accordance with settings in syn_make_nl
+obs_fmt=$SYN_OBS_FMT
+obs_file_dwh_synop='<yyyy><mm><dd>'syn.$obs_fmt
+obs_file_dwh_surface='<yyyy><mm><dd>'sfc.$obs_fmt
+obs_file_dwh_pollen='<yyyy><mm><dd>'pol.$obs_fmt
+obs_file_dwh_tnx='<yyyy><mm><dd>'tnx.$obs_fmt
+#===============================================================================
+# Functions
+#===============================================================================
+function version {
+    # Print script name and revision number on stderr
+    cat >&2 << EOF
+
+$tag  $revision
+
+EOF
+} # function version
+#===============================================================================
+function usage {
+    cat >&2 << EOF
+
+Usage: $tag [-f] [-h] [-k] [-n] obs_dir [firstDay [lastDay]]
+
+Options:
+  -D, --database=DB      Use observational database DB
+  -d, --debug            produce additional output for debugging
+  -E, --dwh-env=ENV	 environment for retrieve_cscs, ENV is one of:
+                         proxy_prod, proxy_depl, proxy_devt
+  -f, --force            force retrieval overwriting existing files
+  -F, --format=FMT       format of retrieved data file
+  -h, --help             print this small help and quit
+  -k, --keep             keep temporary files, no cleanup
+  -n, --no-exec          print commands without executing them
+  -p, --params=LIST      parameters verified, comma-separated list
+  -t, --type=TYPE        type of observations (def=surface, synop, pollen)
+  -V, --version	         print version of this script and quit
+
+Arguments:
+  obs_dir         Directory where observations are written
+  firstDay        First day (default=current)
+  lastDay         Last day (default=firstDay)
+                  Format of firstDay, lastDay: [yy]yymmdd
+EOF
+} # function usage
+#===============================================================================
+function y2k_complete {
+    local y2kwarn day
+    if (( $1 < 800000 )) ; then
+	y2kwarn=yes
+	(( day = $1 + 20000000 ))
+    elif (( $1 < 1000000 )) ; then
+	y2kwarn=yes
+	(( day = $1 + 19000000 ))
+    elif (( $1 < 10000000 || $1 > 30000000 )) ; then
+	# Print warning on stderr
+	echo "${tag}.$FUNCNAME: ERROR: Illegal day: $1" >&2
+	return 1
+    else
+	(( day = $1 ))
+    fi
+    if [[ -n $y2kwarn ]] ; then
+	# Print warning on stderr
+	echo "${tag}.$FUNCNAME: WARNING: Obsolete use of 2-digit year, assuming $day." >&2
+    fi
+    echo $day
+} # y2k_complete
+
+#===============================================================================
+# Initializations
+#===============================================================================
+# Script name
+tag=$(basename $0)
+# Delete all alias definitions
+unalias -a
+# Set pipefail option to get status of whole pipe, not just of last command,
+# needed if last command is always successful, e.g. "| tee file.log"
+# (alternative solution: test ${PIPESTATUS[*]} instead of $?)
+set -o pipefail
+
+#===============================================================================
+# Parse arguments
+#===============================================================================
+while (( $# > 0 )) ; do
+    # $1 must be in quotes to enable embedded blanks
+    case "$1" in
+	-E | --env=*)
+	    [[ $1 == --* ]] || shift
+	    dwh_env=${1#*=}
+	    ;;
+	-D | --database=*)
+	    [[ $1 == --* ]] || shift
+	    database=${1#*=}
+	    ;;
+	-d | --debug)
+	    debug=yes
+	    ;;
+	-f | --force)
+	    force=yes
+	    ;;
+	-F | --format=*)
+	    [[ $1 == --* ]] || shift
+	    format=${1#*=}
+	    ;;
+	-h | --help)
+	    usage
+	    exit 0
+	    ;;
+	-k | --keep)
+	    keep=yes
+	    ;;
+	-n | --no-exec)
+	    no_exec=yes
+	    ;;
+	-p | --params=*)
+	    [[ $1 == --* ]] || shift
+	    param_list=${1#*=}
+	    params=( ${param_list//,/ } )
+	    ;;
+	-t | --type=*)
+	    [[ $1 == --* ]] || shift
+	    obs_type=${1#*=}
+	    ;;
+	-V | --version)
+	    version
+	    exit 0
+	    ;;
+	-* | --*)
+	    echo "${tag}: EXIT[1]: Unknown option: $1"
+            usage
+	    exit 1
+	    ;;
+	*)
+	    # Arguments
+	    if [[ -n $lastDay ]] ; then
+		echo "${tag}: EXIT[2]: Too many arguments: $1"
+		usage
+		exit 1
+	    elif [[ -n $firstDay ]] ; then
+		lastDay="$1"
+	    elif [[ -n $obs_dir ]] ; then
+		firstDay="$1"
+	    else
+		obs_dir="$1"
+	    fi
+	    ;;
+    esac
+    shift
+done
+# Check if obs_dir is defined
+if [[ -z $obs_dir ]] ; then
+    echo "${tag}: EXIT[3]: Insufficient arguments: obs_dir not set."
+    usage
+    exit 1
+fi
+
+# Check firstDay format
+if [[ -n $firstDay ]] ; then
+    firstDay=$(y2k_complete $firstDay) || exit 1
+else
+    # Default firstDay: today - 1
+    # Current date
+    firstDay=$(date --utc +%Y%m%d --date=yesterday)
+fi
+# Check lastDay format
+if [[ -n $lastDay ]] ; then
+    lastDay=$(y2k_complete $lastDay) || exit 1
+fi
+
+# lastDay defined?
+[[ -z  $lastDay ]] && lastDay=$firstDay
+
+# database defined?
+[[ -z $database ]] && database="dwh"
+
+# Option for $dwh_retrieve_cmd
+[[ -n  $dwh_env ]] && dwh_env_opt="-E $dwh_env"
+
+# Output format option
+[[ -z $format ]] && format=atab
+fmt=$format
+
+#===============================================================================
+# Start Processing
+#===============================================================================
+echo "${tag}: INFO: Retrieving observations from $firstDay to $lastDay."
+
+# Observations directory
+if [[ -z $no_exec ]] && [ -d $obs_dir ] ; then
+    mkdir -p $obs_dir
+fi
+echo "${tag}: INFO: Target directory: $obs_dir"
+
+# Observational database
+echo "${tag}: INFO: Database: $database"
+
+# Observation types
+case $database in
+    dwh)
+	echo "${tag}: INFO: Retrieve command: $dwh_retrieve_cmd $dwh_env_opt"
+	[[ -z $obs_type ]] && obs_type=surface
+	echo "${tag}: INFO: Obs type: $obs_type"
+	;;
+    file)
+	# obs_type is filename
+	# TODO: move filename to a new option --file=
+	if [[ -z $obs_type ]] ; then
+	    echo $tag": EXIT[4]: --database='file' requires file name" \
+		"to be defined with --type"
+	    exit 3
+	fi
+	obs_src_file="$obs_type"
+	# TODO: allow various obs types
+	obs_type=synop
+	echo "${tag}: INFO: Data source file: $obs_src_file"
+	;;
+esac
+
+# Init day
+day=$firstDay
+
+# Retrieval file
+case $database in
+    dwh)
+        # DWH retrieval commands
+	obs_retrieval=$obs_dir/${database}_$obs_type.retrieval
+	;;
+    file)
+	# Copy commands
+	obs_retrieval=$obs_dir/$database.retrieval
+	;;
+esac
+
+# Loop over all days
+(( n_retrieval = 0 ))
+while (( ${day} <= ${lastDay} )) ; do
+
+    # Select appropriate obs data file
+    case $obs_type in
+	synop | surface | pollen | tnx)
+	    eval obs_file_template=\"\$obs_file_dwh_$obs_type\"
+	    obs_file=${obs_file_template//<yyyy><mm><dd>/$day}
+	    ;;
+	*)
+	    echo "${tag}: EXIT[7]: Unknown observation type: $obs_type"
+	    exit 3
+	    ;;
+    esac
+
+    # Repeated run: Check if data already present
+    if [ -f $obs_dir/$obs_file ] && [[ -z $force ]] ; then
+	# Data file present
+	# Check if file size > 0
+	if [ -s $obs_dir/$obs_file ] ; then
+	    # Data present, print message
+	    if [[ -n $is_present_msg ]] ; then
+		[[ is_present_msg != $day ]] && echo -n ", $obs_file"
+	    else
+		echo -n "${tag}: INFO: Data already present: $obs_file"
+	    fi
+	    is_present_msg=$day
+	    # Increment date and cycle loop
+	    day=$(date --utc +%Y%m%d --date="$day +1 day")
+	    continue
+	else
+	    # Data file empty
+	    if [[ -n $is_present_msg ]] ; then
+		echo ""
+		unset is_present_msg
+	    fi
+	    echo "${tag}: WARNING: File present but empty, re-extracting:"\
+		    "$obs_file"
+	fi
+    fi
+
+    # Data not present, retrieve
+    (( n_retrieval++ ))
+
+    # Check if retrieval file has already been renewed
+    if [[ $n_retrieval == 1 ]] ; then
+	# Create new, empty retrieval file
+	cat > $obs_retrieval <<EOF
+EOF
+	# Check if successful
+	if (( $? != 0 )) ; then
+	    echo "${tag}: EXIT[8]: Error creating retrieval file:"\
+		    "$obs_retrieval"
+	    exit 3
+	fi
+
+	# Remove log file
+	[ -e ${obs_retrieval%.*}.log ] && rm ${obs_retrieval%.*}.log
+    fi
+
+    # Retrieve
+    case $database in
+	dwh)
+	    case $obs_type in
+		surface)
+		    # DWH surface data
+
+		    # Default parameter setting of dwh_retrieve equates to:
+		    #   Option   -p 91,194,90,968,196,197,2278,1675,4339,2269,1760,101,292,98
+		    #              T_2M    PS    FF_10M   PREC1    PREC24     CLCT3   VMAX6
+		    #                TD_2M   PMSL    DD_10M   PREC12     GLOB     VM10min RELHUM
+
+		    # Alternative parameters:
+		    #   1760 --> 753 for CLCT from APCADA PCA derived cloudiness data
+		    #   196  --> 195 for FF_10M from vector mean instead of scalar mean
+		    # Note: When using APCADA PCA, the options -a SMN,Westa_O or -a SMN,OBS are not
+		    #       needed, -a SMN ist sufficient in this case.
+
+		    # Unused parameters:
+		    #   101 VM10min (max gust last 10 min) is not verified
+
+		    # Additional parameters:
+		    #   4338 for TOT_PREC3
+		    #   1674 for TOT_PREC6
+		    #   2262 for VMAX_10M1
+		    #   4742 for VMAX_10M3
+		    #   2280 for DURSUN1  [min]
+		    #   1072 for DURSUN24 [h]   stored at 00 UTC of day of interval start
+		    #   4363 for DURSUNAM [min] 00-12 UTC stored at 00 UTC of same day
+		    #   4364 for DURSUNPM [min] 12-00 UTC stored at 00 UTC of day of interval start
+		    #   7625 for DURSUN12 [min]
+		    #   Option -p 91,194,90,968,195,197,2278,4338,1674,1675,4339,2269,753,2262,4742,292,98,2280,7625,1072
+		    #            T_2M    PS    FF_10M   PREC1     PREC6    PREC24     CLCT     VMAX3  RELHUM   DURSUN12
+		    #               TD_2M   PMSL   DD_10M    PREC3    PREC12      GLOB   VMAX1     VMAX6  DURSUN1  DURSUN24
+
+		    # For all parameters defined in dwh_retrieve, see
+		    #  /oprusers/owm/opr/resources/parameter_dictionary.txt
+
+		    # Houry averaged data:
+		    #   Param. 2285 for T_2M, 305 for TD_2M, 2275 for PS, 2271 for PMSL, 
+		    #          2261 for FF_10M, 2257 for DD_10M, 753 for CLCT (APCADA)
+		    #   Option -p 2285,305,2275,2271,2261,2257,2278,1675,4339,2269,753,292,98
+		    #             T_2M       PS    FF_10M     PREC1    PREC24     CLCT RELHUM
+		    #                TD_2M      PMSL    DD_10M    PREC12      GLOB   VMAX6
+
+		    # Option -s surface_bufr assures that coordinates of main measurement field are 
+		    # used rather than those of the eye observations and implies -a SMN,Westa_O
+		    # Use -a SMN explicitly (instead of default SMN,Westa_O)
+		    #     -a SMN,OBS adds 1 station with precip and 6 stations with CLCT eye obs (2017-08).
+
+		    # Partnerstationen
+		    # retrieve_cscs -s surface -j lat,lon,elev,int_ind,nat_abbr \
+		    #   -p 91,194,90,968,196,197,2278,1675,4339,2269,753,292,98 \
+		    #   -a Agrometeo,ARPA_Lombardei,Axpo,DWD,IMIS-Stationen,Kachelmannwetter,kant._Messnetze,MeteoFrance,\
+		    #      MeteoGroup,MIL-Flugplätze,NABEL,Niederschlagsmessnetz_Piemont,Rega,Strassenwetter,Valle_Aosta,\
+		    #      Vorarlberg,Windspots,WSL,ZAMG
+
+            # params 270,282,283
+
+		    cat > $obs_retrieval.tmp <<EOF
+$dwh_retrieve_cmd $dwh_env_opt -t ${day}0000-${day}2359 -s surface_bufr \
+              -a SMN,Agrometeo,ARPA_Lombardei,Axpo,DWD,IMIS-Stationen,Kachelmannwetter,kant._Messnetze,MeteoFrance,MeteoGroup,MIL-Flugplätze,NABEL,Niederschlagsmessnetz_Piemont,Rega,Strassenwetter,Valle_Aosta,VVorarlberg,Windspots,WSL,ZAMG \
+              -p 270,282,283 \
+              -f $format -o $obs_dir/$obs_file
+EOF
+		    ;;
+
+		synop)
+		    # DWH SYNOP data
+		    # Param. 119 for CLCT, 1674 for TOT_PREC6
+		    # Operational OBS_DOMAIN = 35,60,-15,25
+		    # Option -s synop_bufr automatically sets all parameters needed for BUFR encoding
+		    # Note: Option -s synop_bufr does not exist in retrieve_cscs, only in dwh_retrieve
+		    cat > $obs_retrieval.tmp <<EOF
+$dwh_retrieve_cmd $dwh_env_opt -t ${day}0000-${day}2359 -s synop_bufr \
+              -l 35,60,-15,25 \
+              -f $format -o $obs_dir/$obs_file
+EOF
+		    ;;
+
+		pollen)
+		    # DWH pollen data
+		    # 0-0 UTC mean ALNU24, AMBR24, BETU24, POAC24 = ?,4861,4839,4870
+		    # 6-6 UTC mean ALNU24, AMBR24, BETU24, POAC24 = 1315,1424,1323,1469
+		    # 2 h mean     ALNU2,  AMBR2,  BETU2,  POAC2  = ?,4490,4494,4520
+		    # hourly mean  ALNU,   AMBR,   BETU,   POAC   = ?,?,?,?
+		    cat > $obs_retrieval.tmp <<EOF
+$dwh_retrieve_cmd $dwh_env_opt -t ${day}0000-${day}2359 -s surface_stations \
+              -p 1323,1424,1469,1315 \
+              -i nat_abbr,PBS,PBE,PBU,PDS,PGE,PCF,PLS,PLO,PLU,PLZ,PMU,PNE,PVI,PZH \
+              -f $format -o $obs_dir/$obs_file
+EOF
+		    ;;
+
+		tnx)
+		    cat > $obs_retrieval.tmp <<EOF
+$dwh_retrieve_cmd $dwh_env_opt -t ${day}0000-${day}2359 -s surface_bufr \
+              -p 212,213 \
+              -f $format -o $obs_dir/$obs_file
+EOF
+		    ;;
+	    esac # obs_type
+
+	    # Append retrieval command to retrieval file for documentation only
+	    cat $obs_retrieval.tmp >> $obs_retrieval
+	    if [[ -n $is_present_msg ]] ; then
+		echo ""
+		unset is_present_msg
+	    fi
+
+	    # Execute temporary retrieval file
+	    echo -n "${tag}: INFO: Retrieving $obs_type data for day: $day at "
+	    date --iso=seconds
+	    (( iret = 0 ))
+	    while (( $iret <= $n_retries )) ; do
+		(( $iret > 0 )) && echo "${tag}: WARNING: Retrieval failed, retrying"
+		source $obs_retrieval.tmp 2>&1 | tee ${obs_retrieval%.*}.$iret.log
+		(( $? == 0 )) && grep -q "Successful execution" ${obs_retrieval%.*}.$iret.log && break
+		(( iret++ ))
+	    done
+	    if (( $iret > $n_retries )) ; then
+		# dwh_retrieve sometime ends without newline
+		echo 
+		echo $tag: "EXIT[9]: Error executing DWH retrieval," \
+		    "see ${obs_retrieval%.*}.*.log"
+		exit 3
+	    fi
+	    echo -n "${tag}: INFO: Received data at "
+	    date --iso=seconds
+	    rm $obs_retrieval.tmp
+	    # Check size of data file
+	    if [ ! -s $obs_dir/$obs_file ] ; then
+		# Data file empty
+		echo "${tag}: EXIT[10]: No $obs_type obervations for day: $day"
+		rm $obs_dir/$obs_file
+		exit 3
+	    fi
+	    ;;
+
+	file)
+	    source_file=$(echo "$obs_src_file" | \
+		sed "s/<yyyy>/${day:0:4}/" | \
+		sed "s/<yy>/${day:2:2}/"   | \
+		sed "s/<mm>/${day:4:2}/"   | \
+		sed "s/<dd>/${day:6:2}/"     )
+
+	    # Append command to retrieval file for documentation only
+	    cat >> $obs_retrieval <<EOF
+cp $source_file $obs_dir/$obs_file
+EOF
+	    # Execute copy command
+	    [[ -n $is_present_msg ]] && echo "" && unset is_present_msg
+	    echo "${tag}: INFO: Retrieving $obs_type data for day: $day"
+	    if ! cp $source_file $obs_dir/$obs_file ; then
+		echo "${tag}: EXIT[9]: Error executing file copy from: $source_file" \
+		    "to: $obs_dir/$obs_file"
+		exit 3
+	    fi
+	    ;;
+
+    esac # database
+
+    # Increment date
+    day=$(date --utc +%Y%m%d --date="$day +1 day")
+
+done # Loop over all days
+
+# Write newline if "already present" line incomplete
+if [[ -n $is_present_msg ]] ; then
+    echo ""
+fi
+
+# Report if any retrievals have been done
+if (( $n_retrieval == 0 )) ; then
+    echo "${tag}: INFO: All data present, no retrieval needed."
+fi
+
+exit
