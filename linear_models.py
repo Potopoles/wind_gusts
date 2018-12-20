@@ -105,10 +105,29 @@ class Linear_Models:
         if predictor_list is None:
             predictor_list = [
 
-            ['zvp10', 'zvp10_2', 'zvp10_3'],
+            ['zvp10', 
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3'],
 
-            ['zvp10', 'zvp10_2', 'zvp10_3',
-                'zvp10_tcm'],
+            ['zvp10',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+                'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbralb_3'],
+
+            ['zvp10', 'zvp10_tcm',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+                'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbralb_3'],
+
+            ['zvp10',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+                'zvp10_braes', 'zvp10_braub'],
+
+            ['zvp10',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+                'zvp10_braes','zvp10_braes_2', 'zvp10_braub', 'zvp10_braub_2'],
+
+            ['zvp10',
+                'zvp10_bralb', 'zvp10_bralb_2', 'zvp10_bralb_3',
+                'zvp10_zbralb', 'zvp10_zbralb_2', 'zvp10_zbralb_3',
+                'zvp10_braes', 'zvp10_braub'],
 
                 ]
 

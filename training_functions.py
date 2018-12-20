@@ -331,7 +331,3 @@ def prepare_model_params(use_model_fields, lm_runs, CN,
     return(result)
 
 
-
-
-
-

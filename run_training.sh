@@ -1,6 +1,6 @@
 #!/bin/bash
 
-model_inds=($(seq 0 1 2))
+model_inds=($(seq 0 1 5))
 #model_inds=(4)
 #printf "%s\n" "${model_inds[@]}"
 #exit 1

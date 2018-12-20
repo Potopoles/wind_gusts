@@ -221,4 +221,4 @@ def train_linear_model(model_key, lm, predictors,
 
     result = (coefs, errors_ref, errors)
 
-    return(result)
+return(result)

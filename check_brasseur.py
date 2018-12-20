@@ -23,7 +23,7 @@ i_plot = nl.i_plot
 i_plot_type = nl.i_plot_type
 max_tuning_steps = 2000
 coef_conv_thresh = 1E-3
-weights_err_spaces = {'1_1':1,'err':1}
+weights_err_spaces = {'1_1':0,'err':1}
 nth_ts_out = 20
 reset_model_constellation = nl.reset_model_constellation
 n_bins = 4
@@ -50,9 +50,13 @@ if i_plot > 1 and not os.path.exists(CN.plot_path):
 data = pickle.load( open(CN.mod_path, 'rb') )
 ncf = Dataset(CN.mod_nc_path, 'r')
 
+
 # load Predictor class and linear model (lm)
 PR = Predictors(ncf, data)
-lms = Linear_Models(PR, CN, reset_model_constellation, run_which_models)
+
+predictor_list = [['zvp10', 'bralb', 'braub', 'braes']]
+lms = Linear_Models(PR, CN, reset_model_constellation, run_which_models,
+                    predictor_list)
 
 # data that must be loaded in any case.
 obs_mean = data['obs_mean']
@@ -73,6 +77,7 @@ obs_mean = obs_mean[~obsmask]
 model_mean = model_mean[~obsmask]
 tcm = tcm[~obsmask]
 zvp10 = zvp10[~obsmask]
+
 
 #obs_gust[obs_gust < 0.1] = 0.1
 #obs_gust = np.log(obs_gust)
@@ -115,17 +120,102 @@ for model_key,model in lms.models.items():
             # remove data where masked due observation missing values
             pred_values = pred_values[~obsmask]
 
-            # apply scaling
-            if model[pred_name]['fix'] is not 1:
-                pred_values,sd = apply_scaling(pred_values)
-                scales[pred_name] = sd
-            else:
-                scales[pred_name] = 1
+            ## apply scaling
+            #if model[pred_name]['fix'] is not 1:
+            #    pred_values,sd = apply_scaling(pred_values)
+            #    scales[pred_name] = sd
+            #else:
+            #    scales[pred_name] = 1
 
             # store
             predictors[pred_name] = pred_values
 
 
+wind = predictors['zvp10']
+bralb = predictors['bralb']
+braes = predictors['braes']
+braub = predictors['braub']
+
+
+
+#########################################
+#rat_bralb = np.mean(bralb)/np.mean(wind)
+#rat_braes = np.mean(braes)/np.mean(wind)
+#rat_braub = np.mean(braub)/np.mean(wind)
+#wind = np.arange(0,60)
+#bralb = wind*rat_bralb
+#braes = wind*rat_braes
+#braub = wind*rat_braub
+#########################################
+
+
+gust = 1.62*wind - 1.74E-3*wind*bralb \
+                 - 1.95E-5*wind*bralb**2 \
+                 - 1.25E-5*wind*bralb**3 \
+                 + 1.13E-2*wind*braes \
+                 + 1.24E-2*wind*braub
+wind = np.mean(wind, axis=1)
+gust = np.max(gust, axis=1)
+print(np.max(wind))
+print(np.max(gust))
+
+
+#########################################
+#bralb_tot = - 1.74E-3*wind*bralb + \
+#            - 1.95E-5*wind*bralb**2 - \
+#            - 1.25E-5*wind*bralb**3
+#bra_tot = - 1.74E-3*wind*bralb + \
+#          - 1.95E-5*wind*bralb**2 - \
+#          - 1.25E-5*wind*bralb**3 + \
+#          + 1.13E-2*wind*braes + \
+#          + 1.24E-2*wind*braub
+#print(balb_tot.shape)
+#quit()
+#bralb_tot = np.mean(bralb_tot, axis=1)
+#bra_tot = np.mean(bra_tot, axis=1)
+#axes[0].scatter(wind, bralb_tot)
+#axes[1].scatter(wind, bra_tot)
+#plt.show()
+#quit()
+#########################################
+
+fig,axes = plt.subplots(2,2, figsize=(10,10))
+axes[0,0].scatter(wind.flatten(), gust.flatten(), marker='.')
+axes[0,0].grid()
+error = gust - obs_gust
+#axes[1,0].scatter(obs_gust, error.flatten(), marker='.')
+axes[1,0].scatter(wind.flatten(), error.flatten(), marker='.')
+axes[1,0].grid()
+
+thr1 = 22
+thr2 = 25
+gust_factor = 1.9
+sel_between = (wind >= thr1) & (wind < thr2)
+sel_above = wind >= thr2
+gust[sel_between] = (wind[sel_between] - thr1)/(thr2 - thr1)*\
+                        wind[sel_between]*gust_factor + \
+                    (thr2 - wind[sel_between])/(thr2 - thr1)*\
+                        gust[sel_between]
+#gust[sel_between] = (thr2 - wind[sel_between])/(thr2 - thr1)*\
+#                        gust[sel_between]
+gust[sel_above] = wind[sel_above]*gust_factor
+
+#axes[1].plot(wind, gust, marker='.')
+#axes[1].grid()
+#plt.show()
+#quit()
+
+
+axes[0,1].scatter(wind.flatten(), gust.flatten(), marker='.')
+axes[0,1].grid()
+error = gust - obs_gust
+#axes[1,1].scatter(obs_gust, error.flatten(), marker='.')
+axes[1,1].scatter(wind.flatten(), error.flatten(), marker='.')
+axes[1,1].grid()
+plt.show()
+
+
+quit()
 
 ###############################################################################
 ###### PART 2: Training and Output
